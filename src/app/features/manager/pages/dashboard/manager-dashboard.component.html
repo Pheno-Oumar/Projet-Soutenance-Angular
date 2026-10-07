@@ -1,0 +1,199 @@
+<div class="manager-dashboard">
+  <!-- DASHBOARD HERO / HEADER -->
+  <header class="dashboard-header">
+    <div class="header-left">
+      <span class="greeting-date">{{ currentDate | date:'fullDate' | titlecase }}</span>
+      <h1 class="greeting-title">
+        Bonjour, {{ currentUser()?.prenom || 'Manager' }}
+      </h1>
+      <p class="greeting-subtitle">
+        Supervision opérationnelle du salon <strong>{{ salonContext()?.nomSalon || 'Mon Salon' }}</strong>
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <a [routerLink]="['rendez-vous']" class="btn-primary">
+        <mat-icon class="btn-icon icon-sm">event</mat-icon>
+        Consulter le planning
+      </a>
+      <a [routerLink]="['services']" class="btn-secondary">
+        <mat-icon class="btn-icon icon-sm">content_cut</mat-icon>
+        Catalogue Soins
+      </a>
+    </div>
+  </header>
+
+
+  <!-- KPI CARDS GRID -->
+  <section class="kpi-grid">
+    <!-- KPI: RDV Aujourd'hui -->
+    <div class="kpi-card" [routerLink]="['rendez-vous']">
+      <div class="kpi-icon-wrap icon-planning">
+        <mat-icon class="icon-md">schedule</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Rendez-vous Aujourd'hui</span>
+        <div class="kpi-value">{{ todayAppointments().length }}</div>
+        <span class="kpi-subtext">Créneaux planifiés sur la journée</span>
+      </div>
+    </div>
+
+    <!-- KPI: Prestations au Catalogue -->
+    <div class="kpi-card" [routerLink]="['services']">
+      <div class="kpi-icon-wrap icon-services">
+        <mat-icon class="icon-md">content_cut</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Catalogue de Services</span>
+        <div class="kpi-value">{{ servicesCount() }}</div>
+        <span class="kpi-subtext">Soins et déclinaisons configurés</span>
+      </div>
+    </div>
+
+    <!-- KPI: Réclamations à Traiter -->
+    <div class="kpi-card" [routerLink]="['reclamations']" [class.kpi-alert]="openReclamations().length > 0">
+      <div class="kpi-icon-wrap icon-reclamations">
+        <mat-icon class="icon-md">report_problem</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Réclamations Ouvertes</span>
+        <div class="kpi-value">{{ openReclamations().length }}</div>
+        <span class="kpi-subtext">{{ openReclamations().length === 0 ? 'Aucune réclamation en attente' : 'Action requise' }}</span>
+      </div>
+    </div>
+
+    <!-- KPI: Avis à Modérer -->
+    <div class="kpi-card" [routerLink]="['avis']" [class.kpi-warning]="totalAvisEnAttente > 0">
+      <div class="kpi-icon-wrap icon-avis">
+        <mat-icon class="icon-md">star</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Avis en Attente</span>
+        <div class="kpi-value">{{ totalAvisEnAttente }}</div>
+        <span class="kpi-subtext">Prestations & Salon à valider</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN DASHBOARD CONTENT (TWO COLUMNS) -->
+  <div class="dashboard-body-grid">
+    <!-- LEFT: PLANNING DU JOUR -->
+    <section class="dashboard-card planning-section">
+      <div class="card-header">
+        <div class="card-title-group">
+          <h2 class="card-title">Agenda d'aujourd'hui</h2>
+          <span class="card-badge">{{ todayAppointments().length }} RDV</span>
+        </div>
+        <a [routerLink]="['rendez-vous']" class="link-action">Voir tout l'agenda &rarr;</a>
+      </div>
+
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Chargement du planning...</span>
+        </div>
+      } @else if (todayAppointments().length === 0) {
+        <div class="empty-state-mini">
+          <mat-icon class="icon-xl">calendar_today</mat-icon>
+          <p>Aucun rendez-vous planifié aujourd'hui</p>
+        </div>
+      } @else {
+        <div class="appointments-list">
+          @for (rdv of todayAppointments(); track rdv.rdvId) {
+            <div class="appointment-row">
+              <div class="rdv-time">
+                <span class="time-start">{{ formatHeure(rdv.dateHeureDebut) }}</span>
+                <span class="time-end">{{ formatHeure(rdv.dateHeureFin) }}</span>
+              </div>
+
+              <div class="rdv-client-info">
+                <span class="client-name">{{ rdv.prenomClient }} {{ rdv.nomClient }}</span>
+                <span class="rdv-service">
+                  @if (rdv.prestations && rdv.prestations.length > 0) {
+                    {{ rdv.prestations[0].serviceNom }} - {{ rdv.prestations[0].varianteNom }}
+                  } @else {
+                    Prestation personnalisée
+                  }
+                </span>
+              </div>
+
+              <div class="rdv-meta">
+                <span class="rdv-badge" [class]="'badge-' + rdv.statut.toLowerCase()">
+                  {{ rdv.statut }}
+                </span>
+                @if (rdv.montantEstime) {
+                  <span class="rdv-amount">{{ formatDevise(rdv.montantEstime) }}</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- RIGHT: ALERTES OPÉRATIONNELLES & ACTIONS RAPIDES -->
+    <div class="dashboard-side-col">
+      <!-- WIDGET: RÉCLAMATIONS EN ATTENTE -->
+      <section class="dashboard-card widget-reclamations">
+        <div class="card-header">
+          <h2 class="card-title">Réclamations urgentes</h2>
+          <a [routerLink]="['reclamations']" class="link-action">Voir les réclamations</a>
+        </div>
+
+        @if (openReclamations().length === 0) {
+          <div class="empty-state-mini success">
+            <mat-icon class="icon-xl text-success">check_circle</mat-icon>
+            <p>Toutes les réclamations sont traitées !</p>
+          </div>
+        } @else {
+          <div class="reclamations-list">
+            @for (rec of openReclamations().slice(0, 3); track rec.id) {
+              <div class="reclamation-item">
+                <div class="rec-header">
+                  <span class="rec-priorite badge-danger">{{ rec.statut }}</span>
+                  <span class="rec-date">{{ rec.dateCreation | date:'dd/MM HH:mm' }}</span>
+                </div>
+                <h4 class="rec-motif">{{ rec.objet }}</h4>
+                <p class="rec-desc">{{ rec.description }}</p>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- WIDGET: ACCÈS RAPIDES DU MANAGER -->
+      <section class="dashboard-card widget-quick-links">
+        <h2 class="card-title">Raccourcis Opérationnels</h2>
+        <div class="quick-links-grid">
+          <a [routerLink]="['services']" class="quick-link-btn">
+            <div class="quick-icon icon-services">
+              <mat-icon class="icon-md">add</mat-icon>
+            </div>
+            <span>Ajouter Service</span>
+          </a>
+
+          <a [routerLink]="['realisations']" class="quick-link-btn">
+            <div class="quick-icon icon-realisation">
+              <mat-icon class="icon-md">videocam</mat-icon>
+            </div>
+            <span>Portfolio Vidéo</span>
+          </a>
+
+          <a [routerLink]="['clients']" class="quick-link-btn">
+            <div class="quick-icon icon-clients">
+              <mat-icon class="icon-md">people</mat-icon>
+            </div>
+            <span>Dossiers Clients</span>
+          </a>
+
+          <a [routerLink]="['avis']" class="quick-link-btn">
+            <div class="quick-icon icon-avis">
+              <mat-icon class="icon-md">rate_review</mat-icon>
+            </div>
+            <span>Modérer Avis</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

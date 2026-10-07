@@ -1,0 +1,162 @@
+<div class="compte-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Mon Profil & Paramètres de Sécurité</h1>
+      <p class="page-subtitle">Gérez vos coordonnées professionnelles et sécurisez votre accès manager au salon</p>
+    </div>
+  </header>
+
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement de votre compte...</span>
+    </div>
+  } @else {
+    <div class="compte-grid">
+      <!-- INFORMATIONS PERSONNELLES -->
+      <section class="compte-card">
+        <div class="card-header">
+          <div class="icon-wrap">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div>
+            <h2 class="card-title">Informations Personnelles</h2>
+            <p class="card-subtitle">Coordonnées associées à votre profil manager</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="mettreAJourProfil()" class="form-body">
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="profPrenom" class="form-label">Prénom *</label>
+              <input
+                id="profPrenom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="profilData.prenom"
+                name="prenom"
+                required
+              />
+            </div>
+
+            <div class="form-group col-half">
+              <label for="profNom" class="form-label">Nom *</label>
+              <input
+                id="profNom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="profilData.nom"
+                name="nom"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="profEmail" class="form-label">Adresse Email (Identifiant de connexion)</label>
+            <input
+              id="profEmail"
+              type="email"
+              class="form-control"
+              [value]="compte()?.email"
+              disabled
+              title="L'adresse email ne peut pas être modifiée directement."
+            />
+            <span class="input-hint">L'email sert d'identifiant unique et ne peut être altéré.</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="profTel" class="form-label">Numéro de téléphone</label>
+              <input
+                id="profTel"
+                type="tel"
+                class="form-control"
+                [(ngModel)]="profilData.telephone"
+                name="telephone"
+                placeholder="+223 ..."
+              />
+            </div>
+
+            <div class="form-group col-half">
+              <label for="profDateNais" class="form-label">Date de naissance</label>
+              <input
+                id="profDateNais"
+                type="date"
+                class="form-control"
+                [(ngModel)]="profilData.dateNaissance"
+                name="dateNaissance"
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingProfil">
+              {{ isUpdatingProfil ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- SÉCURITÉ & MOT DE PASSE -->
+      <section class="compte-card">
+        <div class="card-header">
+          <div class="icon-wrap icon-secu">
+            <mat-icon>lock</mat-icon>
+          </div>
+          <div>
+            <h2 class="card-title">Sécurité du Compte</h2>
+            <p class="card-subtitle">Modifier votre mot de passe d'accès</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="changerMotDePasse()" class="form-body">
+          <div class="form-group">
+            <label for="oldPassword" class="form-label">Mot de passe actuel *</label>
+            <input
+              id="oldPassword"
+              type="password"
+              class="form-control"
+              [(ngModel)]="passwordForm.ancienMotDePasse"
+              name="ancienMotDePasse"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="newPassword" class="form-label">Nouveau mot de passe *</label>
+            <input
+              id="newPassword"
+              type="password"
+              class="form-control"
+              [(ngModel)]="passwordForm.nouveauMotDePasse"
+              name="nouveauMotDePasse"
+              placeholder="Minimum 8 caractères"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe *</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              class="form-control"
+              [(ngModel)]="passwordForm.confirmationMotDePasse"
+              name="confirmationMotDePasse"
+              required
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" [disabled]="isChangingPassword">
+              {{ isChangingPassword ? 'Modification...' : 'Modifier le mot de passe' }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+</div>

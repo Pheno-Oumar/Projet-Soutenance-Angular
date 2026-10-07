@@ -1,0 +1,39 @@
+<div class="story-reel-container" *ngIf="stories && stories.length > 0">
+  <div class="reel-header">
+    <div class="reel-title-badge">
+      <span class="live-dot"></span>
+      <span class="title-text">{{ titre }}</span>
+    </div>
+    <span class="count-pill">{{ stories.length }} salon{{ stories.length > 1 ? 's' : '' }} en direct</span>
+  </div>
+
+  <div class="reel-scroll">
+    <div
+      *ngFor="let item of stories"
+      class="story-item"
+      (click)="onSelect(item)"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Voir les stories de ' + item.salonNom"
+    >
+      <div class="story-ring-wrapper">
+        <div class="story-ring">
+          <div class="avatar-box">
+            <img
+              *ngIf="item.salonLogoUrl"
+              [src]="item.salonLogoUrl | safeMedia"
+              [alt]="item.salonNom"
+              class="salon-logo"
+              referrerpolicy="no-referrer"
+            />
+            <div *ngIf="!item.salonLogoUrl" class="avatar-fallback">
+              {{ item.salonNom.charAt(0).toUpperCase() }}
+            </div>
+          </div>
+        </div>
+        <span class="badge-count">{{ item.nombreStories }}</span>
+      </div>
+      <span class="salon-name" [title]="item.salonNom">{{ item.salonNom }}</span>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,185 @@
+<div class="reclamations-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Gestion & Résolution des Réclamations</h1>
+      <p class="page-subtitle">Suivi du contentieux client, investigations internes et réponses formelles</p>
+    </div>
+
+    <!-- FILTER PILLS -->
+    <div class="filter-pills">
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === 'TOUTES'"
+        (click)="filterStatut = 'TOUTES'; chargerReclamations()"
+      >
+        Toutes ({{ reclamations().length }})
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === 'EN_ATTENTE'"
+        (click)="filterStatut = 'EN_ATTENTE'; chargerReclamations()"
+      >
+        En attente
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === 'EN_COURS'"
+        (click)="filterStatut = 'EN_COURS'; chargerReclamations()"
+      >
+        En cours
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === 'RESOLUE'"
+        (click)="filterStatut = 'RESOLUE'; chargerReclamations()"
+      >
+        Résolues
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === 'REJETEE'"
+        (click)="filterStatut = 'REJETEE'; chargerReclamations()"
+      >
+        Rejetées
+      </button>
+    </div>
+  </header>
+
+
+  <!-- RECLAMATIONS LIST -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement des réclamations...</span>
+    </div>
+  } @else if (filteredReclamations.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">check_circle</mat-icon>
+      <h3>Aucune réclamation trouvée</h3>
+      <p>Aucun dossier ne correspond à votre filtre actuel.</p>
+    </div>
+  } @else {
+    <div class="reclamations-list">
+      @for (r of filteredReclamations; track r.id) {
+        <div class="rec-card" [class]="'card-' + r.statut.toLowerCase()">
+          <div class="rec-header">
+            <div class="rec-title-wrap">
+              <span class="badge" [class]="'badge-' + r.statut.toLowerCase()">
+                {{ r.statut }}
+              </span>
+              <h3 class="rec-title">{{ r.objet }}</h3>
+            </div>
+            <span class="rec-date">{{ r.dateCreation | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+
+          <div class="rec-client-meta">
+            <span>Client : <strong>{{ r.clientNomComplet || 'Anonyme' }}</strong></span>
+            @if (r.clientEmail) {
+              <span class="meta-sep">&bull;</span>
+              <span>{{ r.clientEmail }}</span>
+            }
+          </div>
+
+          <div class="rec-desc-box">
+            <h4 class="box-subtitle">Motif & Description de la réclamation</h4>
+            <p>{{ r.description }}</p>
+          </div>
+
+          @if (r.reponseTraitement) {
+            <div class="rec-reponse-box">
+              <div class="reponse-header">
+                <span class="reponse-badge">Réponse officielle apportée</span>
+                @if (r.traiteParNomComplet) {
+                  <span class="traite-par">Par {{ r.traiteParNomComplet }} le {{ r.dateTraitement | date:'dd/MM/yyyy' }}</span>
+                }
+              </div>
+              <p class="reponse-text">{{ r.reponseTraitement }}</p>
+            </div>
+          }
+
+          @if (r.statut === 'EN_ATTENTE' || r.statut === 'EN_COURS') {
+            <div class="rec-actions">
+              <button type="button" class="btn-primary" (click)="ouvrirTraiterModal(r)">
+                <span>Traiter cette réclamation</span>
+                <mat-icon class="inline-arrow">arrow_forward</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL: TRAITER LA RÉCLAMATION -->
+  @if (showTraiterModal && selectedReclamation) {
+    <div class="modal-backdrop" (click)="showTraiterModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Traitement de la Réclamation #{{ selectedReclamation.id }}</h2>
+          <button type="button" class="btn-close" (click)="showTraiterModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="traiterReclamation()">
+          <div class="modal-body">
+            <div class="rec-summary-box">
+              <strong>{{ selectedReclamation.objet }}</strong>
+              <p>{{ selectedReclamation.description }}</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Décision de traitement *</label>
+              <div class="decision-radios">
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    name="nouveauStatut"
+                    [(ngModel)]="traiterData.nouveauStatut"
+                    value="RESOLUE"
+                  />
+                  <span class="radio-tag resolve-tag">Résoudre la réclamation (Accord / Geste commercial)</span>
+                </label>
+                <label class="radio-label">
+                  <input
+                    type="radio"
+                    name="nouveauStatut"
+                    [(ngModel)]="traiterData.nouveauStatut"
+                    value="REJETEE"
+                  />
+                  <span class="radio-tag reject-tag">Rejeter la réclamation (Non fondée)</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="reponseClient" class="form-label">Réponse motivée au client *</label>
+              <textarea
+                id="reponseClient"
+                class="form-control"
+                [(ngModel)]="traiterData.reponse"
+                name="reponse"
+                rows="4"
+                placeholder="Expliquez la solution adoptée ou les motifs du rejet..."
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showTraiterModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isTraitementEnCours">
+              {{ isTraitementEnCours ? 'Transmission...' : 'Valider la décision' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</div>

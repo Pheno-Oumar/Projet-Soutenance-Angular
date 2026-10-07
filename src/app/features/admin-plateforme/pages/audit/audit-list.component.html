@@ -1,0 +1,209 @@
+<div class="audit-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="header-titles">
+          <div class="breadcrumbs">
+            <a routerLink="/admin-plateforme">Administration</a>
+            <span>/</span>
+            <span>Sécurité & Audit</span>
+          </div>
+          <h1>Journaux d'Audit & Traçabilité</h1>
+          <p>Supervisez l'intégralité des actions sensibles, connexions et modifications survenues sur la plateforme.</p>
+        </div>
+        <div class="header-actions">
+          <button (click)="chargerLogs()" [disabled]="isLoading()" class="btn-refresh">
+            <mat-icon class="icon-xs" [class.spin]="isLoading()">refresh</mat-icon>
+            <span>Actualiser</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Barre d'outils et Filtres Avancés -->
+      <section class="filter-card card-3d">
+        <div class="filter-row">
+          <!-- Recherche libre -->
+          <div class="search-box">
+            <mat-icon class="icon-sm">search</mat-icon>
+            <input
+              type="text"
+              [(ngModel)]="searchKeyword"
+              placeholder="Recherche par utilisateur, IP, entité..."
+              (keyup.enter)="appliquerFiltre()"
+            />
+          </div>
+
+          <!-- Filtre Type d'Action -->
+          <div class="select-box">
+            <label>Action :</label>
+            <select [(ngModel)]="filtreAction" (change)="appliquerFiltre()">
+              <option value="">Toutes les actions</option>
+              <option value="CONNEXION">CONNEXION</option>
+              <option value="DECONNEXION">DECONNEXION</option>
+              <option value="CREATION">CREATION</option>
+              <option value="MODIFICATION">MODIFICATION</option>
+              <option value="DESACTIVATION">DESACTIVATION</option>
+              <option value="REACTIVATION">REACTIVATION</option>
+              <option value="CHANGEMENT_MDP">CHANGEMENT_MDP</option>
+              <option value="SUPPRESSION">SUPPRESSION</option>
+            </select>
+          </div>
+
+          <!-- Onglet Sensible Rapide -->
+          <div class="mode-tabs">
+            <button
+              [class.active]="tabMode() === 'all'"
+              (click)="setTabMode('all')"
+              class="tab-btn"
+            >
+              Tous les logs
+            </button>
+            <button
+              [class.active]="tabMode() === 'sensibles'"
+              (click)="setTabMode('sensibles')"
+              class="tab-btn badge-alert"
+            >
+              <mat-icon class="icon-xs">warning</mat-icon> Actions Sensibles
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Erreur -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span>{{ errorMessage() }}</span>
+        <button (click)="chargerLogs()" class="btn-retry">Réessayer</button>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des événements de sécurité...</p>
+      </div>
+
+      <!-- Tableau des Logs -->
+      <section *ngIf="!isLoading()" class="table-container card-3d">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date & Heure</th>
+              <th>Action</th>
+              <th>Acteur / Compte</th>
+              <th>Salon concerné</th>
+              <th>Entité</th>
+              <th>Adresse IP</th>
+              <th class="text-right">Détails</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of logs()" (click)="selectionnerLog(log)" class="log-row">
+              <td class="font-mono">{{ log.dateHeure | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>
+                <span class="badge-action" [ngClass]="getActionBadgeClass(log.action)">
+                  {{ log.action }}
+                </span>
+              </td>
+              <td>
+                <div class="actor-cell">
+                  <strong>{{ log.compteNom || log.compteEmail || 'Système' }}</strong>
+                  <span *ngIf="log.roleUtilise" class="role-badge">{{ log.roleUtilise }}</span>
+                </div>
+              </td>
+              <td>
+                <span *ngIf="log.salonNom">{{ log.salonNom }}</span>
+                <span *ngIf="!log.salonNom" class="text-subtle">-</span>
+              </td>
+              <td>
+                <span class="entity-badge">{{ log.entite }}</span>
+              </td>
+              <td class="font-mono text-muted">{{ log.adresseIP || 'N/A' }}</td>
+              <td class="text-right">
+                <button (click)="selectionnerLog(log); $event.stopPropagation()" class="btn-detail-icon">
+                  <mat-icon class="icon-xs">visibility</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Aucun log -->
+        <div *ngIf="logs().length === 0" class="empty-state">
+          <div class="empty-icon">
+            <mat-icon class="icon-xl">shield</mat-icon>
+          </div>
+          <h3>Aucun événement d'audit enregistré</h3>
+          <p>Aucun journal ne correspond à la période ou aux critères spécifiés.</p>
+        </div>
+      </section>
+
+      <!-- TIROIR / MODAL DÉTAIL D'UN LOG -->
+      <div *ngIf="selectedLog()" class="drawer-backdrop" (click)="selectedLog.set(null)">
+        <div class="drawer-panel card-3d" (click)="$event.stopPropagation()">
+          <div class="drawer-header">
+            <div>
+              <h3>Événement d'Audit #{{ selectedLog()?.id }}</h3>
+              <span class="font-mono text-muted">{{ selectedLog()?.dateHeure | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <button (click)="selectedLog.set(null)" class="btn-close">
+              <mat-icon class="icon-sm">close</mat-icon>
+            </button>
+          </div>
+
+          <div class="drawer-body">
+            <div class="detail-section">
+              <h4>Informations Générales</h4>
+              <div class="kv-grid">
+                <div class="kv-item">
+                  <span class="kv-key">Action :</span>
+                  <span class="badge-action" [ngClass]="getActionBadgeClass(selectedLog()!.action)">
+                    {{ selectedLog()?.action }}
+                  </span>
+                </div>
+                <div class="kv-item">
+                  <span class="kv-key">Entité :</span>
+                  <span class="kv-value font-mono">{{ selectedLog()?.entite }} (ID: {{ selectedLog()?.entiteId || 'N/A' }})</span>
+                </div>
+                <div class="kv-item">
+                  <span class="kv-key">Compte Acteur :</span>
+                  <span class="kv-value">{{ selectedLog()?.compteEmail }} ({{ selectedLog()?.compteNom || 'N/A' }})</span>
+                </div>
+                <div class="kv-item">
+                  <span class="kv-key">Rôle Utilisé :</span>
+                  <span class="kv-value">{{ selectedLog()?.roleUtilise || 'N/A' }}</span>
+                </div>
+                <div class="kv-item">
+                  <span class="kv-key">Salon :</span>
+                  <span class="kv-value">{{ selectedLog()?.salonNom || selectedLog()?.salonSlug || 'Aucun (Global)' }}</span>
+                </div>
+                <div class="kv-item">
+                  <span class="kv-key">Adresse IP :</span>
+                  <span class="kv-value font-mono">{{ selectedLog()?.adresseIP || 'Non renseignée' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Client Info / User Agent -->
+            <div class="detail-section" *ngIf="selectedLog()?.userAgent">
+              <h4>Navigateur & User-Agent</h4>
+              <div class="code-block font-mono">
+                {{ selectedLog()?.userAgent }}
+              </div>
+            </div>
+
+            <!-- Valeurs Avant / Après -->
+            <div class="detail-section" *ngIf="selectedLog()?.ancienneValeur || selectedLog()?.nouvelleValeur">
+              <h4>Modifications de Données</h4>
+
+              <div *ngIf="selectedLog()?.ancienneValeur" class="diff-box old-val">
+                <span class="diff-title">Ancienne Valeur :</span>
+                <pre class="font-mono">{{ selectedLog()?.ancienneValeur }}</pre>
+              </div>
+
+              <div *ngIf="selectedLog()?.nouvelleValeur" class="diff-box new-val">
+                <span class="diff-title">Nouvelle Valeur :</span>
+                <pre class="font-mono">{{ selectedLog()?.nouvelleValeur }}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>

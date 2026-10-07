@@ -1,0 +1,174 @@
+<header class="public-navbar">
+  <div class="navbar-container">
+    <!-- Brand Plateforme -->
+    <a routerLink="/explore" class="brand-link">
+      <div class="brand-icon-box">
+        <mat-icon class="icon-sm">content_cut</mat-icon>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">HAIR STYLE <span class="brand-badge-pro">ELITE</span></span>
+        <span class="brand-tagline">Le Guide des Salons & Tendances</span>
+      </div>
+    </a>
+
+    <!-- Navigation Liens Plateforme -->
+    <nav class="nav-links">
+      <a
+        routerLink="/explore"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">storefront</mat-icon>
+        <span>Salons & Spas</span>
+      </a>
+
+      <a
+        routerLink="/kadys"
+        routerLinkActive="active"
+        class="nav-item kadys-nav-item"
+      >
+        <mat-icon class="icon-sm pulsing-glow">auto_awesome</mat-icon>
+        <span>Kady's Reels</span>
+        <span class="badge-hot">LIVE</span>
+      </a>
+
+      <a
+        routerLink="/explore"
+        fragment="tendances"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">local_fire_department</mat-icon>
+        <span>Prestations Tendances</span>
+      </a>
+
+      <a
+        routerLink="/explore"
+        fragment="pourquoi-nous"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">star</mat-icon>
+        <span>Pourquoi Réserver ?</span>
+      </a>
+
+      <a
+        routerLink="/explore"
+        fragment="partenaires-pro"
+        class="nav-item pro-pitch-link"
+      >
+        <mat-icon class="icon-sm">handshake</mat-icon>
+        <span>Devenir Salon Partenaire</span>
+      </a>
+    </nav>
+
+    <!-- Actions Droite Plateforme -->
+    <div class="nav-actions">
+      <!-- Utilisateur Connecté -->
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <a *ngIf="isClient" routerLink="/client" class="btn-account">
+          <mat-icon class="icon-sm">account_circle</mat-icon>
+          <span class="user-name">{{ userDisplayName }}</span>
+        </a>
+
+        <a *ngIf="!isClient" routerLink="/espace-selection" class="btn-pro-account">
+          <mat-icon class="icon-sm">business_center</mat-icon>
+          <span>Espace Pro</span>
+        </a>
+
+        <button (click)="logout()" class="btn-logout" title="Déconnexion">
+          <mat-icon class="icon-sm">logout</mat-icon>
+        </button>
+      </ng-container>
+
+      <!-- Visiteur Non Connecté -->
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <a routerLink="/login" class="btn-login-plateforme">
+          <span>Connexion</span>
+        </a>
+      </ng-container>
+
+      <!-- Bouton Hamburger Mobile -->
+      <button
+        class="btn-hamburger"
+        [class.is-active]="isMobileMenuOpen"
+        (click)="toggleMobileMenu()"
+        aria-label="Ouvrir le menu de navigation"
+        title="Menu"
+      >
+        <span class="h-bar"></span>
+        <span class="h-bar"></span>
+        <span class="h-bar"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Drawer Backdrop & Menu -->
+  <div
+    class="public-mobile-backdrop"
+    *ngIf="isMobileMenuOpen"
+    (click)="closeMobileMenu()"
+  ></div>
+
+  <div class="public-mobile-drawer" [class.is-open]="isMobileMenuOpen">
+    <div class="mobile-drawer-header">
+      <div class="drawer-brand">
+        <mat-icon class="icon-sm">content_cut</mat-icon>
+        <span class="d-title">HAIR STYLE <span class="d-badge">ELITE</span></span>
+      </div>
+      <button class="btn-close-drawer" (click)="closeMobileMenu()" aria-label="Fermer le menu">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+    </div>
+
+    <div class="mobile-drawer-nav">
+      <a routerLink="/explore" (click)="closeMobileMenu()" class="drawer-nav-item">
+        <mat-icon class="icon-sm">storefront</mat-icon>
+        <span>Salons & Spas</span>
+      </a>
+
+      <a routerLink="/kadys" (click)="closeMobileMenu()" class="drawer-nav-item kadys-item">
+        <mat-icon class="icon-sm">auto_awesome</mat-icon>
+        <span>Kady's Reels</span>
+        <span class="d-live">LIVE</span>
+      </a>
+
+      <a routerLink="/explore" fragment="tendances" (click)="closeMobileMenu()" class="drawer-nav-item">
+        <mat-icon class="icon-sm">local_fire_department</mat-icon>
+        <span>Prestations Phares</span>
+      </a>
+
+      <a routerLink="/explore" fragment="pourquoi-nous" (click)="closeMobileMenu()" class="drawer-nav-item">
+        <mat-icon class="icon-sm">star</mat-icon>
+        <span>Pourquoi Réserver ?</span>
+      </a>
+
+      <a routerLink="/explore" fragment="partenaires-pro" (click)="closeMobileMenu()" class="drawer-nav-item">
+        <mat-icon class="icon-sm">handshake</mat-icon>
+        <span>Devenir Salon Partenaire</span>
+      </a>
+    </div>
+
+    <div class="mobile-drawer-footer">
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <a *ngIf="isClient" routerLink="/client" (click)="closeMobileMenu()" class="btn-drawer-account">
+          <mat-icon class="icon-sm">account_circle</mat-icon>
+          <span>Mon Compte ({{ userDisplayName }})</span>
+        </a>
+        <a *ngIf="!isClient" routerLink="/espace-selection" (click)="closeMobileMenu()" class="btn-drawer-account">
+          <mat-icon class="icon-sm">business_center</mat-icon>
+          <span>Mon Espace Pro</span>
+        </a>
+        <button (click)="logout()" class="btn-drawer-logout">
+          <mat-icon class="icon-sm">logout</mat-icon>
+          <span>Se déconnecter</span>
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <a routerLink="/login" (click)="closeMobileMenu()" class="btn-drawer-login">
+          <span>Se connecter</span>
+        </a>
+      </ng-container>
+    </div>
+  </div>
+</header>

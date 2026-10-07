@@ -1,0 +1,558 @@
+<header class="salon-navbar">
+  <div class="salon-navbar-container">
+    <!-- Brand / Logo du Salon -->
+    <a [routerLink]="['/' + slugSalon]" class="salon-brand">
+      <div class="salon-logo-wrap">
+        <img
+          *ngIf="salon?.logoUrl"
+          [src]="salon!.logoUrl | safeMedia"
+          [alt]="salon?.nom || 'Salon'"
+          class="salon-logo-img"
+          referrerpolicy="no-referrer"
+        />
+        <div *ngIf="!salon?.logoUrl" class="salon-logo-fallback">
+          <span>{{ salon?.nom ? salon?.nom?.charAt(0) : 'S' }}</span>
+        </div>
+      </div>
+      <div class="salon-name-wrap">
+        <span class="salon-title">{{ salon?.nom || 'Salon de Coiffure' }}</span>
+        <div class="salon-status-chip" [class.is-open]="ouvertureStatus?.isOpen">
+          <span class="status-pulse-dot" [class.is-open]="ouvertureStatus?.isOpen"></span>
+          <span class="status-label">{{ ouvertureStatus?.message || 'Ouvert • Réservations en direct' }}</span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Navigation Liens Internes au Salon (Design Épuré & Haute Précision) -->
+    <nav class="salon-nav-links">
+      <a
+        [routerLink]="['/' + slugSalon + '/services']"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">spa</mat-icon>
+        <span>Prestations</span>
+      </a>
+
+      <a
+        [routerLink]="['/' + slugSalon + '/boutique']"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">shopping_bag</mat-icon>
+        <span>Boutique</span>
+      </a>
+
+      <a
+        [routerLink]="['/' + slugSalon + '/realisations']"
+        routerLinkActive="active"
+        class="nav-item"
+      >
+        <mat-icon class="icon-sm">photo_camera</mat-icon>
+        <span>Réalisations</span>
+      </a>
+
+      <!-- Menu Déroulant Élégant "Le Salon" pour Notre Équipe & Avis -->
+      <div
+        class="nav-dropdown-wrap"
+        (mouseenter)="isMoreDropdownOpen = true"
+        (mouseleave)="isMoreDropdownOpen = false"
+      >
+        <button
+          type="button"
+          class="nav-item nav-item-dropdown"
+          [class.active]="isMoreDropdownOpen"
+          (click)="toggleMoreDropdown($event)"
+          aria-haspopup="true"
+          [attr.aria-expanded]="isMoreDropdownOpen"
+        >
+          <mat-icon class="icon-sm">content_cut</mat-icon>
+          <span>Le Salon</span>
+          <mat-icon class="icon-xs dropdown-caret">expand_more</mat-icon>
+        </button>
+
+        <div class="nav-dropdown-menu" *ngIf="isMoreDropdownOpen">
+          <a
+            [routerLink]="['/' + slugSalon + '/equipe']"
+            routerLinkActive="active"
+            (click)="closeMoreDropdown()"
+            class="dropdown-menu-item"
+          >
+            <div class="dropdown-item-icon">
+              <mat-icon class="icon-sm">badge</mat-icon>
+            </div>
+            <div class="dropdown-item-content">
+              <span class="dropdown-item-title">Notre Équipe</span>
+              <span class="dropdown-item-sub">Maîtres coiffeurs & stylistes</span>
+            </div>
+          </a>
+
+          <a
+            [routerLink]="['/' + slugSalon + '/avis']"
+            routerLinkActive="active"
+            (click)="closeMoreDropdown()"
+            class="dropdown-menu-item"
+          >
+            <div class="dropdown-item-icon">
+              <mat-icon class="icon-sm">star</mat-icon>
+            </div>
+            <div class="dropdown-item-content">
+              <span class="dropdown-item-title">Avis Clients</span>
+              <span class="dropdown-item-sub">Retours d'expérience vérifiés</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Actions Rapides & Compte Dédié au Salon -->
+    <div class="salon-nav-actions">
+      <!-- Panier Click & Collect du Salon -->
+      <button
+        (click)="openPanier.emit()"
+        class="btn-salon-cart"
+        [class.has-items]="panierCount > 0"
+        title="Voir mon panier Click & Collect"
+      >
+        <mat-icon class="icon-sm cart-icon">shopping_bag</mat-icon>
+        <span class="cart-badge" *ngIf="panierCount > 0">{{ panierCount }}</span>
+        <span class="cart-total-text" *ngIf="montantTotal > 0">{{ montantTotal | number:'1.0-0' }} F</span>
+      </button>
+
+      <!-- Authentification / Espace Client Salon -->
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <!-- Client connecté : Menu Déroulant Élégant -->
+        <div
+          *ngIf="isClient"
+          class="client-dropdown-wrap"
+          (mouseenter)="isClientDropdownOpen.set(true)"
+          (mouseleave)="isClientDropdownOpen.set(false)"
+        >
+          <button
+            type="button"
+            class="btn-salon-account btn-client-trigger"
+            [class.active]="isClientDropdownOpen()"
+            (click)="toggleClientDropdown($event)"
+            aria-haspopup="true"
+            [attr.aria-expanded]="isClientDropdownOpen()"
+            title="Mon Espace Client dans ce salon"
+          >
+            <div class="user-avatar-circle">
+              <span>{{ userInitials }}</span>
+            </div>
+            <span class="user-label">{{ userDisplayName }}</span>
+            <mat-icon class="icon-xs dropdown-caret">expand_more</mat-icon>
+          </button>
+
+          <!-- Menu Déroulant Flottant "Warm Luxury" -->
+          <div class="client-dropdown-menu" *ngIf="isClientDropdownOpen()">
+            <div class="client-dropdown-header">
+              <div class="header-avatar-circle">
+                <span>{{ userInitials }}</span>
+              </div>
+              <div class="header-user-meta">
+                <span class="header-user-name">{{ userDisplayName }}</span>
+                <span class="header-user-badge">Client Privilégié • {{ salon?.nom || 'Salon' }}</span>
+              </div>
+            </div>
+
+            <div class="client-dropdown-items">
+              <a
+                [routerLink]="['/' + slugSalon + '/client/rdv']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">calendar_month</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Mes Rendez-vous</span>
+                  <span class="client-item-desc">Réservations, créneaux & statuts</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/commandes']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">shopping_bag</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Commandes Click & Collect</span>
+                  <span class="client-item-desc">Codes de retrait & articles préparés</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/prestations']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">content_cut</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Historique Prestations</span>
+                  <span class="client-item-desc">Soins réalisés & évaluations</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/paiements']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">receipt_long</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Règlements & Factures</span>
+                  <span class="client-item-desc">Reçus Wave, Orange Money & Espèces</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/favoris']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">favorite</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Coiffeurs Favoris</span>
+                  <span class="client-item-desc">Vos artistes et stylistes attitrés</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/profil-capillaire']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">biotech</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Diagnostic & Code PIN</span>
+                  <span class="client-item-desc">Coffre-fort capillaire à 6 chiffres</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/avis']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">grade</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Mes Avis Salon</span>
+                  <span class="client-item-desc">Notes et retours d'expérience</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/reclamations']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">support_agent</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Réclamations & Support</span>
+                  <span class="client-item-desc">Assistance et suivi des demandes</span>
+                </div>
+              </a>
+
+              <a
+                [routerLink]="['/' + slugSalon + '/client/compte']"
+                routerLinkActive="item-active"
+                (click)="closeClientDropdown()"
+                class="client-menu-item"
+              >
+                <div class="client-item-icon">
+                  <mat-icon class="icon-sm">manage_accounts</mat-icon>
+                </div>
+                <div class="client-item-content">
+                  <span class="client-item-title">Mon Compte & Sécurité</span>
+                  <span class="client-item-desc">Coordonnées personnelles & mot de passe</span>
+                </div>
+              </a>
+            </div>
+
+            <div class="client-dropdown-footer">
+              <button type="button" (click)="logout()" class="client-btn-logout">
+                <mat-icon class="icon-xs">logout</mat-icon>
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personnel / Staff connecté -->
+        <a
+          *ngIf="!isClient"
+          routerLink="/espace-selection"
+          class="btn-salon-account"
+          title="Sélectionner mon espace de travail"
+        >
+          <mat-icon class="icon-sm">business_center</mat-icon>
+          <span>Mes Espaces</span>
+        </a>
+
+        <button *ngIf="!isClient" (click)="logout()" class="btn-salon-logout" title="Déconnexion">
+          <mat-icon class="icon-sm">logout</mat-icon>
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <a
+          [routerLink]="['/' + slugSalon + '/login']"
+          class="btn-salon-login"
+        >
+          <mat-icon class="icon-sm login-icon">account_circle</mat-icon>
+          <span>Connexion</span>
+        </a>
+      </ng-container>
+
+      <!-- CTA Principal : Prendre Rendez-vous -->
+      <button
+        (click)="openBooking.emit()"
+        class="btn-salon-cta-book"
+        [class.has-booking]="bookingCount > 0"
+      >
+        <mat-icon class="icon-sm cta-sparkle">calendar_month</mat-icon>
+        <span class="cta-text">Prendre RDV</span>
+        <span class="booking-badge" *ngIf="bookingCount > 0">{{ bookingCount }}</span>
+      </button>
+
+      <!-- Bouton Hamburger Mobile -->
+      <button
+        class="btn-hamburger"
+        [class.is-active]="isMobileMenuOpen"
+        (click)="toggleMobileMenu()"
+        aria-label="Ouvrir le menu de navigation"
+        title="Menu"
+      >
+        <span class="h-bar"></span>
+        <span class="h-bar"></span>
+        <span class="h-bar"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Drawer Backdrop & Menu -->
+  <div
+    class="salon-mobile-backdrop"
+    *ngIf="isMobileMenuOpen"
+    (click)="closeMobileMenu()"
+  ></div>
+
+  <div class="salon-mobile-drawer" [class.is-open]="isMobileMenuOpen">
+    <div class="mobile-drawer-header">
+      <div class="drawer-salon-info">
+        <span class="drawer-salon-name">{{ salon?.nom || 'Salon' }}</span>
+        <span class="drawer-status-chip" [class.is-open]="ouvertureStatus?.isOpen">
+          <mat-icon class="icon-xs">fiber_manual_record</mat-icon>
+          {{ ouvertureStatus?.message || 'Réservations directes' }}
+        </span>
+      </div>
+      <button class="btn-close-drawer" (click)="closeMobileMenu()" aria-label="Fermer le menu">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Section Espace Client Dédiée Mobile -->
+    <div class="mobile-client-section" *ngIf="authService.isAuthenticated() && isClient">
+      <div class="mobile-client-profile">
+        <div class="mobile-avatar-circle">
+          <span>{{ userInitials }}</span>
+        </div>
+        <div class="mobile-user-info">
+          <span class="mobile-user-name">{{ userDisplayName }}</span>
+          <span class="mobile-user-role">Mon Espace Client</span>
+        </div>
+      </div>
+
+      <div class="mobile-client-links">
+        <a
+          [routerLink]="['/' + slugSalon + '/client/rdv']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">calendar_month</mat-icon>
+          <span>Mes Rendez-vous</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/commandes']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">shopping_bag</mat-icon>
+          <span>Commandes Click & Collect</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/prestations']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">content_cut</mat-icon>
+          <span>Historique Prestations</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/paiements']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">receipt_long</mat-icon>
+          <span>Règlements & Factures</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/favoris']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">favorite</mat-icon>
+          <span>Coiffeurs Favoris</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/profil-capillaire']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">biotech</mat-icon>
+          <span>Diagnostic & Code PIN</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/avis']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">grade</mat-icon>
+          <span>Mes Avis Salon</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/reclamations']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">support_agent</mat-icon>
+          <span>Réclamations & Support</span>
+        </a>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/client/compte']"
+          (click)="closeMobileMenu()"
+          routerLinkActive="active"
+          class="drawer-nav-item drawer-nav-client"
+        >
+          <mat-icon class="icon-sm">manage_accounts</mat-icon>
+          <span>Mon Compte & Sécurité</span>
+        </a>
+      </div>
+      <div class="mobile-section-divider"></div>
+    </div>
+
+    <!-- Navigation Liens Vitrine -->
+    <div class="mobile-drawer-nav">
+      <div class="mobile-nav-label">Explorer le Salon</div>
+      <a
+        [routerLink]="['/' + slugSalon]"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">home</mat-icon>
+        <span>Accueil</span>
+      </a>
+      <a
+        [routerLink]="['/' + slugSalon + '/services']"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">spa</mat-icon>
+        <span>Prestations & Tarifs</span>
+      </a>
+      <a
+        [routerLink]="['/' + slugSalon + '/boutique']"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">shopping_bag</mat-icon>
+        <span>Boutique & Soins</span>
+      </a>
+      <a
+        [routerLink]="['/' + slugSalon + '/realisations']"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">photo_camera</mat-icon>
+        <span>Réalisations</span>
+      </a>
+      <a
+        [routerLink]="['/' + slugSalon + '/equipe']"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">content_cut</mat-icon>
+        <span>Notre Équipe</span>
+      </a>
+      <a
+        [routerLink]="['/' + slugSalon + '/avis']"
+        (click)="closeMobileMenu()"
+        routerLinkActive="active"
+        class="drawer-nav-item"
+      >
+        <mat-icon class="icon-sm">star</mat-icon>
+        <span>Avis Clients</span>
+      </a>
+    </div>
+
+    <div class="mobile-drawer-footer">
+      <button (click)="closeMobileMenu(); openBooking.emit()" class="btn-drawer-cta-book">
+        <mat-icon class="icon-sm">calendar_month</mat-icon>
+        <span>Prendre Rendez-vous</span>
+        <span class="booking-badge" *ngIf="bookingCount > 0">{{ bookingCount }}</span>
+      </button>
+
+      <button *ngIf="authService.isAuthenticated()" (click)="logout()" class="btn-drawer-logout">
+        <mat-icon class="icon-sm">logout</mat-icon>
+        <span>Déconnexion</span>
+      </button>
+    </div>
+  </div>
+</header>
+

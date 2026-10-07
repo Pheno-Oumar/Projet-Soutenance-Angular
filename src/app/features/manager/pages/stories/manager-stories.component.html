@@ -1,0 +1,188 @@
+<div class="stories-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Stories Éphémères 24h & Kady's</h1>
+      <p class="page-subtitle">Partagez l'ambiance du salon, les créations instantanées et vos promotions flash visibles pendant 24 heures</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Nouvelle Story
+      </button>
+    </div>
+  </header>
+
+  <!-- STORIES CONTAINER -->
+  <div class="stories-container">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des stories actives du salon...</span>
+      </div>
+    } @else if (stories().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">auto_awesome</mat-icon>
+        <h3>Aucune story active en ce moment</h3>
+        <p>Diffusez une photo ou une courte vidéo pour animer le profil de votre salon et attirer des clients.</p>
+        <button type="button" class="btn-primary" (click)="openCreateModal()">Publier une story maintenant</button>
+      </div>
+    } @else {
+      <div class="stories-grid">
+        @for (s of stories(); track s.id) {
+          <div class="story-card">
+            <!-- PREVIEW MEDIA -->
+            <div class="story-preview-box" (click)="openViewer(s)">
+              @if (s.typeMedia === 'VIDEO') {
+                <video [appHlsVideo]="s.mediaUrl" preload="metadata" class="story-media"></video>
+                <div class="play-overlay">
+                  <div class="play-circle">
+                    <mat-icon>play_arrow</mat-icon>
+                  </div>
+                </div>
+              } @else {
+                <img [src]="s.mediaUrl" alt="Story salon" class="story-media" />
+              }
+
+              <!-- BADGES OVER MEDIA -->
+              <span class="type-badge">
+                {{ s.typeMedia === 'VIDEO' ? 'Vidéo' : 'Photo' }}
+              </span>
+
+              <span class="expiry-badge">
+                <mat-icon class="mini-icon">schedule</mat-icon>
+                {{ getTempsRestant(s.dateExpiration) }}
+              </span>
+            </div>
+
+            <!-- STORY INFO -->
+            <div class="story-card-body">
+              <div class="story-date-info">
+                <span class="story-published-label">Publiée le :</span>
+                <span class="story-published-date">{{ s.dateCreation | date:'dd MMM à HH:mm' }}</span>
+              </div>
+
+              <div class="story-actions">
+                <button type="button" class="btn-action-view" (click)="openViewer(s)">
+                  Visionner
+                </button>
+                <button type="button" class="btn-action-delete" (click)="openDeleteModal(s)">
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- MODAL: PUBLIER NOUVELLE STORY -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="showCreateModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Publier une Story (24h)</h2>
+          <button type="button" class="btn-close" (click)="showCreateModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="publierStory()">
+          <div class="modal-body">
+            <p class="modal-intro">
+              Votre story sera visible pendant <strong>24 heures</strong> sur la vitrine publique du salon et dans les bulles stories de l'application Kady's.
+            </p>
+
+            <div class="file-drop-zone">
+              <input
+                id="storyFileInput"
+                type="file"
+                accept="image/*,video/*"
+                (change)="onFileSelected($event)"
+                class="file-input-hidden"
+                required
+              />
+              <label for="storyFileInput" class="file-drop-label">
+                <mat-icon class="upload-icon">cloud_upload</mat-icon>
+                <span class="upload-title">Cliquez pour choisir une photo ou une vidéo</span>
+                <span class="upload-formats">Formats acceptés : JPG, PNG, WEBP, MP4, WEBM</span>
+              </label>
+            </div>
+
+            <!-- LIVE PREVIEW -->
+            @if (filePreviewUrl) {
+              <div class="preview-box">
+                <h4 class="preview-title">Aperçu avant mise en ligne :</h4>
+                <div class="preview-media-wrapper">
+                  @if (isVideo) {
+                    <video [src]="filePreviewUrl" controls class="preview-media"></video>
+                  } @else {
+                    <img [src]="filePreviewUrl" alt="Aperçu Story" class="preview-media" />
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showCreateModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isPublishing || !selectedFile">
+              {{ isPublishing ? 'Publication en cours...' : 'Publier la Story' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: VISIONNEUSE STORY -->
+  @if (showViewerModal && viewingStory) {
+    <div class="modal-backdrop viewer-backdrop" (click)="closeViewer()">
+      <div class="viewer-dialog" (click)="$event.stopPropagation()">
+        <header class="viewer-header">
+          <div class="viewer-salon-info">
+            <span class="viewer-salon-name">{{ viewingStory.salonNom }}</span>
+            <span class="viewer-countdown">{{ getTempsRestant(viewingStory.dateExpiration) }}</span>
+          </div>
+          <button type="button" class="btn-close-viewer" (click)="closeViewer()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <div class="viewer-body">
+          @if (viewingStory.typeMedia === 'VIDEO') {
+            <video [appHlsVideo]="viewingStory.mediaUrl" controls autoplay class="viewer-media-element"></video>
+          } @else {
+            <img [src]="viewingStory.mediaUrl" alt="Story salon" class="viewer-media-element" />
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: CONFIRMER SUPPRESSION -->
+  @if (showDeleteModal && storyToDelete) {
+    <div class="modal-backdrop" (click)="showDeleteModal = false">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Supprimer la Story</h2>
+          <button type="button" class="btn-close" (click)="showDeleteModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <div class="modal-body">
+          <p>Êtes-vous sûr de vouloir supprimer cette story avant la fin de ses 24 heures ?</p>
+          <p class="modal-danger-note">Le média sera retiré immédiatement de votre vitrine et de Cloudinary.</p>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+          <button type="button" class="btn-danger" (click)="confirmerSuppression()" [disabled]="isDeleting">
+            {{ isDeleting ? 'Suppression...' : 'Supprimer' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

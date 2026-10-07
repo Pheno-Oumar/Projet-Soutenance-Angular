@@ -1,0 +1,295 @@
+<div class="employes-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Gestion de l'Équipe</h1>
+      <p class="page-subtitle">Recrutez des collaborateurs, attribuez leurs rôles et administrez les accès au salon</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="icon-sm">person_add</mat-icon>
+        Recruter un collaborateur
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="icon-sm">warning</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- TABS FILTRES STATUT -->
+  <div class="status-tabs-container">
+    <div class="status-tabs">
+      <button
+        type="button"
+        class="status-tab-btn"
+        [class.active]="statusFilter() === 'ALL'"
+        (click)="statusFilter.set('ALL')"
+      >
+        <span>Tous les collaborateurs</span>
+        <span class="tab-pill">{{ totalCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="status-tab-btn"
+        [class.active]="statusFilter() === 'ACTIF'"
+        (click)="statusFilter.set('ACTIF')"
+      >
+        <span>
+          <mat-icon class="icon-xs" style="color: #22c55e;">check_circle</mat-icon> Actifs
+        </span>
+        <span class="tab-pill pill-active">{{ activeCount() }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="status-tab-btn"
+        [class.active]="statusFilter() === 'INACTIF'"
+        (click)="statusFilter.set('INACTIF')"
+      >
+        <span>
+          <mat-icon class="icon-xs">block</mat-icon> Désactivés
+        </span>
+        <span class="tab-pill pill-inactive">{{ inactiveCount() }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- EMPLOYES LIST -->
+  <div class="employes-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des collaborateurs...</span>
+      </div>
+    } @else if (employes().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="icon-xl">group</mat-icon>
+        <h3>Aucun employé dans l'équipe</h3>
+        <p>Commencez par ajouter votre premier coiffeur, manager ou réceptionniste.</p>
+        <button type="button" class="btn-primary" (click)="openCreateModal()">Recruter maintenant</button>
+      </div>
+    } @else if (filteredEmployes().length === 0) {
+      <div class="empty-state">
+        <h3>Aucun collaborateur dans cette vue</h3>
+        <p *ngIf="statusFilter() === 'INACTIF'">Il n'y a actuellement aucun collaborateur désactivé.</p>
+        <p *ngIf="statusFilter() === 'ACTIF'">Tous vos collaborateurs sont actuellement inactifs.</p>
+        <button type="button" class="btn-secondary" (click)="statusFilter.set('ALL')">Voir tous les collaborateurs</button>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Collaborateur</th>
+              <th>Contact</th>
+              <th>Rôles assignés</th>
+              <th>Statut</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (e of filteredEmployes(); track e.affectationId) {
+              <tr [class.row-disabled]="!e.statut">
+                <td>
+                  <div class="user-cell">
+                    <div class="user-avatar">{{ e.prenom.charAt(0) }}{{ e.nom.charAt(0) }}</div>
+                    <div class="user-names">
+                      <strong>{{ e.prenom }} {{ e.nom }}</strong>
+                      <span class="user-id">Réf #{{ e.affectationId }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="contact-cell">
+                    <span class="contact-email">{{ e.email }}</span>
+                    <span class="contact-phone">{{ e.telephone }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  <div class="roles-chips">
+                    @for (r of e.roles; track r) {
+                      <span class="role-chip">{{ r }}</span>
+                    }
+                  </div>
+                </td>
+
+                <td>
+                  <span class="badge" [class.badge-active]="e.statut" [class.badge-inactive]="!e.statut">
+                    {{ e.statut ? 'Actif' : 'Désactivé' }}
+                  </span>
+                </td>
+
+                <td class="text-right actions-cell">
+                  <button
+                    type="button"
+                    class="btn-action btn-roles"
+                    (click)="openRolesModal(e)"
+                    title="Modifier les rôles"
+                  >
+                    Gérer rôles
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn-action"
+                    [class.btn-deactivate]="e.statut"
+                    [class.btn-reactivate]="!e.statut"
+                    (click)="toggleStatut(e)"
+                  >
+                    {{ e.statut ? 'Désactiver' : 'Réactiver' }}
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- RECRUTEMENT MODAL -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="closeCreateModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Recruter un Collaborateur</h2>
+          <button type="button" class="btn-close" (click)="closeCreateModal()">
+            <mat-icon class="icon-sm">close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="creerEmploye()">
+          <div class="modal-body">
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="empPrenom" class="form-label">Prénom *</label>
+                <input
+                  id="empPrenom"
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="createForm.prenom"
+                  name="prenom"
+                  placeholder="Ex: Fatou"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="empNom" class="form-label">Nom *</label>
+                <input
+                  id="empNom"
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="createForm.nom"
+                  name="nom"
+                  placeholder="Ex: Ndiaye"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="empEmail" class="form-label">Email professionnel *</label>
+              <input
+                id="empEmail"
+                type="email"
+                class="form-control"
+                [(ngModel)]="createForm.email"
+                name="email"
+                placeholder="Ex: fatou.ndiaye@mon-salon.com"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="empTel" class="form-label">Numéro de téléphone *</label>
+              <input
+                id="empTel"
+                type="tel"
+                class="form-control"
+                [(ngModel)]="createForm.telephone"
+                name="telephone"
+                placeholder="Ex: +221 77 123 45 67"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Rôles attribués dans le salon *</label>
+              <div class="roles-selection-grid">
+                @for (role of availableRoles; track role.key) {
+                  <label class="role-option" [class.selected]="createForm.roles.includes(role.key)">
+                    <input
+                      type="checkbox"
+                      [checked]="createForm.roles.includes(role.key)"
+                      (change)="toggleRoleInCreate(role.key)"
+                    />
+                    <span>{{ role.label }}</span>
+                  </label>
+                }
+              </div>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeCreateModal()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isCreating">
+              {{ isCreating ? 'Création...' : 'Créer le collaborateur' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- ROLES MODAL -->
+  @if (showRolesModal) {
+    <div class="modal-backdrop" (click)="closeRolesModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Modifier les rôles : {{ selectedEmploye?.prenom }} {{ selectedEmploye?.nom }}</h2>
+          <button type="button" class="btn-close" (click)="closeRolesModal()">
+            <mat-icon class="icon-sm">close</mat-icon>
+          </button>
+        </header>
+
+        <div class="modal-body">
+          <p class="modal-instruction">Cochez ou décochez les fonctions attribuées à cet employé :</p>
+          @if (selectedEmploye?.roles?.includes('PROPRIETAIRE')) {
+            <div class="role-option selected locked" style="cursor: not-allowed; opacity: 0.9; margin-bottom: 0.75rem; background: #FAF7F5; border-color: #8C7A6B;">
+              <mat-icon style="font-size: 1.15rem; width: 1.15rem; height: 1.15rem; color: #4A3B32;">lock</mat-icon>
+              <span style="font-weight: 600; color: #4A3B32;">Propriétaire (Rôle permanent, non retirable)</span>
+            </div>
+          }
+          <div class="roles-selection-grid">
+            @for (role of availableRoles; track role.key) {
+              <label class="role-option" [class.selected]="selectedRoles.includes(role.key)">
+                <input
+                  type="checkbox"
+                  [checked]="selectedRoles.includes(role.key)"
+                  (change)="toggleRoleInUpdate(role.key)"
+                />
+                <span>{{ role.label }}</span>
+              </label>
+            }
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeRolesModal()">Annuler</button>
+          <button type="button" class="btn-primary" (click)="sauvegarderRoles()" [disabled]="isUpdatingRoles">
+            {{ isUpdatingRoles ? 'Enregistrement...' : 'Enregistrer les rôles' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

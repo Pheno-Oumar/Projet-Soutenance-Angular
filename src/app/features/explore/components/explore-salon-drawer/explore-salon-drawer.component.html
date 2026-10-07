@@ -1,0 +1,770 @@
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MAIN DRAWER BACKDROP + PANEL                                 -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div
+  class="drawer-backdrop"
+  [class.is-open]="isOpen"
+  (click)="onBackdropClick($event)"
+>
+  <div class="drawer-panel" [class.is-open]="isOpen" (scroll)="onDrawerScroll($event)">
+
+    <!-- ═══ CLOSE BUTTON ═══ -->
+    <button class="drawer-close-btn" (click)="close()" title="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    @if (salon) {
+      <!-- ═══ COVER PARALLAX ═══ -->
+      <div class="drawer-cover">
+        <img [src]="resolveCover(salon)" [alt]="salon.nom" class="drawer-cover-img" referrerpolicy="no-referrer"/>
+        <div class="drawer-cover-overlay"></div>
+        <div class="drawer-salon-logo">
+          <img [src]="resolveLogo(salon)" [alt]="salon.nom" class="drawer-logo-img" referrerpolicy="no-referrer"/>
+        </div>
+      </div>
+
+      <!-- ═══ SALON INFO HEADER ═══ -->
+      <div class="drawer-info-header">
+        <h2 class="drawer-salon-name">{{ (salonDetail() || salon).nom }}</h2>
+
+        <div class="drawer-info-chips">
+          @if ((salonDetail() || salon).ville) {
+            <span class="info-chip chip-location">
+              <mat-icon class="icon-xs">location_on</mat-icon> {{ (salonDetail() || salon).ville }}
+            </span>
+          }
+          <span class="info-chip" [class.chip-open]="isOpenToday()" [class.chip-closed]="!isOpenToday()">
+            <mat-icon class="icon-xs">{{ isOpenToday() ? 'check_circle' : 'cancel' }}</mat-icon> {{ isOpenToday() ? 'Ouvert' : 'Fermé' }} · {{ getTodayHoraire() }}
+          </span>
+          @if ((salonDetail() || salon).telephone) {
+            <a [href]="'tel:' + (salonDetail() || salon).telephone" class="info-chip chip-phone">
+              <mat-icon class="icon-xs">phone</mat-icon> {{ (salonDetail() || salon).telephone }}
+            </a>
+          }
+        </div>
+
+        @if ((salonDetail() || salon).adresse) {
+          <p class="drawer-address">{{ (salonDetail() || salon).adresse }}</p>
+        }
+
+        @if ((salonDetail() || salon).description) {
+          <p class="drawer-description">{{ (salonDetail() || salon).description }}</p>
+        }
+
+        <!-- Itinéraire Button -->
+        <button class="btn-itinerary" (click)="openItinerary()">
+          <mat-icon class="icon-sm">directions</mat-icon>
+          <span>Itinéraire Google Maps</span>
+        </button>
+      </div>
+
+      <!-- ═══ TABS: Services / Boutique ═══ -->
+      <div class="drawer-tabs">
+        <button
+          class="drawer-tab"
+          [class.active]="activeTab() === 'services'"
+          (click)="switchTab('services')"
+        >
+          <mat-icon class="icon-sm">content_cut</mat-icon>
+          <span>Services</span>
+          <span class="tab-count">{{ services().length }}</span>
+        </button>
+        <button
+          class="drawer-tab"
+          [class.active]="activeTab() === 'boutique'"
+          (click)="switchTab('boutique')"
+        >
+          <mat-icon class="icon-sm">shopping_bag</mat-icon>
+          <span>Boutique</span>
+          <span class="tab-count">{{ categories().length }}</span>
+        </button>
+        <div class="tab-indicator" [class.right]="activeTab() === 'boutique'"></div>
+      </div>
+
+      <!-- ═══ TAB CONTENT ═══ -->
+      <div class="drawer-tab-content">
+
+        <!-- ──── LOADING ──── -->
+        @if (loading()) {
+          <div class="drawer-loading">
+            <div class="drawer-skeleton" *ngFor="let s of [1,2,3,4]">
+              <div class="skeleton-img shimmer"></div>
+              <div class="skeleton-text">
+                <div class="skeleton-line shimmer" style="width: 60%"></div>
+                <div class="skeleton-line shimmer" style="width: 90%"></div>
+                <div class="skeleton-line shimmer" style="width: 40%"></div>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ──── SERVICES TAB ──── -->
+        @if (!loading() && activeTab() === 'services') {
+          @if (services().length === 0) {
+            <div class="empty-state">
+              <mat-icon class="empty-icon">content_cut</mat-icon>
+              <h4>Aucun service disponible</h4>
+              <p>Ce salon n'a pas encore publié son catalogue de prestations.</p>
+            </div>
+          } @else {
+            <div class="services-grid">
+              @for (svc of services(); track svc.id; let i = $index) {
+                <div
+                  class="service-card drawer-animate"
+                  [style.animation-delay]="(i * 60) + 'ms'"
+                  #serviceCard
+                  (mousemove)="onCardTilt($event, serviceCard)"
+                  (mouseleave)="onCardTiltReset(serviceCard)"
+                  (click)="openServiceDetail(svc)"
+                >
+                  <div class="card-glow"></div>
+                  <div class="service-card-img-wrap">
+                    <img [src]="resolveServiceImage(svc, i)" [alt]="svc.nom" class="service-card-img" loading="lazy" referrerpolicy="no-referrer"/>
+                  </div>
+                  <div class="service-card-body">
+                    <h4 class="service-card-title">{{ svc.nom }}</h4>
+                    @if (svc.description) {
+                      <p class="service-card-desc">{{ svc.description }}</p>
+                    }
+                    <div class="service-card-meta">
+                      <span class="meta-price">{{ getServicePriceRange(svc) }}</span>
+                      <span class="meta-variantes">{{ getServiceVarianteCount(svc) }} variante{{ getServiceVarianteCount(svc) > 1 ? 's' : '' }}</span>
+                    </div>
+                    <div class="service-card-cta">
+                      <span>Voir les options</span>
+                      <span class="cta-arrow">→</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+
+        <!-- ──── BOUTIQUE TAB ──── -->
+        @if (!loading() && activeTab() === 'boutique') {
+          @if (categories().length === 0) {
+            <div class="empty-state">
+              <mat-icon class="empty-icon">shopping_bag</mat-icon>
+              <h4>Aucun produit disponible</h4>
+              <p>Ce salon n'a pas encore mis en vente de produits.</p>
+            </div>
+          } @else {
+            <div class="categories-grid">
+              @for (cat of categories(); track cat.id; let i = $index) {
+                <div
+                  class="categorie-card drawer-animate"
+                  [style.animation-delay]="(i * 60) + 'ms'"
+                  #catCard
+                  (mousemove)="onCardTilt($event, catCard)"
+                  (mouseleave)="onCardTiltReset(catCard)"
+                  (click)="openCategorieDetail(cat)"
+                >
+                  <div class="card-glow"></div>
+                  <div class="categorie-card-img-wrap">
+                    <img [src]="resolveCategorieImage(cat, i)" [alt]="cat.nom" class="categorie-card-img" loading="lazy" referrerpolicy="no-referrer"/>
+                    @if (cat.nombreProduits) {
+                      <span class="cat-badge">{{ cat.nombreProduits }} produit{{ cat.nombreProduits > 1 ? 's' : '' }}</span>
+                    }
+                  </div>
+                  <div class="categorie-card-body">
+                    <h4>{{ cat.nom }}</h4>
+                    @if (cat.description) {
+                      <p>{{ cat.description }}</p>
+                    }
+                    <div class="categorie-card-cta">
+                      <span>Explorer</span>
+                      <span class="cta-arrow">→</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        }
+      </div>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- SUB-DRAWER: SERVICE DETAIL (Variantes)         -->
+      <!-- ═══════════════════════════════════════════════ -->
+      @if (activeService()) {
+        <div class="sub-drawer-overlay" (click)="closeServiceDetail()"></div>
+        <div class="sub-drawer sub-drawer-enter">
+          <div class="sub-drawer-header">
+            <button class="sub-drawer-back" (click)="closeServiceDetail()">
+              <mat-icon class="icon-sm">arrow_back</mat-icon>
+            </button>
+            <div>
+              <h3>{{ activeService()!.nom }}</h3>
+              @if (activeService()!.description) {
+                <p class="sub-drawer-subtitle">{{ activeService()!.description }}</p>
+              }
+            </div>
+          </div>
+
+          <div class="variantes-list">
+            @if (!activeService()!.variantes || activeService()!.variantes!.length === 0) {
+              <div class="empty-state small">
+                <mat-icon class="empty-icon">assignment</mat-icon>
+                <p>Aucune variante disponible pour ce service.</p>
+              </div>
+            } @else {
+              @for (v of activeService()!.variantes!; track v.id; let i = $index) {
+                @if (v.statut) {
+                  <div
+                    class="variante-card drawer-animate"
+                    [style.animation-delay]="(i * 50) + 'ms'"
+                    [class.is-selected]="isVarianteSelected(v.id)"
+                  >
+                    <div class="variante-info">
+                      <h5 class="variante-nom">{{ v.nom }}</h5>
+                      <div class="variante-meta">
+                        <span class="variante-duree">
+                          <mat-icon class="icon-xs">schedule</mat-icon> {{ v.dureeMinutes }} min
+                        </span>
+                        <span class="variante-prix">{{ v.prix.toLocaleString() }} FCFA</span>
+                      </div>
+                    </div>
+                    <button
+                      class="btn-add-rdv"
+                      [class.is-added]="isVarianteSelected(v.id)"
+                      (click)="toggleVariante(v, activeService()!.nom)"
+                    >
+                      @if (isVarianteSelected(v.id)) {
+                        <mat-icon class="icon-sm">check</mat-icon>
+                        <span>Ajouté</span>
+                      } @else {
+                        <mat-icon class="icon-sm">add</mat-icon>
+                        <span>Ajouter au RDV</span>
+                      }
+                    </button>
+                  </div>
+                }
+              }
+            }
+          </div>
+
+          @if (selectedVariantes().length > 0) {
+            <div class="sub-drawer-footer">
+              <div class="footer-summary">
+                <span class="footer-count">{{ selectedVariantes().length }} prestation{{ selectedVariantes().length > 1 ? 's' : '' }}</span>
+                <span class="footer-price">{{ rdvTotalPrix().toLocaleString() }} FCFA</span>
+              </div>
+              <button class="btn-footer-action" (click)="openRdvRecap()">
+                <span>Finaliser mon RDV</span>
+                <span class="cta-arrow">→</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- SUB-DRAWER: CATÉGORIE PRODUITS                  -->
+      <!-- ═══════════════════════════════════════════════ -->
+      @if (activeCategorie()) {
+        <div class="sub-drawer-overlay" (click)="closeCategorieDetail()"></div>
+        <div class="sub-drawer sub-drawer-enter">
+          <div class="sub-drawer-header">
+            <button class="sub-drawer-back" (click)="closeCategorieDetail()">
+              <mat-icon class="icon-sm">arrow_back</mat-icon>
+            </button>
+            <div>
+              <h3>{{ activeCategorie()!.nom }}</h3>
+              @if (activeCategorie()!.description) {
+                <p class="sub-drawer-subtitle">{{ activeCategorie()!.description }}</p>
+              }
+            </div>
+          </div>
+
+          @if (loadingProduits()) {
+            <div class="drawer-loading">
+              <div class="drawer-skeleton" *ngFor="let s of [1,2,3]">
+                <div class="skeleton-img shimmer"></div>
+                <div class="skeleton-text">
+                  <div class="skeleton-line shimmer" style="width: 60%"></div>
+                  <div class="skeleton-line shimmer" style="width: 40%"></div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <div class="produits-list">
+              @if (categorieProduits().length === 0) {
+                <div class="empty-state small">
+                  <mat-icon class="empty-icon">inventory_2</mat-icon>
+                  <p>Aucun produit dans cette catégorie.</p>
+                </div>
+              } @else {
+                @for (p of categorieProduits(); track p.id; let i = $index) {
+                  <div class="produit-card drawer-animate" [style.animation-delay]="(i * 50) + 'ms'">
+                    <div class="produit-img-wrap">
+                      <img [src]="resolveProduitImage(p, i)" [alt]="p.nom" class="produit-img" loading="lazy" referrerpolicy="no-referrer"/>
+                    </div>
+                    <div class="produit-info">
+                      <h5 class="produit-nom">{{ p.nom }}</h5>
+                      @if (p.description) {
+                        <p class="produit-desc">{{ p.description }}</p>
+                      }
+                      <span class="produit-prix">{{ p.prixVente.toLocaleString() }} FCFA</span>
+                    </div>
+                    <button class="btn-add-panier" (click)="ajouterProduitPanier(p)">
+                      <mat-icon class="icon-sm">add_shopping_cart</mat-icon>
+                      <span>Ajouter au panier</span>
+                    </button>
+                  </div>
+                }
+              }
+            </div>
+
+            @if (panierService.nombreArticles() > 0) {
+              <div class="sub-drawer-footer">
+                <div class="footer-summary">
+                  <span class="footer-count">{{ panierService.nombreArticles() }} article{{ panierService.nombreArticles() > 1 ? 's' : '' }}</span>
+                  <span class="footer-price">{{ panierService.montantTotal().toLocaleString() }} FCFA</span>
+                </div>
+                <button class="btn-footer-action btn-panier-action" (click)="togglePanierDrawer()">
+                  <span>Voir mon Panier</span>
+                  <span class="cta-arrow">→</span>
+                </button>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- SUB-DRAWER: RDV RECAP & BOOKING WIZARD          -->
+      <!-- ═══════════════════════════════════════════════ -->
+      @if (showRdvRecap()) {
+        <div class="sub-drawer-overlay" (click)="closeRdvRecap()"></div>
+        <div class="sub-drawer sub-drawer-enter">
+          <div class="sub-drawer-header">
+            <button class="sub-drawer-back" (click)="closeRdvRecap()">
+              <mat-icon class="icon-sm">arrow_back</mat-icon>
+            </button>
+            <div>
+              <h3>{{ confirmedRdv() ? 'Confirmation' : 'Mon Rendez-vous' }}</h3>
+              <p class="sub-drawer-subtitle">
+                @if (confirmedRdv()) {
+                  Prestation validée auprès du salon
+                } @else {
+                  {{ selectedVariantes().length }} prestation{{ selectedVariantes().length > 1 ? 's' : '' }} sélectionnée{{ selectedVariantes().length > 1 ? 's' : '' }}
+                }
+              </p>
+            </div>
+          </div>
+
+          <!-- SUCCESS STATE: CONFIRMED RDV -->
+          @if (confirmedRdv()) {
+            <div class="booking-success-box drawer-animate">
+              <div class="success-icon-wrap">
+                <div class="success-icon-ring"></div>
+                <div class="success-icon-core">
+                  <mat-icon class="icon-sm">check_circle</mat-icon>
+                </div>
+              </div>
+              <h4 class="success-title">Rendez-vous Confirmé !</h4>
+              <p class="success-salon-name">{{ (salonDetail() || salon).nom }}</p>
+
+              <div class="success-details-card">
+                <div class="success-detail-row">
+                  <span class="detail-label">
+                    <mat-icon class="icon-xs">calendar_month</mat-icon> Date &amp; Heure
+                  </span>
+                  <strong class="detail-value">{{ confirmedRdv()!.dateHeure | date:'EEEE d MMMM yyyy à HH:mm':'fr' }}</strong>
+                </div>
+                <div class="success-detail-row">
+                  <span class="detail-label">
+                    <mat-icon class="icon-xs">content_cut</mat-icon> Prestations
+                  </span>
+                  <span class="detail-value">{{ confirmedRdv()!.services.join(', ') }}</span>
+                </div>
+                <div class="success-detail-row">
+                  <span class="detail-label">
+                    <mat-icon class="icon-xs">hourglass_empty</mat-icon> Durée estimée
+                  </span>
+                  <strong class="detail-value">{{ rdvTotalDuree() }} min</strong>
+                </div>
+                <div class="success-detail-row total-row">
+                  <span class="detail-label">
+                    <mat-icon class="icon-xs">payments</mat-icon> Montant estimé
+                  </span>
+                  <strong class="detail-value highlight-price">{{ rdvTotalPrix().toLocaleString() }} FCFA</strong>
+                </div>
+              </div>
+
+              <div class="success-actions">
+                <button class="btn-success-primary" (click)="goToClientRendezVous()">
+                  <mat-icon class="icon-sm">event</mat-icon>
+                  <span>Voir mes rendez-vous</span>
+                </button>
+                <button class="btn-success-secondary" (click)="resetBookingAfterSuccess()">
+                  <span>Réserver une autre prestation</span>
+                </button>
+              </div>
+            </div>
+          } @else {
+            <!-- WIZARD STEP 1: SELECTED VARIANTES -->
+            @if (selectedVariantes().length === 0) {
+              <div class="empty-state small" style="margin-top: 40px;">
+                <mat-icon class="empty-icon">content_cut</mat-icon>
+                <h4>Aucune prestation sélectionnée</h4>
+                <p>Sélectionnez un service pour choisir vos variantes et réserver un créneau.</p>
+              </div>
+            } @else {
+              <div class="rdv-wizard-content">
+
+                <!-- 1. Prestations sélectionnées -->
+                <div class="wizard-section">
+                  <div class="section-title-wrap">
+                    <span class="section-badge">1</span>
+                    <h4 class="wizard-title">Prestations sélectionnées</h4>
+                  </div>
+                  <div class="rdv-recap-list">
+                    @for (v of selectedVariantes(); track v.varianteId; let i = $index) {
+                      <div class="rdv-recap-item drawer-animate" [style.animation-delay]="(i * 40) + 'ms'">
+                        <div class="rdv-item-info">
+                          <span class="rdv-item-service">{{ v.serviceNom }}</span>
+                          <h5>{{ v.varianteNom }}</h5>
+                          <div class="rdv-item-meta">
+                            <span><mat-icon class="icon-xs">schedule</mat-icon> {{ v.dureeMinutes }} min</span>
+                            <span>{{ v.prix.toLocaleString() }} FCFA</span>
+                          </div>
+                        </div>
+                        <button class="btn-remove-variante" (click)="removeVariante(v.varianteId)" title="Retirer">
+                          <mat-icon class="icon-sm">delete_outline</mat-icon>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <!-- 2. Date Selection -->
+                <div class="wizard-section">
+                  <div class="section-title-wrap">
+                    <span class="section-badge">2</span>
+                    <h4 class="wizard-title">Choisissez le jour</h4>
+                  </div>
+                  <div class="date-selector-row">
+                    <button
+                      type="button"
+                      class="date-pill"
+                      [class.is-selected]="bookingDate() === getTodayDateString()"
+                      (click)="selectBookingDate(getTodayDateString())"
+                    >
+                      <span class="date-pill-label">Aujourd'hui</span>
+                      <span class="date-pill-sub">{{ formatDateShort(getTodayDateString()) }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="date-pill"
+                      [class.is-selected]="bookingDate() === getDateOffsetString(1)"
+                      (click)="selectBookingDate(getDateOffsetString(1))"
+                    >
+                      <span class="date-pill-label">Demain</span>
+                      <span class="date-pill-sub">{{ formatDateShort(getDateOffsetString(1)) }}</span>
+                    </button>
+                    <button
+                      type="button"
+                      class="date-pill"
+                      [class.is-selected]="bookingDate() === getDateOffsetString(2)"
+                      (click)="selectBookingDate(getDateOffsetString(2))"
+                    >
+                      <span class="date-pill-label">Après-demain</span>
+                      <span class="date-pill-sub">{{ formatDateShort(getDateOffsetString(2)) }}</span>
+                    </button>
+                    <div class="custom-date-wrap">
+                      <input
+                        type="date"
+                        class="date-custom-input"
+                        [ngModel]="bookingDate()"
+                        (ngModelChange)="selectBookingDate($event)"
+                        [min]="getTodayDateString()"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. Time Slots Selection -->
+                <div class="wizard-section">
+                  <div class="section-title-wrap">
+                    <span class="section-badge">3</span>
+                    <h4 class="wizard-title">Créneau horaire disponible</h4>
+                  </div>
+
+                  <!-- Slot Period Filters -->
+                  <div class="slot-filter-tabs">
+                    <button
+                      type="button"
+                      class="slot-tab"
+                      [class.active]="activeSlotPeriod() === 'TOUS'"
+                      (click)="setSlotPeriod('TOUS')"
+                    >
+                      Tous ({{ availableSlots().length }})
+                    </button>
+                    <button
+                      type="button"
+                      class="slot-tab"
+                      [class.active]="activeSlotPeriod() === 'MATIN'"
+                      (click)="setSlotPeriod('MATIN')"
+                    >
+                      <mat-icon class="icon-xs">wb_twilight</mat-icon> Matin
+                    </button>
+                    <button
+                      type="button"
+                      class="slot-tab"
+                      [class.active]="activeSlotPeriod() === 'APRES_MIDI'"
+                      (click)="setSlotPeriod('APRES_MIDI')"
+                    >
+                      <mat-icon class="icon-xs">wb_sunny</mat-icon> Après-midi
+                    </button>
+                    <button
+                      type="button"
+                      class="slot-tab"
+                      [class.active]="activeSlotPeriod() === 'SOIR'"
+                      (click)="setSlotPeriod('SOIR')"
+                    >
+                      <mat-icon class="icon-xs">bedtime</mat-icon> Soir
+                    </button>
+                  </div>
+
+                  <!-- Slots State -->
+                  @if (loadingSlots()) {
+                    <div class="slots-loading-grid">
+                      <div class="slot-skeleton shimmer" *ngFor="let s of [1,2,3,4,5,6]"></div>
+                    </div>
+                  } @else if (availableSlots().length === 0) {
+                    <div class="empty-state small slots-empty">
+                      <mat-icon class="empty-icon">calendar_month</mat-icon>
+                      <h5>Aucun créneau libre ce jour</h5>
+                      <p>Veuillez choisir une autre date pour voir les disponibilités.</p>
+                    </div>
+                  } @else if (filteredSlots().length === 0) {
+                    <div class="empty-state small slots-empty">
+                      <mat-icon class="empty-icon">schedule</mat-icon>
+                      <p>Aucun créneau dans cette plage horaire. Affichez "Tous".</p>
+                    </div>
+                  } @else {
+                    <div class="slots-grid">
+                      @for (slot of filteredSlots(); track (slot.heureDebut + slot.coiffeurId)) {
+                        <button
+                          type="button"
+                          class="slot-chip"
+                          [class.is-selected]="selectedSlot()?.heureDebut === slot.heureDebut && selectedSlot()?.coiffeurId === slot.coiffeurId"
+                          (click)="selectSlot(slot)"
+                        >
+                          <span class="slot-time">{{ slot.heureDebut }}</span>
+                          @if (slot.coiffeurNom) {
+                            <span class="slot-coiffeur">
+                              <mat-icon class="icon-xs">person</mat-icon> {{ slot.coiffeurNom }}
+                            </span>
+                          }
+                          @if (selectedSlot()?.heureDebut === slot.heureDebut && selectedSlot()?.coiffeurId === slot.coiffeurId) {
+                            <mat-icon class="slot-check" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;">check</mat-icon>
+                          }
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+
+                <!-- 4. Notes optionnelles -->
+                <div class="wizard-section">
+                  <div class="section-title-wrap">
+                    <span class="section-badge">4</span>
+                    <h4 class="wizard-title">Notes / Précisions (facultatif)</h4>
+                  </div>
+                  <textarea
+                    class="booking-notes-input"
+                    rows="2"
+                    placeholder="Ex: Cheveux crépus, préférence coiffure sans chaleur, etc."
+                    [ngModel]="bookingNotes()"
+                    (ngModelChange)="bookingNotes.set($event)"
+                  ></textarea>
+                </div>
+
+                <!-- 5. Summary & Actions -->
+                <div class="rdv-summary">
+                  <div class="rdv-summary-row">
+                    <span>Durée totale estimée</span>
+                    <strong>{{ rdvTotalDuree() }} min</strong>
+                  </div>
+                  @if (selectedSlot()) {
+                    <div class="rdv-summary-row highlight">
+                      <span>Créneau retenu</span>
+                      <strong>{{ selectedSlot()!.heureDebut }} - {{ selectedSlot()!.heureFin }}</strong>
+                    </div>
+                  }
+                  <div class="rdv-summary-row total">
+                    <span>Prix total estimé</span>
+                    <strong>{{ rdvTotalPrix().toLocaleString() }} FCFA</strong>
+                  </div>
+                </div>
+
+                <div class="rdv-actions">
+                  <button
+                    type="button"
+                    class="btn-rdv-confirm"
+                    [disabled]="!selectedSlot() || submittingBooking()"
+                    (click)="confirmerRendezVous()"
+                  >
+                    @if (submittingBooking()) {
+                      <span class="btn-spinner"></span>
+                      <span>Confirmation en cours...</span>
+                    } @else if (authService.isAuthenticated()) {
+                      <mat-icon class="icon-sm">check_circle</mat-icon>
+                      <span>Confirmer mon Rendez-vous</span>
+                    } @else {
+                      <mat-icon class="icon-sm">login</mat-icon>
+                      <span>Se connecter pour confirmer</span>
+                    }
+                  </button>
+
+                  @if (!authService.isAuthenticated()) {
+                    <p class="guest-booking-hint">
+                      <mat-icon class="icon-xs">lock</mat-icon> Votre sélection et votre créneau seront automatiquement sauvegardés.
+                    </p>
+                  }
+
+                  <button type="button" class="btn-rdv-clear" (click)="clearRdvSelection()">Tout effacer</button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- SUB-DRAWER: PANIER & CLICK & COLLECT           -->
+      <!-- ═══════════════════════════════════════════════ -->
+      @if (showPanierDrawer()) {
+        <div class="sub-drawer-overlay" (click)="togglePanierDrawer()"></div>
+        <div class="sub-drawer sub-drawer-enter">
+          <div class="sub-drawer-header">
+            <button class="sub-drawer-back" (click)="togglePanierDrawer()">
+              <mat-icon class="icon-sm">arrow_back</mat-icon>
+            </button>
+            <div>
+              <h3>{{ confirmedCommande() ? 'Commande validée' : 'Mon Panier' }}</h3>
+              <p class="sub-drawer-subtitle">
+                @if (confirmedCommande()) {
+                  Click &amp; Collect au comptoir
+                } @else {
+                  {{ panierService.nombreArticles() }} article{{ panierService.nombreArticles() > 1 ? 's' : '' }}
+                }
+              </p>
+            </div>
+          </div>
+
+          <!-- SUCCESS STATE: CONFIRMED COMMANDE -->
+          @if (confirmedCommande()) {
+            <div class="booking-success-box drawer-animate">
+              <div class="success-icon-wrap order-success">
+                <div class="success-icon-ring"></div>
+                <div class="success-icon-core">
+                  <mat-icon class="icon-sm">shopping_bag</mat-icon>
+                </div>
+              </div>
+              <h4 class="success-title">Commande Validée !</h4>
+              <p class="success-salon-name">Numéro #{{ confirmedCommande()!.id }} · {{ (salonDetail() || salon).nom }}</p>
+
+              <div class="pickup-code-box">
+                <span class="pickup-code-label">CODE DE RETRAIT AU COMPTOIR</span>
+                <span class="pickup-code-val">{{ confirmedCommande()!.codeRetrait || ('RETRAIT-' + confirmedCommande()!.id) }}</span>
+                <span class="pickup-code-sub">Présentez ce code au salon pour récupérer vos produits</span>
+              </div>
+
+              <div class="success-details-card">
+                <div class="success-detail-row total-row">
+                  <span class="detail-label">Montant à régler</span>
+                  <strong class="detail-value highlight-price">{{ panierService.montantTotal().toLocaleString() }} FCFA</strong>
+                </div>
+              </div>
+
+              <div class="success-actions">
+                <button class="btn-success-primary" (click)="goToClientCommandes()">
+                  <span>Voir mes commandes</span>
+                </button>
+                <button class="btn-success-secondary" (click)="resetCommandeAfterSuccess()">
+                  <span>Continuer mes achats</span>
+                </button>
+              </div>
+            </div>
+          } @else {
+            @if (panierService.panier()?.lignes?.length) {
+              <div class="panier-list">
+                @for (ligne of panierService.panier()!.lignes; track ligne.produitId; let i = $index) {
+                  <div class="panier-item drawer-animate" [style.animation-delay]="(i * 40) + 'ms'">
+                    <div class="panier-item-info">
+                      <h5>{{ ligne.produitNom }}</h5>
+                      <span class="panier-item-prix">{{ ligne.prixUnitaire.toLocaleString() }} FCFA</span>
+                    </div>
+                    <div class="panier-item-actions">
+                      <button class="btn-qty" (click)="modifierQuantitePanier(ligne.produitId, ligne.quantite - 1)">−</button>
+                      <span class="qty-value">{{ ligne.quantite }}</span>
+                      <button class="btn-qty" (click)="modifierQuantitePanier(ligne.produitId, ligne.quantite + 1)">+</button>
+                      <button class="btn-remove-item" (click)="supprimerArticlePanier(ligne.produitId)" title="Supprimer">
+                        <mat-icon class="icon-xs">close</mat-icon>
+                      </button>
+                    </div>
+                    <span class="panier-item-subtotal">{{ ligne.sousTotal.toLocaleString() }} FCFA</span>
+                  </div>
+                }
+              </div>
+
+              <div class="rdv-summary">
+                <div class="rdv-summary-row total">
+                  <span>Total</span>
+                  <strong>{{ panierService.montantTotal().toLocaleString() }} FCFA</strong>
+                </div>
+              </div>
+
+              <div class="rdv-actions">
+                <button
+                  type="button"
+                  class="btn-rdv-confirm"
+                  [disabled]="submittingCommande()"
+                  (click)="passerCommandePanier()"
+                >
+                  @if (submittingCommande()) {
+                    <span class="btn-spinner"></span>
+                    <span>Validation en cours...</span>
+                  } @else if (authService.isAuthenticated()) {
+                    <mat-icon class="icon-sm">shopping_bag</mat-icon>
+                    <span>Valider la commande Click &amp; Collect</span>
+                  } @else {
+                    <mat-icon class="icon-sm">login</mat-icon>
+                    <span>Se connecter pour commander</span>
+                  }
+                </button>
+              </div>
+            } @else {
+              <div class="empty-state small">
+                <mat-icon class="empty-icon">shopping_cart</mat-icon>
+                <h4>Panier vide</h4>
+                <p>Ajoutez des produits depuis l'onglet Boutique.</p>
+              </div>
+            }
+          }
+        </div>
+      }
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- FLOATING ACTION BADGES (RDV + Panier)           -->
+      <!-- ═══════════════════════════════════════════════ -->
+      @if (isOpen && selectedVariantes().length > 0 && !showRdvRecap()) {
+        <button class="fab-rdv fab-bounce" (click)="openRdvRecap()" title="Voir mon rendez-vous">
+          <mat-icon>calendar_month</mat-icon>
+          <span class="fab-count">{{ selectedVariantes().length }}</span>
+        </button>
+      }
+
+      @if (isOpen && panierService.nombreArticles() > 0 && !showPanierDrawer()) {
+        <button class="fab-panier fab-bounce" (click)="togglePanierDrawer()" title="Voir mon panier">
+          <mat-icon>shopping_bag</mat-icon>
+          <span class="fab-count">{{ panierService.nombreArticles() }}</span>
+        </button>
+      }
+    }
+  </div>
+</div>

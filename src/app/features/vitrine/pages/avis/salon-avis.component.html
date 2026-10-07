@@ -1,0 +1,78 @@
+<div class="avis-page">
+  <header class="avis-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>Avis Clients</span>
+      </nav>
+      <span class="sub-badge">RETOUR D'EXPÉRIENCE CERTIFIÉ</span>
+      <h1 class="page-title">Les Avis de Nos Clients</h1>
+      <p class="page-desc">
+        La satisfaction de nos clients est notre plus belle signature. Retrouvez l'ensemble des retours certifiés suite à des prestations réalisées en salon.
+      </p>
+    </div>
+  </header>
+
+  <main class="avis-content">
+    <div class="content-container">
+      <!-- Synthèse Globale des Notes -->
+      <section class="rating-overview-card">
+        <div class="rating-score-box">
+          <span class="score-num">{{ noteMoyenne() }}</span>
+          <div class="stars-row">
+            <mat-icon *ngFor="let s of [1,2,3,4,5]" class="star-icon">star</mat-icon>
+          </div>
+          <span class="score-count">{{ avisList().length }} avis certifié{{ avisList().length > 1 ? 's' : '' }}</span>
+        </div>
+
+        <div class="rating-pitch-box">
+          <h3>Un Standard de Qualité Élevé</h3>
+          <p>Seuls les clients ayant réglé une prestation dans ce salon peuvent publier une appréciation authentique.</p>
+          <button type="button" class="btn-leave-review" (click)="deposerAvis()">
+            <mat-icon class="icon-xs">rate_review</mat-icon>
+            <span>Donner mon avis</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des avis...</p>
+      </div>
+
+      <!-- Aucun avis -->
+      <div *ngIf="!isLoading() && avisList().length === 0" class="empty-state">
+        <mat-icon class="empty-icon">reviews</mat-icon>
+        <h3>Aucun avis pour le moment</h3>
+        <p>Soyez le premier à partager votre expérience après votre prochain rendez-vous !</p>
+      </div>
+
+      <!-- Liste des Avis -->
+      <div *ngIf="!isLoading() && avisList().length > 0" class="reviews-list">
+        <div *ngFor="let a of avisList()" class="review-card">
+          <div class="review-header-row">
+            <div class="reviewer-info">
+              <span class="reviewer-avatar">{{ (a.clientNomComplet || 'Client').charAt(0) }}</span>
+              <div>
+                <strong class="reviewer-name">{{ a.clientNomComplet || 'Client Vérifié' }}</strong>
+                <span class="review-date">{{ a.dateCreation | date:'longDate' }}</span>
+              </div>
+            </div>
+
+            <div class="review-stars">
+              <mat-icon
+                *ngFor="let s of [1,2,3,4,5]"
+                class="star-icon-small"
+                [class.star-filled]="s <= a.note"
+              >star</mat-icon>
+            </div>
+          </div>
+
+          <p class="review-comment" *ngIf="a.commentaire">« {{ a.commentaire }} »</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

@@ -1,0 +1,250 @@
+<div class="client-detail-page">
+  <!-- NAVIGATION BACK -->
+  <div class="back-nav">
+    <a [routerLink]="['..']" class="back-link">
+      <mat-icon class="icon-sm">arrow_back</mat-icon>
+      Retour au fichier clients
+    </a>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement de la fiche client...</span>
+    </div>
+  } @else if (fiche()) {
+    <!-- CLIENT HEADER CARD -->
+    <div class="client-header-card">
+      <div class="client-avatar-large">
+        {{ fiche()?.prenom?.charAt(0) }}{{ fiche()?.nom?.charAt(0) }}
+      </div>
+
+      <div class="client-main-details">
+        <h1 class="client-full-name">{{ fiche()?.prenom }} {{ fiche()?.nom }}</h1>
+        <div class="client-meta-row">
+          <span>
+            <mat-icon class="meta-icon">email</mat-icon>
+            {{ fiche()?.email }}
+          </span>
+
+          @if (fiche()?.telephone) {
+            <span>
+              <mat-icon class="meta-icon">phone</mat-icon>
+              {{ fiche()?.telephone }}
+            </span>
+          }
+
+          @if (fiche()?.dateNaissance) {
+            <span>
+              <mat-icon class="meta-icon">cake</mat-icon>
+              Né(e) le {{ fiche()?.dateNaissance | date:'dd/MM/yyyy' }}
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- DOSSIER TABS -->
+    <div class="tabs-nav">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'PROFIL'"
+        (click)="activeTab = 'PROFIL'"
+      >
+        Profil Capillaire
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'RDV'"
+        (click)="activeTab = 'RDV'"
+      >
+        Rendez-vous ({{ fiche()?.rendezVous?.length || 0 }})
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'PRESTATIONS'"
+        (click)="activeTab = 'PRESTATIONS'"
+      >
+        Prestations Réalisées ({{ fiche()?.prestations?.length || 0 }})
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'FACTURES'"
+        (click)="activeTab = 'FACTURES'"
+      >
+        Factures & Règlements ({{ fiche()?.factures?.length || 0 }})
+      </button>
+    </div>
+
+    <!-- TAB 1: PROFIL CAPILLAIRE -->
+    @if (activeTab === 'PROFIL') {
+      <div class="tab-pane">
+        @if (fiche()?.profilCapillaire) {
+          <div class="profil-grid">
+            <div class="profil-item">
+              <span class="profil-label">Type de cheveux</span>
+              <strong class="profil-val">{{ fiche()?.profilCapillaire?.typeCheveux || 'Non renseigné' }}</strong>
+            </div>
+
+            <div class="profil-item">
+              <span class="profil-label">Texture</span>
+              <strong class="profil-val">{{ fiche()?.profilCapillaire?.texture || 'Non renseigné' }}</strong>
+            </div>
+
+            <div class="profil-item">
+              <span class="profil-label">Longueur</span>
+              <strong class="profil-val">{{ fiche()?.profilCapillaire?.longueur || 'Non renseigné' }}</strong>
+            </div>
+
+            <div class="profil-item">
+              <span class="profil-label">Densité</span>
+              <strong class="profil-val">{{ fiche()?.profilCapillaire?.densite || 'Non renseigné' }}</strong>
+            </div>
+
+            <div class="profil-item">
+              <span class="profil-label">Cuir chevelu</span>
+              <strong class="profil-val">{{ fiche()?.profilCapillaire?.cuirChevelu || 'Normal' }}</strong>
+            </div>
+
+            <div class="profil-item">
+              <span class="profil-label">Sensibilités / Allergies</span>
+              <strong class="profil-val text-red">{{ fiche()?.profilCapillaire?.sensibilites || fiche()?.profilCapillaire?.allergiesProduits || 'Aucune connue' }}</strong>
+            </div>
+          </div>
+
+          @if (fiche()?.profilCapillaire?.observations) {
+            <div class="obs-box">
+              <h4>Observations & Préférences :</h4>
+              <p>{{ fiche()?.profilCapillaire?.observations }}</p>
+            </div>
+          }
+        } @else {
+          <div class="empty-tab-box">
+            <p>Ce client n'a pas encore de profil capillaire enregistré dans le salon.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB 2: RENDEZ-VOUS -->
+    @if (activeTab === 'RDV') {
+      <div class="tab-pane">
+        @if (fiche()?.rendezVous && fiche()?.rendezVous?.length !== 0) {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date & Heure</th>
+                  <th>Prestations</th>
+                  <th>Coiffeur</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of fiche()?.rendezVous || []; track r.id) {
+                  <tr>
+                    <td>{{ r.dateHeure | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ r.services ? r.services.join(', ') : 'Soin' }}</td>
+                    <td>{{ r.coiffeurNom || 'Attribué sur place' }}</td>
+                    <td><span class="badge">{{ r.statut }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-tab-box">
+            <p>Aucun rendez-vous enregistré pour ce client.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB 3: PRESTATIONS -->
+    @if (activeTab === 'PRESTATIONS') {
+      <div class="tab-pane">
+        @if (fiche()?.prestations && fiche()?.prestations?.length !== 0) {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Lignes de soins</th>
+                  <th>Statut</th>
+                  <th class="text-right">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of fiche()?.prestations || []; track p.id) {
+                  <tr>
+                    <td>{{ p.datePrestation | date:'dd/MM/yyyy' }}</td>
+                    <td>
+                      @for (l of p.lignes; track l.id) {
+                        <div>{{ l.serviceNom }} ({{ formatDevise(l.prix) }})</div>
+                      }
+                    </td>
+                    <td><span class="badge">{{ p.statut }}</span></td>
+                    <td class="text-right font-bold">{{ formatDevise(p.montantTotal) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-tab-box">
+            <p>Aucune prestation historique enregistrée pour ce client.</p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- TAB 4: FACTURES & PAIEMENTS -->
+    @if (activeTab === 'FACTURES') {
+      <div class="tab-pane">
+        @if (fiche()?.factures && fiche()?.factures?.length !== 0) {
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>N° Facture</th>
+                  <th>Date d'émission</th>
+                  <th>Statut</th>
+                  <th class="text-right">Montant Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (f of fiche()?.factures || []; track f.id) {
+                  <tr>
+                    <td><strong>{{ f.numeroFacture }}</strong></td>
+                    <td>{{ f.dateEmission | date:'dd/MM/yyyy' }}</td>
+                    <td><span class="badge">{{ f.resteAPayer === 0 ? 'Soldée' : 'Solde: ' + formatDevise(f.resteAPayer) }}</span></td>
+                    <td class="text-right font-bold">{{ formatDevise(f.montantTotal) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-tab-box">
+            <p>Aucune facture émise pour ce client.</p>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

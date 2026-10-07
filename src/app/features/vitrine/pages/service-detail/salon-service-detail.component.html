@@ -1,0 +1,185 @@
+<div class="service-detail-page">
+  <!-- EN-TÊTE DU SERVICE -->
+  <header class="detail-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <a [routerLink]="['/' + slugSalon + '/services']">Prestations</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>{{ service()?.nom || 'Détails Prestation' }}</span>
+      </nav>
+
+      <div class="header-main-card" *ngIf="service() as s" appRevealOnScroll>
+        <div class="header-text-col">
+          <span class="category-badge">Rituel d'Excellence Capillaire</span>
+          <h1 class="service-title">{{ s.nom }}</h1>
+          <p class="service-desc">
+            {{ s.description || 'Protocole de soin sur-mesure prodigué avec passion par les artisans de notre maison de beauté.' }}
+          </p>
+
+          <!-- Piliers de réassurance -->
+          <div class="service-reassurance-row">
+            <div class="reassurance-chip">
+              <mat-icon class="icon-xs">verified</mat-icon>
+              <span>Diagnostic personnalisé inclus</span>
+            </div>
+            <div class="reassurance-chip">
+              <mat-icon class="icon-xs">payments</mat-icon>
+              <span>Paiement sur place après prestation</span>
+            </div>
+            <div class="reassurance-chip">
+              <mat-icon class="icon-xs">event_available</mat-icon>
+              <span>Annulation sans frais jusqu'à 24h</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-img-col" *ngIf="s.imageUrl">
+          <img [src]="s.imageUrl | safeMedia" [alt]="s.nom" class="header-photo" />
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- LISTE DES VARIANTES DISPONIBLES -->
+  <main class="variantes-content">
+    <div class="content-container">
+      <!-- Choix facultatif du coiffeur préféré -->
+      <section class="coiffeur-preference-section" *ngIf="coiffeurs().length > 0" appRevealOnScroll>
+        <div class="pref-header">
+          <mat-icon class="icon-sm">person_pin</mat-icon>
+          <h3>Une préférence d'artisan coiffeur ? (Optionnel)</h3>
+        </div>
+        <p class="pref-desc">
+          Vous pouvez confier votre soin à un coiffeur précis ou choisir « Premier disponible » pour un maximum de flexibilité horaire.
+        </p>
+
+        <div class="coiffeurs-chips-row">
+          <button
+            type="button"
+            class="coiffeur-chip"
+            [class.is-active]="selectedCoiffeurId() === null"
+            (click)="setCoiffeurPreference(null)"
+          >
+            <mat-icon class="icon-xs">bolt</mat-icon>
+            <span>Premier artisan disponible</span>
+          </button>
+
+          <button
+            type="button"
+            class="coiffeur-chip"
+            *ngFor="let c of coiffeurs()"
+            [class.is-active]="selectedCoiffeurId() === c.id"
+            (click)="setCoiffeurPreference(c.id, c.coiffeurPrenom + ' ' + c.coiffeurNom)"
+          >
+            <img
+              *ngIf="c.photoProfilUrl"
+              [src]="c.photoProfilUrl | safeMedia"
+              [alt]="c.coiffeurPrenom"
+              class="chip-avatar-img"
+            />
+            <mat-icon *ngIf="!c.photoProfilUrl" class="icon-xs">face</mat-icon>
+            <span>{{ c.coiffeurPrenom }} ({{ c.nomAffichage || 'Artisan' }})</span>
+          </button>
+        </div>
+      </section>
+
+      <div class="section-title-wrap" appRevealOnScroll>
+        <span class="sub-label">Étape de Sélection</span>
+        <h2>Choisissez votre formule</h2>
+        <p>Sélectionnez la variante adaptée à la longueur, au volume ou aux besoins spécifiques de vos cheveux.</p>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des formules disponibles...</p>
+      </div>
+
+      <!-- Aucune variante -->
+      <div
+        *ngIf="!isLoading() && (!service() || !service()!.variantes || service()!.variantes!.length === 0)"
+        class="empty-state"
+      >
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">info</mat-icon>
+        </div>
+        <h3>Aucune formule détaillée disponible</h3>
+        <p>Ce rituel est actuellement proposé directement au salon lors de votre accueil.</p>
+        <a [routerLink]="['/' + slugSalon + '/services']" class="btn-back">
+          <mat-icon class="icon-xs">arrow_back</mat-icon>
+          <span>Retour à la carte des rituels</span>
+        </a>
+      </div>
+
+      <!-- Grille des variantes -->
+      <div
+        *ngIf="!isLoading() && service()?.variantes && service()!.variantes!.length > 0"
+        class="variantes-grid"
+      >
+        <article
+          *ngFor="let v of service()!.variantes; let idx = index"
+          class="variante-card"
+          [class.is-selected]="isVarianteSelected(v.id)"
+          appTilt3d
+          [maxTilt]="5"
+          appRevealOnScroll
+          [revealDelay]="idx * 50"
+        >
+          <div class="variante-card-header">
+            <h3 class="variante-name">{{ v.nom }}</h3>
+            <span class="variante-price">{{ v.prix | number:'1.0-0' }} FCFA</span>
+          </div>
+
+          <div class="variante-meta">
+            <span class="duration-pill">
+              <mat-icon class="icon-xs">schedule</mat-icon>
+              Durée estimée : {{ v.dureeMinutes }} minutes
+            </span>
+          </div>
+
+          <div class="variante-actions">
+            <button
+              type="button"
+              class="btn-select-variante"
+              [class.btn-selected]="isVarianteSelected(v.id)"
+              (click)="onToggleVariante($event, v)"
+              aria-label="Sélectionner cette formule pour le rendez-vous"
+            >
+              <mat-icon class="icon-xs">
+                {{ isVarianteSelected(v.id) ? 'check_circle' : 'add_circle_outline' }}
+              </mat-icon>
+              <span>{{ isVarianteSelected(v.id) ? 'Sélectionné pour mon RDV' : 'Ajouter au rendez-vous' }}</span>
+            </button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRE FLOTTANTE RDV EN COURS (SI SÉLECTION ACTIVE) -->
+  <aside class="booking-floating-bar" *ngIf="bookingStore.count() > 0" appRevealOnScroll>
+    <div class="floating-bar-inner">
+      <div class="floating-left">
+        <div class="floating-badge">
+          <mat-icon class="icon-xs">calendar_month</mat-icon>
+          <span>{{ bookingStore.count() }} prestation{{ bookingStore.count() > 1 ? 's' : '' }}</span>
+        </div>
+        <span class="floating-total">
+          Montant : <strong>{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+        </span>
+      </div>
+
+      <div class="floating-actions">
+        <button type="button" class="btn-floating-view" (click)="openBookingDrawer()">
+          Voir ma sélection
+        </button>
+        <button type="button" class="btn-floating-confirm" (click)="goToCheckout()">
+          <span>Choisir date & heure</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </aside>
+</div>

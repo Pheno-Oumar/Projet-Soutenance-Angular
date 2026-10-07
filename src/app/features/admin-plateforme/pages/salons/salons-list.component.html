@@ -1,0 +1,286 @@
+<div class="salons-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="header-titles">
+          <div class="breadcrumbs">
+            <a routerLink="/admin-plateforme">Administration</a>
+            <span>/</span>
+            <span>Salons</span>
+          </div>
+          <h1>Réseau des Salons de Coiffure</h1>
+          <p>Consultez, gérez et supervisez l'ensemble des établissements affiliés à la plateforme.</p>
+        </div>
+        <div class="header-actions">
+          <a routerLink="/admin-plateforme/salons/nouveau" class="btn-primary">
+            <mat-icon class="icon-sm">add</mat-icon>
+            <span>Nouveau Salon</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Barre d'outils (Filtres, Recherche, Modes de vue) -->
+      <section class="toolbar-card card-3d">
+        <div class="search-box">
+          <mat-icon class="icon-sm">search</mat-icon>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Rechercher par nom, ville, adresse, email..."
+          />
+          <button *ngIf="searchQuery()" (click)="searchQuery.set('')" class="btn-clear" title="Effacer">
+            <mat-icon class="icon-xs">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="filters-row">
+          <div class="filter-group">
+            <label>Statut :</label>
+            <div class="segmented-control">
+              <button [class.active]="statusFilter() === 'ALL'" (click)="statusFilter.set('ALL')">Tous ({{ salons().length }})</button>
+              <button [class.active]="statusFilter() === 'ACTIVE'" (click)="statusFilter.set('ACTIVE')">Actifs ({{ countActifs() }})</button>
+              <button [class.active]="statusFilter() === 'INACTIVE'" (click)="statusFilter.set('INACTIVE')">Inactifs ({{ countInactifs() }})</button>
+            </div>
+          </div>
+
+          <div class="view-switch">
+            <button
+              [class.active]="viewMode() === 'grid'"
+              (click)="setViewMode('grid')"
+              title="Vue Grille 3D"
+            >
+              <mat-icon class="icon-sm">grid_view</mat-icon>
+              <span>Grille</span>
+            </button>
+            <button
+              [class.active]="viewMode() === 'table'"
+              (click)="setViewMode('table')"
+              title="Vue Tableau"
+            >
+              <mat-icon class="icon-sm">view_list</mat-icon>
+              <span>Tableau</span>
+            </button>
+            <button
+              [class.active]="viewMode() === 'map'"
+              (click)="setViewMode('map')"
+              title="Vue Carte Leaflet"
+            >
+              <mat-icon class="icon-sm">map</mat-icon>
+              <span>Carte Leaflet</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- État Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des salons et métriques...</p>
+      </div>
+
+      <!-- Erreur -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span>{{ errorMessage() }}</span>
+        <button (click)="chargerSalons()" class="btn-retry">Réessayer</button>
+      </div>
+
+      <!-- VUE 1 : GRILLE 3D -->
+      <section *ngIf="!isLoading() && viewMode() === 'grid'" class="salons-grid">
+        <div *ngFor="let salon of filteredSalons()" class="salon-card card-3d">
+          <div class="salon-card-header">
+            <div class="salon-avatar">
+              <img
+                *ngIf="salon.logoUrl"
+                [src]="salon.logoUrl | safeMedia"
+                [alt]="salon.nom"
+                referrerpolicy="no-referrer"
+                (error)="onImgError($event)"
+              />
+              <div *ngIf="!salon.logoUrl" class="avatar-placeholder">
+                {{ salon.nom.charAt(0).toUpperCase() }}
+              </div>
+            </div>
+            <div class="salon-info-main">
+              <h3 class="salon-title">{{ salon.nom }}</h3>
+              <span class="salon-slug">@{{ salon.slug }}</span>
+            </div>
+            <span class="badge-status" [class.active]="salon.statut" [class.inactive]="!salon.statut">
+              {{ salon.statut ? 'Actif' : 'Inactif' }}
+            </span>
+          </div>
+
+          <p class="salon-desc" *ngIf="salon.description">{{ salon.description }}</p>
+          <p class="salon-desc empty" *ngIf="!salon.description">Aucune description renseignée.</p>
+
+          <div class="salon-meta-contact">
+            <div *ngIf="salon.adresse" class="meta-item">
+              <mat-icon class="icon-xs">location_on</mat-icon>
+              <span>{{ salon.adresse }}</span>
+            </div>
+            <div *ngIf="salon.telephone" class="meta-item">
+              <mat-icon class="icon-xs">phone</mat-icon>
+              <span>{{ salon.telephone }}</span>
+            </div>
+          </div>
+
+          <!-- Métriques Clés du Salon (Backend Enriched) -->
+          <div class="metrics-strip">
+            <div class="metric-item">
+              <span class="m-val">{{ salon.nombreClients ?? 0 }}</span>
+              <span class="m-lbl">Clients</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-val">{{ salon.nombreEmployes ?? 0 }}</span>
+              <span class="m-lbl">Employés</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-val ca-gold">{{ formatDevise(salon.chiffreAffaires ?? 0) }}</span>
+              <span class="m-lbl">C.A.</span>
+            </div>
+            <div class="metric-item">
+              <span class="m-val">{{ salon.nombreCommandes ?? 0 }}</span>
+              <span class="m-lbl">Cmds</span>
+            </div>
+          </div>
+
+          <!-- Actions du Salon -->
+          <div class="salon-card-footer">
+            <a [routerLink]="['/admin-plateforme/salons', salon.slug]" class="btn-detail" title="Consulter la fiche">
+              <span>Détails</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </a>
+
+            <button
+              *ngIf="salon.statut"
+              (click)="desactiverSalon(salon)"
+              [disabled]="isActionLoading(salon.slug)"
+              class="btn-toggle-status deactivate"
+              title="Désactiver ce salon"
+            >
+              <span>Désactiver</span>
+            </button>
+
+            <button
+              *ngIf="!salon.statut"
+              (click)="reactiverSalon(salon)"
+              [disabled]="isActionLoading(salon.slug)"
+              class="btn-toggle-status activate"
+              title="Réactiver ce salon"
+            >
+              <span>Réactiver</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VUE 2 : TABLEAU DÉTAILLÉ -->
+      <section *ngIf="!isLoading() && viewMode() === 'table'" class="table-container card-3d">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Salon</th>
+              <th>Statut</th>
+              <th>Clients</th>
+              <th>Employés</th>
+              <th>Chiffre d'Affaires</th>
+              <th>Commandes</th>
+              <th>Coordonnées GPS</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let salon of filteredSalons()">
+              <td>
+                <div class="table-salon-cell">
+                  <div class="table-avatar">
+                    <img
+                      *ngIf="salon.logoUrl"
+                      [src]="salon.logoUrl | safeMedia"
+                      [alt]="salon.nom"
+                      referrerpolicy="no-referrer"
+                      (error)="onImgError($event)"
+                    />
+                    <span *ngIf="!salon.logoUrl">{{ salon.nom.charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <div>
+                    <strong class="salon-name-link">{{ salon.nom }}</strong>
+                    <div class="text-muted-xs">@{{ salon.slug }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge-status" [class.active]="salon.statut" [class.inactive]="!salon.statut">
+                  {{ salon.statut ? 'Actif' : 'Inactif' }}
+                </span>
+              </td>
+              <td><strong>{{ salon.nombreClients ?? 0 }}</strong></td>
+              <td><strong>{{ salon.nombreEmployes ?? 0 }}</strong></td>
+              <td><span class="ca-gold-badge">{{ formatDevise(salon.chiffreAffaires ?? 0) }}</span></td>
+              <td><strong>{{ salon.nombreCommandes ?? 0 }}</strong></td>
+              <td>
+                <span *ngIf="salon.latitude && salon.longitude" class="gps-badge">
+                  <mat-icon class="icon-xs">location_on</mat-icon> {{ salon.latitude | number:'1.2-4' }}, {{ salon.longitude | number:'1.2-4' }}
+                </span>
+                <span *ngIf="!salon.latitude || !salon.longitude" class="gps-empty">
+                  Non configuré
+                </span>
+              </td>
+              <td class="text-right">
+                <div class="table-actions">
+                  <a [routerLink]="['/admin-plateforme/salons', salon.slug]" class="btn-action-icon" title="Voir les détails">
+                    <mat-icon class="icon-xs">visibility</mat-icon>
+                  </a>
+                  <button
+                    *ngIf="salon.statut"
+                    (click)="desactiverSalon(salon)"
+                    class="btn-action-icon text-danger"
+                    title="Désactiver"
+                  >
+                    <mat-icon class="icon-xs">block</mat-icon>
+                  </button>
+                  <button
+                    *ngIf="!salon.statut"
+                    (click)="reactiverSalon(salon)"
+                    class="btn-action-icon text-success"
+                    title="Réactiver"
+                  >
+                    <mat-icon class="icon-xs">check_circle</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- VUE 3 : CARTE INTERACTIVE LEAFLET -->
+      <section *ngIf="viewMode() === 'map'" class="map-view-wrapper card-3d">
+        <div class="map-header">
+          <div>
+            <h3>Cartographie Géographique du Réseau</h3>
+            <p>Visualisation des salons géolocalisés ({{ countSalonsAvecGps() }} salons positionnés)</p>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="pin-active"></span> Salon Actif</span>
+            <span class="legend-item"><span class="pin-inactive"></span> Salon Inactif</span>
+          </div>
+        </div>
+
+        <div #mapContainer class="leaflet-map-element"></div>
+
+        <div *ngIf="countSalonsSansGps() > 0" class="map-notice">
+          <mat-icon class="icon-xs">info</mat-icon> <strong>{{ countSalonsSansGps() }} salon(s)</strong> ne possèdent pas encore de coordonnées GPS configurées. Les propriétaires peuvent les positionner ultérieurement via leur interface.
+        </div>
+      </section>
+
+      <!-- Aucun résultat -->
+      <div *ngIf="!isLoading() && filteredSalons().length === 0" class="empty-state card-3d">
+        <div class="empty-icon">
+          <mat-icon class="icon-xl">storefront</mat-icon>
+        </div>
+        <h3>Aucun salon trouvé</h3>
+        <p>Aucun établissement ne correspond aux critères de recherche actuels.</p>
+        <button (click)="searchQuery.set(''); statusFilter.set('ALL')" class="btn-refresh">
+          Réinitialiser les filtres
+        </button>
+      </div>
+    </div>

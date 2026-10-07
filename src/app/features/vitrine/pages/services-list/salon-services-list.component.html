@@ -1,0 +1,158 @@
+<div class="services-page">
+  <!-- EN-TÊTE DE LA PAGE -->
+  <header class="services-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>Prestations & Rituels</span>
+      </nav>
+
+      <span class="header-pretitle">Haute Coiffure & Rituels Capillaires</span>
+      <h1 class="page-title">La Carte des Soins</h1>
+      <p class="page-desc">
+        Explorez notre éventail de prestations d'excellence chez <strong>{{ salonNom }}</strong>.
+        Sélectionnez un soin pour découvrir l'ensemble de ses déclinaisons et réserver votre créneau.
+      </p>
+
+      <!-- Barre de recherche instantanée -->
+      <div class="search-bar-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher une prestation (ex: Soin Kératine, Tresses, Balayage, Brushing...)"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+        />
+        <button
+          *ngIf="searchQuery()"
+          (click)="searchQuery.set('')"
+          class="clear-btn"
+          aria-label="Effacer la recherche"
+        >
+          <mat-icon class="icon-xs">close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Filtres horizontaux par catégorie -->
+      <div class="categories-filter-bar">
+        <button
+          type="button"
+          *ngFor="let cat of categories()"
+          class="cat-filter-btn"
+          [class.is-active]="selectedCategory() === cat"
+          (click)="selectedCategory.set(cat)"
+        >
+          <span>{{ cat === 'TOUS' ? 'Tous les rituels' : cat }}</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- LISTE DES SERVICES -->
+  <main class="services-content">
+    <div class="content-container">
+      <!-- État de chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des rituels et prestations...</p>
+      </div>
+
+      <!-- Aucun résultat -->
+      <div *ngIf="!isLoading() && filteredServices().length === 0" class="empty-state">
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">spa</mat-icon>
+        </div>
+        <h3>Aucun rituel ne correspond à votre recherche</h3>
+        <p>Essayez avec d'autres termes ou réinitialisez les filtres pour voir toute la carte.</p>
+        <button
+          type="button"
+          (click)="searchQuery.set(''); selectedCategory.set('TOUS')"
+          class="btn-reset"
+        >
+          Réinitialiser tous les filtres
+        </button>
+      </div>
+
+      <!-- Grille des prestations -->
+      <div *ngIf="!isLoading() && filteredServices().length > 0" class="services-grid">
+        <article
+          *ngFor="let s of filteredServices(); let idx = index"
+          class="service-card"
+          appTilt3d
+          [maxTilt]="6"
+          appRevealOnScroll
+          [revealDelay]="idx * 40"
+        >
+          <div class="service-img-box">
+            <img
+              *ngIf="s.imageUrl"
+              [src]="s.imageUrl | safeMedia"
+              [alt]="s.nom"
+              class="service-img"
+              loading="lazy"
+            />
+            <div *ngIf="!s.imageUrl" class="service-placeholder">
+              <mat-icon class="placeholder-icon">spa</mat-icon>
+            </div>
+
+            <!-- Badges durée & formules -->
+            <span class="variante-count-badge">
+              {{ getFormulesCount(s) }} formule{{ getFormulesCount(s) > 1 ? 's' : '' }}
+            </span>
+
+            <span class="duration-badge">
+              <mat-icon class="icon-xs">schedule</mat-icon>
+              Dès {{ getMinDuree(s) }} min
+            </span>
+          </div>
+
+          <div class="service-info">
+            <h2 class="service-name">{{ s.nom }}</h2>
+            <p class="service-summary">
+              {{ s.description || 'Protocole de soin sur-mesure réalisé par nos artisans coiffeurs avec des produits de haute technologie.' }}
+            </p>
+
+            <div class="service-meta-row">
+              <div class="price-box">
+                <span class="price-label">À partir de</span>
+                <span class="service-price">{{ getMinPrice(s) | number:'1.0-0' }} FCFA</span>
+              </div>
+
+              <a [routerLink]="['/' + slugSalon + '/services', s.id]" class="btn-service-view">
+                <span>Découvrir les formules</span>
+                <mat-icon class="icon-xs">arrow_forward</mat-icon>
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRE FLOTTANTE RDV EN COURS (SI SÉLECTION ACTIVE) -->
+  <aside class="booking-floating-bar" *ngIf="bookingStore.count() > 0" appRevealOnScroll>
+    <div class="floating-bar-inner">
+      <div class="floating-left">
+        <div class="floating-badge">
+          <mat-icon class="icon-xs">calendar_month</mat-icon>
+          <span>{{ bookingStore.count() }} prestation{{ bookingStore.count() > 1 ? 's' : '' }}</span>
+        </div>
+        <span class="floating-total">
+          Total : <strong>{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+        </span>
+      </div>
+
+      <div class="floating-actions">
+        <button type="button" class="btn-floating-view" (click)="bookingStore.openDrawer()">
+          Voir ma sélection
+        </button>
+        <a [routerLink]="['/' + slugSalon + '/rdv']" class="btn-floating-confirm">
+          <span>Choisir mon créneau</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </div>
+  </aside>
+</div>

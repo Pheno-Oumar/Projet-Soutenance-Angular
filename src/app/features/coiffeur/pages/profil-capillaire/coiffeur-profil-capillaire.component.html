@@ -1,0 +1,197 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Fiches & Diagnostics Capillaires Clients</h1>
+      <p class="page-subtitle">Accédez en toute sécurité au profil capillaire de vos clients sur autorisation PIN</p>
+    </div>
+  </div>
+
+  <!-- Search & Toolbar -->
+  <div class="search-bar-wrap">
+    <div class="search-box">
+      <mat-icon class="icon-xs search-icon">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+        placeholder="Rechercher par nom, prénom, téléphone ou email..."
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-xs">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerClients()">Réessayer</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Recherche des clients du salon...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && clients().length === 0" class="empty-state">
+    <mat-icon class="empty-icon">group</mat-icon>
+    <h3>Aucun client trouvé</h3>
+    <p>Aucun compte client ne correspond à votre recherche dans ce salon.</p>
+  </div>
+
+  <!-- Clients Grid -->
+  <div *ngIf="!isLoading() && clients().length > 0" class="clients-grid">
+    <div *ngFor="let client of clients()" class="client-card">
+      <div class="client-avatar">
+        {{ (client.prenom || 'C').charAt(0).toUpperCase() }}
+      </div>
+      <div class="client-info">
+        <h3 class="client-name">{{ client.prenom }} {{ client.nom }}</h3>
+        <p class="client-meta" *ngIf="client.telephone">
+          <mat-icon class="icon-xs">phone</mat-icon> {{ client.telephone }}
+        </p>
+        <p class="client-meta" *ngIf="client.email">
+          <mat-icon class="icon-xs">mail</mat-icon> {{ client.email }}
+        </p>
+
+        <div class="profil-status">
+          <span *ngIf="client.hasProfilCapillaire" class="badge-has-profile">
+            <mat-icon class="icon-xs">verified</mat-icon> Profil Capillaire Renseigné
+          </span>
+          <span *ngIf="!client.hasProfilCapillaire" class="badge-no-profile">
+            <mat-icon class="icon-xs">radio_button_unchecked</mat-icon> Non Renseigné
+          </span>
+        </div>
+      </div>
+
+      <div class="client-action">
+        <button
+          class="btn-unlock"
+          (click)="demanderConsultation(client)"
+          [title]="client.hasProfilCapillaire ? 'Consulter le diagnostic' : 'Demander l’accès'"
+        >
+          <mat-icon class="icon-xs icon">lock</mat-icon> Consulter Fiche
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Saisie PIN Client -->
+  <div *ngIf="showPinModal" class="modal-backdrop" (click)="fermerPinModal()">
+    <div class="modal-content pin-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Déverrouillage Sécurisé</h2>
+        <button class="btn-close" (click)="fermerPinModal()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="pin-instructions">
+        <div class="pin-icon-wrap">
+          <mat-icon class="icon-lg">lock</mat-icon>
+        </div>
+        <p>
+          Pour consulter la fiche capillaire de <strong>{{ selectedClient?.prenom }} {{ selectedClient?.nom }}</strong>,
+          veuillez lui demander de vous communiquer son <strong>code d'accès PIN à 6 chiffres</strong>.
+        </p>
+      </div>
+
+      <div *ngIf="pinError" class="modal-alert-error">
+        <mat-icon class="icon-xs">warning</mat-icon> {{ pinError }}
+      </div>
+
+      <form (ngSubmit)="validerCodePin()">
+        <div class="pin-input-wrap">
+          <input
+            type="password"
+            maxlength="6"
+            [(ngModel)]="codePin"
+            name="codePin"
+            class="pin-digit-input"
+            placeholder="••••••"
+            autofocus
+            required
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="fermerPinModal()">Annuler</button>
+          <button type="submit" class="btn-submit" [disabled]="isVerifying || codePin.length !== 6">
+            {{ isVerifying ? 'Vérification...' : 'Déverrouiller la fiche' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Affichage Profil Capillaire Déverrouillé -->
+  <div *ngIf="showProfileModal" class="modal-backdrop" (click)="fermerProfileModal()">
+    <div class="modal-content profile-details-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="modal-subtitle">Fiche Diagnostic Capillaire</span>
+          <h2>{{ activeProfilCapillaire?.prenomClient }} {{ activeProfilCapillaire?.nomClient }}</h2>
+        </div>
+        <button class="btn-close" (click)="fermerProfileModal()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="capillary-grid" *ngIf="activeProfilCapillaire">
+        <div class="capillary-item">
+          <span class="cap-label">Type de Cheveux</span>
+          <span class="cap-val">{{ activeProfilCapillaire.typeCheveux || 'Non spécifié' }}</span>
+        </div>
+        <div class="capillary-item">
+          <span class="cap-label">Texture</span>
+          <span class="cap-val">{{ activeProfilCapillaire.texture || 'Non spécifié' }}</span>
+        </div>
+        <div class="capillary-item">
+          <span class="cap-label">Densité</span>
+          <span class="cap-val">{{ activeProfilCapillaire.densite || 'Non spécifié' }}</span>
+        </div>
+        <div class="capillary-item">
+          <span class="cap-label">Longueur</span>
+          <span class="cap-val">{{ activeProfilCapillaire.longueur || 'Non spécifié' }}</span>
+        </div>
+        <div class="capillary-item">
+          <span class="cap-label">Cuir Chevelu</span>
+          <span class="cap-val">{{ activeProfilCapillaire.cuirChevelu || 'Sain' }}</span>
+        </div>
+        <div class="capillary-item">
+          <span class="cap-label">État Général</span>
+          <span class="cap-val">{{ activeProfilCapillaire.etatCheveux || 'Normal' }}</span>
+        </div>
+      </div>
+
+      <!-- Critical Warnings : Allergies & Sensibilités -->
+      <div class="warning-section" *ngIf="activeProfilCapillaire?.allergiesProduits || activeProfilCapillaire?.sensibilites">
+        <h4 class="warning-title">
+          <mat-icon class="icon-xs">warning</mat-icon> Précautions & Allergies Connues
+        </h4>
+        <p *ngIf="activeProfilCapillaire?.allergiesProduits" class="alert-line">
+          <strong>Allergies produits :</strong> {{ activeProfilCapillaire?.allergiesProduits }}
+        </p>
+        <p *ngIf="activeProfilCapillaire?.sensibilites" class="alert-line">
+          <strong>Sensibilités cuir chevelu :</strong> {{ activeProfilCapillaire?.sensibilites }}
+        </p>
+      </div>
+
+      <!-- Notes / Observations -->
+      <div class="observations-section" *ngIf="activeProfilCapillaire?.observations">
+        <h4 class="obs-title">
+          <mat-icon class="icon-xs">notes</mat-icon> Observations & Conseils de Coiffage
+        </h4>
+        <p class="obs-text">{{ activeProfilCapillaire?.observations }}</p>
+      </div>
+
+      <div class="profile-modal-footer">
+        <span class="creation-date">
+          Dernière mise à jour : {{ (activeProfilCapillaire?.dateMiseAJour || activeProfilCapillaire?.dateCreation) | date:'dd/MM/yyyy' }}
+        </span>
+        <button class="btn-primary" (click)="fermerProfileModal()">Fermer la fiche</button>
+      </div>
+    </div>
+  </div>
+</div>

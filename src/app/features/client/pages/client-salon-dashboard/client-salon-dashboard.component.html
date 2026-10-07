@@ -1,0 +1,1276 @@
+<div class="client-portal-wrapper" *ngIf="!compteDesactiveParSalon(); else compteDesactiveTpl">
+  <!-- 1. VIP Lounge Header (Warm Luxury) -->
+  <header class="vip-lounge-header">
+    <div class="vip-header-overlay"></div>
+    <div class="vip-header-content">
+      <div class="vip-user-summary">
+        <div class="vip-avatar-badge">
+          <span class="avatar-initials">{{ userInitials }}</span>
+          <div class="vip-crown-icon" title="Membre Privilège">
+            <mat-icon class="icon-xs">auto_awesome</mat-icon>
+          </div>
+        </div>
+
+        <div class="vip-text-meta">
+          <div class="vip-tier-pill">
+            <mat-icon class="icon-xxs">verified</mat-icon>
+            <span>Membre Privilège • {{ salon()?.nom || 'Salon de Coiffure' }}</span>
+          </div>
+          <h1 class="vip-greeting">Bienvenue, {{ userName }}</h1>
+          <p class="vip-subtitle">
+            Gérez vos réservations, commandes, soins réalisés et votre carnet de diagnostic capillaire confidentiel.
+          </p>
+        </div>
+      </div>
+
+      <div class="vip-header-actions">
+        <a [routerLink]="['/' + slugSalon]" [queryParams]="{ rdv: true }" class="btn-vip-action btn-gold-accent">
+          <mat-icon class="icon-sm">calendar_month</mat-icon>
+          <span>Prendre un rendez-vous</span>
+        </a>
+        <a [routerLink]="['/' + slugSalon]" fragment="boutique" class="btn-vip-action btn-ghost-luxury">
+          <mat-icon class="icon-sm">storefront</mat-icon>
+          <span>Explorer la boutique</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. Alerte Rendez-vous Imminent (Aujourd'hui) -->
+  <section class="imminent-alert-banner" *ngIf="rdvImminent() as rdv">
+    <div class="imminent-left">
+      <div class="imminent-pulsing-dot"></div>
+      <div class="imminent-icon-wrap">
+        <mat-icon class="icon-md">alarm</mat-icon>
+      </div>
+      <div class="imminent-info">
+        <span class="imminent-tag">Rendez-vous Aujourd’hui</span>
+        <h3 class="imminent-title">
+          {{ rdv.services && rdv.services[0] ? rdv.services[0] : 'Soin au salon' }}
+          à <strong>{{ rdv.dateHeure | date:'HH:mm' }}</strong>
+        </h3>
+        <p class="imminent-details">
+          Styliste assigné : <strong>{{ rdv.coiffeurNom || 'Coiffeur attitré du salon' }}</strong>
+          • Présentez-vous 5 min avant l’horaire convenu.
+        </p>
+      </div>
+    </div>
+    <div class="imminent-actions" *ngIf="salon()?.telephone as tel">
+      <a [href]="'tel:' + tel" class="btn-imminent-call">
+        <mat-icon class="icon-xs">phone</mat-icon>
+        <span>Appeler le salon ({{ tel }})</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 3. Ruban de Métriques Rapides (6 KPIs Interactifs) -->
+  <div class="kpi-metrics-grid">
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'RENDEZ_VOUS'" (click)="setTab('RENDEZ_VOUS')">
+      <div class="kpi-icon-box"><mat-icon>event</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number">{{ rdvsAVenir().length }}</span>
+        <span class="kpi-label">RDV à venir</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'COMMANDES'" (click)="setTab('COMMANDES')">
+      <div class="kpi-icon-box"><mat-icon>shopping_bag</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number">{{ commandesEnCours().length }}</span>
+        <span class="kpi-label">Commandes en cours</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'PRESTATIONS'" (click)="setTab('PRESTATIONS')">
+      <div class="kpi-icon-box"><mat-icon>content_cut</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number">{{ prestations().length }}</span>
+        <span class="kpi-label">Soins réalisés</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'PAIEMENTS'" (click)="setTab('PAIEMENTS')">
+      <div class="kpi-icon-box"><mat-icon>receipt_long</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number">{{ paiements().length }}</span>
+        <span class="kpi-label">Règlements & Factures</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'PROFIL_CAPILLAIRE'" (click)="setTab('PROFIL_CAPILLAIRE')">
+      <div class="kpi-icon-box"><mat-icon>lock</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number status-badge" [class.status-green]="profilCapillaire()?.hasCodeProfil">
+          {{ profilCapillaire()?.hasCodeProfil ? 'PIN Actif' : 'PIN --' }}
+        </span>
+        <span class="kpi-label">Coffre-fort Capillaire</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+
+    <div class="kpi-card" [class.kpi-active]="activeTab() === 'RECLAMATIONS'" (click)="setTab('RECLAMATIONS')">
+      <div class="kpi-icon-box"><mat-icon>support_agent</mat-icon></div>
+      <div class="kpi-meta">
+        <span class="kpi-number">{{ reclamations().length }}</span>
+        <span class="kpi-label">Réclamations</span>
+      </div>
+      <mat-icon class="kpi-arrow">arrow_forward</mat-icon>
+    </div>
+  </div>
+
+  <!-- 4. Navigation par Onglets Principaux (Ruban Warm Luxury) -->
+  <nav class="portal-tabs-nav">
+    <div class="tabs-scroll-container">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'RENDEZ_VOUS'"
+        (click)="setTab('RENDEZ_VOUS')"
+      >
+        <mat-icon class="tab-icon">calendar_month</mat-icon>
+        <span class="tab-label">Mes Rendez-vous</span>
+        <span class="tab-count-pill" *ngIf="rdvsAVenir().length > 0">{{ rdvsAVenir().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'COMMANDES'"
+        (click)="setTab('COMMANDES')"
+      >
+        <mat-icon class="tab-icon">shopping_bag</mat-icon>
+        <span class="tab-label">Commandes Click & Collect</span>
+        <span class="tab-count-pill" *ngIf="commandesEnCours().length > 0">{{ commandesEnCours().length }}</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'PRESTATIONS'"
+        (click)="setTab('PRESTATIONS')"
+      >
+        <mat-icon class="tab-icon">content_cut</mat-icon>
+        <span class="tab-label">Soins & Prestations</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'PAIEMENTS'"
+        (click)="setTab('PAIEMENTS')"
+      >
+        <mat-icon class="tab-icon">receipt_long</mat-icon>
+        <span class="tab-label">Règlements & Factures</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'FAVORIS'"
+        (click)="setTab('FAVORIS')"
+      >
+        <mat-icon class="tab-icon">favorite</mat-icon>
+        <span class="tab-label">Coiffeurs Favoris</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'PROFIL_CAPILLAIRE'"
+        (click)="setTab('PROFIL_CAPILLAIRE')"
+      >
+        <mat-icon class="tab-icon">biotech</mat-icon>
+        <span class="tab-label">Diagnostic & Code PIN</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'AVIS'"
+        (click)="setTab('AVIS')"
+      >
+        <mat-icon class="tab-icon">grade</mat-icon>
+        <span class="tab-label">Mes Avis</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'RECLAMATIONS'"
+        (click)="setTab('RECLAMATIONS')"
+      >
+        <mat-icon class="tab-icon">support_agent</mat-icon>
+        <span class="tab-label">Réclamations</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'COMPTE'"
+        (click)="setTab('COMPTE')"
+      >
+        <mat-icon class="tab-icon">manage_accounts</mat-icon>
+        <span class="tab-label">Mon Compte & Sécurité</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Indicateur de Chargement -->
+  <div class="portal-loading-banner" *ngIf="chargement()">
+    <div class="luxury-spinner"></div>
+    <span>Chargement des données de votre espace privilégié...</span>
+  </div>
+
+  <!-- 5. Contenus des Sections Dynamiques -->
+  <main class="portal-main-content" *ngIf="!chargement()">
+
+    <!-- ==================================================== -->
+    <!-- SECTION 1 : RENDEZ-VOUS                              -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'RENDEZ_VOUS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Rendez-vous dans ce salon</h2>
+          <p>Consultez vos séances planifiées, modifiez ou annulez un créneau selon vos disponibilités.</p>
+        </div>
+
+        <!-- Filtres RDV -->
+        <div class="filter-pills-bar">
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="rdvFilter() === 'ALL'"
+            (click)="rdvFilter.set('ALL')"
+          >
+            Tous ({{ rendezVous().length }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="rdvFilter() === 'A_VENIR'"
+            (click)="rdvFilter.set('A_VENIR')"
+          >
+            À venir ({{ rdvsAVenir().length }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="rdvFilter() === 'TERMINES'"
+            (click)="rdvFilter.set('TERMINES')"
+          >
+            Réalisés
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="rdvFilter() === 'ANNULES'"
+            (click)="rdvFilter.set('ANNULES')"
+          >
+            Annulés
+          </button>
+        </div>
+      </div>
+
+      <!-- État Vide -->
+      <div class="empty-portal-card" *ngIf="rdvsFiltres().length === 0">
+        <div class="empty-icon-circle"><mat-icon>event_busy</mat-icon></div>
+        <h3>Aucun rendez-vous correspondant</h3>
+        <p>Vous n'avez pas de rendez-vous dans cette catégorie pour le salon {{ salon()?.nom || 'actuel' }}.</p>
+        <a [routerLink]="['/' + slugSalon]" [queryParams]="{ rdv: true }" class="btn-portal-primary">
+          <mat-icon>add_circle</mat-icon>
+          <span>Réserver un nouveau créneau</span>
+        </a>
+      </div>
+
+      <!-- Grille des Rendez-vous -->
+      <div class="rdv-cards-grid" *ngIf="rdvsFiltres().length > 0">
+        <article
+          class="rdv-luxury-card"
+          *ngFor="let rdv of rdvsFiltres()"
+          [class.rdv-annule]="rdv.statut === 'ANNULE'"
+          [class.rdv-termine]="rdv.statut === 'TERMINE'"
+        >
+          <div class="rdv-card-top">
+            <div class="rdv-date-badge">
+              <span class="date-day">{{ rdv.dateHeure | date:'dd' }}</span>
+              <span class="date-month">{{ rdv.dateHeure | date:'MMM' }}</span>
+              <span class="date-year">{{ rdv.dateHeure | date:'yyyy' }}</span>
+            </div>
+
+            <div class="rdv-status-badge" [ngClass]="'status-' + (rdv.statut | lowercase)">
+              <mat-icon class="icon-xxs">circle</mat-icon>
+              <span>{{ getRdvStatutLabel(rdv.statut) }}</span>
+            </div>
+          </div>
+
+          <div class="rdv-card-body">
+            <div class="rdv-time-row">
+              <mat-icon class="icon-xs">schedule</mat-icon>
+              <span class="rdv-time-text">{{ rdv.dateHeure | date:'EEEE dd MMMM à HH:mm' }}</span>
+            </div>
+
+            <h4 class="rdv-services-title">
+              {{ (rdv.services && rdv.services.length > 0) ? rdv.services.join(' • ') : 'Prestation de coiffure' }}
+            </h4>
+
+            <div class="rdv-stylist-meta">
+              <div class="stylist-avatar">
+                <mat-icon class="icon-xs">person</mat-icon>
+              </div>
+              <span class="stylist-label">Coiffeur :</span>
+              <span class="stylist-name">{{ rdv.coiffeurNom || 'Styliste du salon' }}</span>
+            </div>
+
+            <p class="rdv-notes" *ngIf="rdv.notes">
+              <mat-icon class="icon-xxs">notes</mat-icon>
+              <span>{{ rdv.notes }}</span>
+            </p>
+          </div>
+
+          <div class="rdv-card-footer">
+            <button
+              type="button"
+              class="btn-card-action btn-rebook"
+              (click)="reprendreRdv(rdv)"
+              title="Prendre un nouveau RDV identique"
+            >
+              <mat-icon class="icon-xs">replay</mat-icon>
+              <span>Réserver à nouveau</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-card-action btn-cancel"
+              *ngIf="rdv.statut !== 'ANNULE' && rdv.statut !== 'TERMINE'"
+              (click)="ouvrirModalAnnulation(rdv)"
+              title="Annuler ce rendez-vous"
+            >
+              <mat-icon class="icon-xs">close</mat-icon>
+              <span>Annuler</span>
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 2 : COMMANDES CLICK & COLLECT                -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'COMMANDES'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Commandes de Produits</h2>
+          <p>Suivez la préparation de vos soins capillaires et accédez à votre pass de retrait comptoir.</p>
+        </div>
+
+        <div class="filter-pills-bar">
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="commandeFilter() === 'ALL'"
+            (click)="commandeFilter.set('ALL')"
+          >
+            Toutes ({{ commandes().length }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="commandeFilter() === 'EN_COURS'"
+            (click)="commandeFilter.set('EN_COURS')"
+          >
+            En cours ({{ commandesEnCours().length }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="commandeFilter() === 'PRETES'"
+            (click)="commandeFilter.set('PRETES')"
+          >
+            Prêtes au salon ({{ commandesPretes().length }})
+          </button>
+          <button
+            type="button"
+            class="filter-pill"
+            [class.active]="commandeFilter() === 'RECUPEREES'"
+            (click)="commandeFilter.set('RECUPEREES')"
+          >
+            Retirées
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-portal-card" *ngIf="commandesFiltrees().length === 0">
+        <div class="empty-icon-circle"><mat-icon>shopping_bag</mat-icon></div>
+        <h3>Aucune commande trouvée</h3>
+        <p>Découvrez notre sélection de soins capillaires exclusifs en vente à emporter au salon.</p>
+        <a [routerLink]="['/' + slugSalon]" fragment="boutique" class="btn-portal-primary">
+          <mat-icon>storefront</mat-icon>
+          <span>Visiter la boutique du salon</span>
+        </a>
+      </div>
+
+      <div class="orders-list-stack" *ngIf="commandesFiltrees().length > 0">
+        <article class="order-luxury-card" *ngFor="let cmd of commandesFiltrees()">
+          <div class="order-card-header">
+            <div class="order-meta-left">
+              <div class="order-number-badge">
+                <mat-icon class="icon-xs">receipt</mat-icon>
+                <span>{{ cmd.numeroCommande }}</span>
+              </div>
+              <span class="order-date">Passée le {{ cmd.dateCommande | date:'dd MMMM yyyy à HH:mm' }}</span>
+            </div>
+
+            <div class="order-meta-right">
+              <span class="order-total-highlight">{{ cmd.montantTotal | number:'1.0-0' }} FCFA</span>
+              <span class="order-status-pill" [ngClass]="'cmd-' + (cmd.statut | lowercase)">
+                {{ getCommandeStatutLabel(cmd.statut) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Stepped Tracker -->
+          <div class="order-stepped-tracker">
+            <div class="step-item" [class.step-completed]="getCommandeStep(cmd.statut) >= 1">
+              <div class="step-bullet"><mat-icon>receipt</mat-icon></div>
+              <span class="step-text">Reçue</span>
+            </div>
+            <div class="step-line" [class.line-completed]="getCommandeStep(cmd.statut) >= 2"></div>
+            <div class="step-item" [class.step-completed]="getCommandeStep(cmd.statut) >= 2">
+              <div class="step-bullet"><mat-icon>inventory_2</mat-icon></div>
+              <span class="step-text">Préparation</span>
+            </div>
+            <div class="step-line" [class.line-completed]="getCommandeStep(cmd.statut) >= 3"></div>
+            <div class="step-item" [class.step-completed]="getCommandeStep(cmd.statut) >= 3" [class.step-current]="cmd.statut === 'VALIDEE'">
+              <div class="step-bullet"><mat-icon>storefront</mat-icon></div>
+              <span class="step-text">Prête au salon</span>
+            </div>
+            <div class="step-line" [class.line-completed]="getCommandeStep(cmd.statut) >= 4"></div>
+            <div class="step-item" [class.step-completed]="getCommandeStep(cmd.statut) >= 4">
+              <div class="step-bullet"><mat-icon>check_circle</mat-icon></div>
+              <span class="step-text">Retirée</span>
+            </div>
+          </div>
+
+          <!-- Pass de Retrait VIP Secret -->
+          <div class="vip-pickup-pass" *ngIf="cmd.codeRetrait">
+            <div class="pass-perforated-edge"></div>
+            <div class="pass-content">
+              <div class="pass-info-side">
+                <mat-icon class="pass-icon">lock</mat-icon>
+                <div>
+                  <span class="pass-caption">Pass Secret de Retrait Comptoir</span>
+                  <p class="pass-sub">Présentez ce code à la caisse du salon pour retirer votre colis.</p>
+                </div>
+              </div>
+              <div class="pass-code-side">
+                <span class="pass-code-digits">{{ cmd.codeRetrait }}</span>
+                <button
+                  type="button"
+                  class="btn-copy-code"
+                  (click)="copierCodeRetrait(cmd.codeRetrait)"
+                  title="Copier le code de retrait"
+                >
+                  <mat-icon class="icon-xs">content_copy</mat-icon>
+                  <span>Copier</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lignes de Produits -->
+          <div class="order-items-table">
+            <div class="order-item-row" *ngFor="let item of cmd.lignes">
+              <div class="item-name-cell">
+                <mat-icon class="icon-xs item-icon">spa</mat-icon>
+                <span class="item-title">{{ item.produitNom }}</span>
+              </div>
+              <div class="item-qty-cell">Quantité : {{ item.quantite }}</div>
+              <div class="item-price-cell">{{ item.prixUnitaire | number:'1.0-0' }} FCFA / u</div>
+              <div class="item-subtotal-cell">{{ item.sousTotal | number:'1.0-0' }} FCFA</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 3 : SOINS & PRESTATIONS RÉALISÉS              -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'PRESTATIONS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Historique de mes Soins & Prestations</h2>
+          <p>Retrouvez toutes vos transformations passées, vos coiffeurs attitrés et notez vos séances.</p>
+        </div>
+      </div>
+
+      <div class="empty-portal-card" *ngIf="prestations().length === 0">
+        <div class="empty-icon-circle"><mat-icon>content_cut</mat-icon></div>
+        <h3>Aucune prestation enregistrée pour l'instant</h3>
+        <p>Vos séances passées dans ce salon apparaîtront ici automatiquement dès leur réalisation.</p>
+        <a [routerLink]="['/' + slugSalon]" [queryParams]="{ rdv: true }" class="btn-portal-primary">
+          <mat-icon>calendar_month</mat-icon>
+          <span>Planifier un premier soin</span>
+        </a>
+      </div>
+
+      <div class="prestations-grid" *ngIf="prestations().length > 0">
+        <article class="prestation-card" *ngFor="let p of prestations()">
+          <div class="prestation-header">
+            <div class="prestation-date-badge">
+              <mat-icon class="icon-xs">history</mat-icon>
+              <span>{{ p.datePrestation ? (p.datePrestation | date:'dd MMMM yyyy') : (p.dateHeureDebut | date:'dd MMMM yyyy') }}</span>
+            </div>
+            <span class="prestation-price-tag">{{ p.montantTotal | number:'1.0-0' }} FCFA</span>
+          </div>
+
+          <div class="prestation-body">
+            <div class="stylist-badge-row" *ngIf="p.coiffeurNom">
+              <mat-icon class="icon-xs">face</mat-icon>
+              <span>Styliste : <strong>{{ p.coiffeurPrenom }} {{ p.coiffeurNom }}</strong></span>
+            </div>
+
+            <ul class="prestation-lines-list">
+              <li *ngFor="let ligne of p.lignes">
+                <span class="line-name">{{ ligne.serviceNom || ligne.varianteNom || 'Soin personnalisé' }}</span>
+                <span class="line-price" *ngIf="ligne.prix">{{ ligne.prix | number:'1.0-0' }} F</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="prestation-footer">
+            <button
+              type="button"
+              class="btn-prestation-action btn-rate-service"
+              (click)="ouvrirModalAvisPrestation(p)"
+            >
+              <mat-icon class="icon-xs">star</mat-icon>
+              <span>Noter ce soin</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-prestation-action btn-rebook-service"
+              (click)="reprendrePrestation(p)"
+            >
+              <mat-icon class="icon-xs">replay</mat-icon>
+              <span>Reprendre ce soin</span>
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 4 : PAIEMENTS & FACTURES                     -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'PAIEMENTS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Règlements & Factures</h2>
+          <p>Consultez la traçabilité intégrale de vos règlements au salon (Orange Money, Wave, Espèces).</p>
+        </div>
+
+        <div class="total-spend-pill">
+          <span>Dépenses cumulées salon :</span>
+          <strong>{{ totalDepenses() | number:'1.0-0' }} FCFA</strong>
+        </div>
+      </div>
+
+      <div class="empty-portal-card" *ngIf="paiements().length === 0">
+        <div class="empty-icon-circle"><mat-icon>receipt_long</mat-icon></div>
+        <h3>Aucun historique de paiement pour ce salon</h3>
+        <p>Vos reçus de paiement apparaîtront ici à la suite de vos réservations et achats en boutique.</p>
+      </div>
+
+      <div class="payments-table-card" *ngIf="paiements().length > 0">
+        <table class="luxury-table">
+          <thead>
+            <tr>
+              <th>Référence</th>
+              <th>Date de règlement</th>
+              <th>Mode de paiement</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of paiements()">
+              <td>
+                <span class="payment-ref">#{{ p.id }}</span>
+              </td>
+              <td>{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="payment-method-chip">{{ p.moyenPaiement || 'Comptoir' }}</span>
+              </td>
+              <td>
+                <strong class="payment-amount">{{ p.montant | number:'1.0-0' }} FCFA</strong>
+              </td>
+              <td>
+                <span class="status-pill-green">Validé</span>
+              </td>
+              <td>
+                <button type="button" class="btn-table-icon" (click)="imprimerRecu(p)" title="Imprimer ou enregistrer le reçu">
+                  <mat-icon class="icon-xs">print</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 5 : COIFFEURS FAVORIS                        -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'FAVORIS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Coiffeurs Favoris dans ce salon</h2>
+          <p>Retrouvez vos stylistes attitrés pour réserver directement sur leur planning dédié.</p>
+        </div>
+      </div>
+
+      <div class="empty-portal-card" *ngIf="coiffeursFavoris().length === 0">
+        <div class="empty-icon-circle"><mat-icon>favorite_border</mat-icon></div>
+        <h3>Aucun coiffeur favori pour l'instant</h3>
+        <p>Vous pouvez ajouter vos artisans coiffeurs favoris en consultant l'équipe sur la vitrine du salon.</p>
+        <a [routerLink]="['/' + slugSalon]" fragment="coiffeurs" class="btn-portal-primary">
+          <mat-icon>group</mat-icon>
+          <span>Découvrir l'équipe du salon</span>
+        </a>
+      </div>
+
+      <div class="stylists-favorites-grid" *ngIf="coiffeursFavoris().length > 0">
+        <article class="stylist-fav-card" *ngFor="let fav of coiffeursFavoris()">
+          <div class="stylist-fav-avatar">
+            <img *ngIf="fav.coiffeurPhotoUrl" [src]="fav.coiffeurPhotoUrl" [alt]="fav.coiffeurNomComplet" />
+            <span *ngIf="!fav.coiffeurPhotoUrl">{{ fav.coiffeurNomComplet.charAt(0) }}</span>
+          </div>
+
+          <div class="stylist-fav-info">
+            <h4 class="stylist-fav-name">{{ fav.coiffeurNomComplet }}</h4>
+            <span class="stylist-fav-badge">Artisan Styliste</span>
+            <p class="stylist-fav-salon">{{ fav.salonNom || salon()?.nom }}</p>
+          </div>
+
+          <div class="stylist-fav-actions">
+            <a
+              [routerLink]="['/' + slugSalon]"
+              [queryParams]="{ rdv: true, coiffeurId: fav.coiffeurId }"
+              class="btn-stylist-book"
+            >
+              <mat-icon class="icon-xs">calendar_today</mat-icon>
+              <span>Réserver avec {{ fav.coiffeurNomComplet.split(' ')[0] }}</span>
+            </a>
+
+            <button
+              type="button"
+              class="btn-stylist-remove"
+              (click)="retirerCoiffeurFavori(fav.coiffeurId)"
+              title="Retirer des favoris"
+            >
+              <mat-icon class="icon-xs">delete_outline</mat-icon>
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 6 : DIAGNOSTIC CAPILLAIRE & CODE PIN (PASS)  -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'PROFIL_CAPILLAIRE'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Carnet de Santé Capillaire & Coffre-fort PIN</h2>
+          <p>
+            Renseignez votre diagnostic pour guider vos coiffeurs et configurez votre code secret de consultation au salon.
+          </p>
+        </div>
+      </div>
+
+      <div class="capillary-portal-grid">
+        <!-- 6.1 Coffre-fort PIN Secret à 6 Chiffres -->
+        <div class="luxury-security-vault-card">
+          <div class="vault-top-banner">
+            <div class="vault-icon-badge">
+              <mat-icon>lock</mat-icon>
+            </div>
+            <div class="vault-header-text">
+              <h3>Coffre-fort Secret (Coiffeur Pass)</h3>
+              <p>Code secret obligatoire pour déverrouiller votre profil capillaire lors de vos séances en salon.</p>
+            </div>
+            <div class="vault-status-indicator" [class.vault-active]="profilCapillaire()?.hasCodeProfil">
+              <mat-icon class="icon-xxs">circle</mat-icon>
+              <span>{{ profilCapillaire()?.hasCodeProfil ? 'PIN Actif & Protégé' : 'Non configuré' }}</span>
+            </div>
+          </div>
+
+          <div class="vault-body">
+            <p class="vault-instruction">
+              Saisissez un <strong>code secret à 6 chiffres</strong>. Ce code reste strictement confidentiel et sera
+              demandé par votre coiffeur avant de consulter vos sensibilités ou antécédents capillaires.
+            </p>
+
+            <!-- 6 Boîtes individuelles de saisie PIN -->
+            <div class="pin-inputs-container">
+              <input
+                *ngFor="let digit of pinDigits; let i = index"
+                [id]="'pin-digit-' + i"
+                [type]="showPin ? 'text' : 'password'"
+                inputmode="numeric"
+                maxlength="1"
+                class="pin-digit-box"
+                [value]="pinDigits[i]"
+                (input)="onPinDigitInput(i, $event)"
+                (keydown)="onPinKeydown(i, $event)"
+                (paste)="onPinPaste($event)"
+                placeholder="•"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="vault-controls-row">
+              <button type="button" class="btn-toggle-pin" (click)="showPin = !showPin">
+                <mat-icon class="icon-xs">{{ showPin ? 'visibility_off' : 'visibility' }}</mat-icon>
+                <span>{{ showPin ? 'Masquer les chiffres' : 'Afficher les chiffres' }}</span>
+              </button>
+
+              <button
+                type="button"
+                class="btn-save-pin-vault"
+                [disabled]="pinCode.length !== 6 || savingPin"
+                (click)="changerCodePin()"
+              >
+                <mat-icon class="icon-xs" *ngIf="!savingPin">shield</mat-icon>
+                <div class="micro-spinner" *ngIf="savingPin"></div>
+                <span *ngIf="!savingPin">Activer mon code PIN (6 chiffres)</span>
+                <span *ngIf="savingPin">Sécurisation en cours...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6.2 Diagnostic Capillaire Visuel & Expert -->
+        <div class="luxury-diagnostic-form-card">
+          <div class="diagnostic-card-header">
+            <mat-icon class="icon-sm">biotech</mat-icon>
+            <h3>Mon Profil & Diagnostic Capillaire</h3>
+          </div>
+
+          <form (ngSubmit)="enregistrerProfilCapillaire()" class="diagnostic-form">
+            <!-- Typologie de Cheveux -->
+            <div class="diag-field-group">
+              <label class="diag-label">Type de Cheveux (Classification Afro & Texturée)</label>
+              <div class="hair-type-selector-grid">
+                <button
+                  type="button"
+                  class="hair-type-card"
+                  *ngFor="let t of hairTypes"
+                  [class.selected]="profilForm.typeCheveux === t.code"
+                  (click)="selectHairType(t.code)"
+                >
+                  <span class="type-code">{{ t.code }}</span>
+                  <span class="type-label">{{ t.label }}</span>
+                  <span class="type-desc">{{ t.desc }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Texture & Longueur -->
+            <div class="diag-row-2">
+              <div class="diag-field-group">
+                <label class="diag-label">Texture des cheveux</label>
+                <div class="pill-options-wrap">
+                  <button
+                    type="button"
+                    class="opt-pill"
+                    *ngFor="let tex of textures"
+                    [class.selected]="profilForm.texture === tex"
+                    (click)="selectTexture(tex)"
+                  >
+                    {{ tex }}
+                  </button>
+                </div>
+              </div>
+
+              <div class="diag-field-group">
+                <label class="diag-label">Longueur actuelle</label>
+                <div class="pill-options-wrap">
+                  <button
+                    type="button"
+                    class="opt-pill"
+                    *ngFor="let lon of longueurs"
+                    [class.selected]="profilForm.longueur === lon"
+                    (click)="selectLongueur(lon)"
+                  >
+                    {{ lon }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cuir chevelu -->
+            <div class="diag-field-group">
+              <label class="diag-label">État du cuir chevelu</label>
+              <div class="pill-options-wrap">
+                <button
+                  type="button"
+                  class="opt-pill"
+                  *ngFor="let cuir of etatsCuirChevelu"
+                  [class.selected]="profilForm.cuirChevelu === cuir"
+                  (click)="selectCuirChevelu(cuir)"
+                >
+                  {{ cuir }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Sensibilités & Allergies -->
+            <div class="diag-row-2">
+              <div class="diag-field-group">
+                <label class="diag-label">Sensibilités connues</label>
+                <input
+                  type="text"
+                  class="diag-input"
+                  [(ngModel)]="profilForm.sensibilites"
+                  name="sensibilites"
+                  placeholder="Ex: Sulfates, alcool, chaleur intense..."
+                />
+              </div>
+
+              <div class="diag-field-group">
+                <label class="diag-label">Allergies aux produits cosmétiques</label>
+                <input
+                  type="text"
+                  class="diag-input"
+                  [(ngModel)]="profilForm.allergiesProduits"
+                  name="allergiesProduits"
+                  placeholder="Ex: Colorations amomniaquées, parabènes..."
+                />
+              </div>
+            </div>
+
+            <!-- Observations -->
+            <div class="diag-field-group">
+              <label class="diag-label">Observations & Préférences coiffeur</label>
+              <textarea
+                class="diag-textarea"
+                rows="3"
+                [(ngModel)]="profilForm.observations"
+                name="observations"
+                placeholder="Indiquez vos habitudes de coiffage, soins préférés ou attentes particulières..."
+              ></textarea>
+            </div>
+
+            <div class="diag-actions-row">
+              <button type="submit" [disabled]="savingProfil" class="btn-save-diagnostic">
+                <mat-icon class="icon-xs" *ngIf="!savingProfil">save</mat-icon>
+                <div class="micro-spinner" *ngIf="savingProfil"></div>
+                <span *ngIf="!savingProfil">Enregistrer mon diagnostic capillaire</span>
+                <span *ngIf="savingProfil">Enregistrement en cours...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 7 : MES AVIS DÉPOSÉS                         -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'AVIS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Retours & Expériences Salon</h2>
+          <p>Donnez votre avis sur le salon et retrouvez vos évaluations sur les prestations réalisées.</p>
+        </div>
+      </div>
+
+      <div class="avis-sections-stack">
+        <!-- Mon avis sur le Salon -->
+        <div class="salon-review-box">
+          <div class="review-box-header">
+            <mat-icon class="icon-sm">store</mat-icon>
+            <h3>Mon avis sur le salon {{ salon()?.nom || '' }}</h3>
+          </div>
+
+          <div class="star-rating-selector">
+            <button
+              type="button"
+              class="star-btn"
+              *ngFor="let s of [1, 2, 3, 4, 5]"
+              (click)="salonAvisNote = s"
+              [class.star-filled]="s <= salonAvisNote"
+            >
+              <mat-icon>{{ s <= salonAvisNote ? 'star' : 'star_border' }}</mat-icon>
+            </button>
+            <span class="rating-legend">{{ salonAvisNote }}/5 étoiles</span>
+          </div>
+
+          <div class="review-comment-wrap">
+            <textarea
+              class="review-textarea"
+              rows="3"
+              [(ngModel)]="salonAvisCommentaire"
+              placeholder="Partagez votre expérience globale dans ce salon (accueil, propreté, professionnalisme)..."
+            ></textarea>
+          </div>
+
+          <div class="review-actions-wrap">
+            <button
+              type="button"
+              class="btn-save-review"
+              [disabled]="submittingAvisSalon"
+              (click)="soumettreAvisSalon()"
+            >
+              <mat-icon class="icon-xs" *ngIf="!submittingAvisSalon">send</mat-icon>
+              <div class="micro-spinner" *ngIf="submittingAvisSalon"></div>
+              <span>{{ monAvis() ? 'Mettre à jour mon avis' : 'Publier mon avis sur le salon' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Avis laissés sur des prestations -->
+        <div class="past-reviews-container">
+          <h3>Mes avis sur les prestations passées</h3>
+          <div class="empty-portal-card" *ngIf="avisPrestations().length === 0">
+            <div class="empty-icon-circle"><mat-icon>star_outline</mat-icon></div>
+            <p>Vous n'avez pas encore laissé d'avis sur une prestation spécifique.</p>
+          </div>
+
+          <div class="past-reviews-list" *ngIf="avisPrestations().length > 0">
+            <div class="past-review-item" *ngFor="let av of avisPrestations()">
+              <div class="item-stars">
+                <mat-icon class="icon-xs star-filled" *ngFor="let s of [1,2,3,4,5]" [class.star-empty]="s > av.note">
+                  {{ s <= av.note ? 'star' : 'star_border' }}
+                </mat-icon>
+                <span class="item-date">{{ av.dateCreation | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <p class="item-comment">"{{ av.commentaire }}"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 8 : RÉCLAMATIONS & SUPPORT                   -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'RECLAMATIONS'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Réclamations & Assistance Salon</h2>
+          <p>Un problème avec un service ou un produit ? Transmettez directement votre demande à la direction.</p>
+        </div>
+
+        <button type="button" class="btn-portal-primary" (click)="ouvrirModalReclamation()">
+          <mat-icon>add_alert</mat-icon>
+          <span>Déposer une réclamation</span>
+        </button>
+      </div>
+
+      <div class="empty-portal-card" *ngIf="reclamations().length === 0">
+        <div class="empty-icon-circle"><mat-icon>sentiment_satisfied</mat-icon></div>
+        <h3>Aucune réclamation enregistrée</h3>
+        <p>Toutes vos expériences se sont bien déroulées ! Si vous rencontrez un souci, vous pouvez ouvrir un ticket ici.</p>
+      </div>
+
+      <div class="reclamations-list" *ngIf="reclamations().length > 0">
+        <article class="reclamation-card" *ngFor="let rec of reclamations()">
+          <div class="rec-top">
+            <span class="rec-subject">{{ rec.objet }}</span>
+            <span class="rec-status-pill" [ngClass]="'status-' + (rec.statut | lowercase)">
+              {{ rec.statut }}
+            </span>
+          </div>
+
+          <p class="rec-desc">{{ rec.description }}</p>
+
+          <div class="rec-reply-box" *ngIf="rec.reponseTraitement">
+            <div class="reply-header">
+              <mat-icon class="icon-xs">forum</mat-icon>
+              <span>Réponse de la direction du salon :</span>
+            </div>
+            <p class="reply-content">{{ rec.reponseTraitement }}</p>
+          </div>
+
+          <div class="rec-meta">
+            <span>Soumise le {{ rec.dateCreation | date:'dd MMMM yyyy à HH:mm' }}</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================================================== -->
+    <!-- SECTION 9 : MON COMPTE & SÉCURITÉ                    -->
+    <!-- ==================================================== -->
+    <section class="portal-tab-pane" *ngIf="activeTab() === 'COMPTE'">
+      <div class="pane-header">
+        <div class="pane-title-group">
+          <h2>Mes Informations Personnelles & Sécurité</h2>
+          <p>Gérez vos coordonnées de contact et renouvelez votre mot de passe de compte.</p>
+        </div>
+      </div>
+
+      <div class="account-settings-grid">
+        <!-- Coordonnées -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <mat-icon class="icon-sm">person</mat-icon>
+            <h3>Coordonnées Personnelles</h3>
+          </div>
+
+          <form (ngSubmit)="enregistrerCompte()" class="luxury-form">
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="prenomInput">Prénom *</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">badge</mat-icon>
+                  <input id="prenomInput" type="text" [(ngModel)]="compteForm.prenom" name="prenom" required />
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="nomInput">Nom *</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">person</mat-icon>
+                  <input id="nomInput" type="text" [(ngModel)]="compteForm.nom" name="nom" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="emailInput">Adresse Email (Identifiant)</label>
+                <div class="input-wrap disabled-wrap">
+                  <mat-icon class="input-icon">email</mat-icon>
+                  <input id="emailInput" type="email" [value]="compte()?.email || ''" disabled />
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="telInput">Numéro de Téléphone *</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">phone</mat-icon>
+                  <input id="telInput" type="tel" [(ngModel)]="compteForm.telephone" name="telephone" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="dobInput">Date de Naissance</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">calendar_today</mat-icon>
+                  <input id="dobInput" type="date" [(ngModel)]="compteForm.dateNaissance" name="dateNaissance" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions-right">
+              <button type="submit" [disabled]="savingCompte" class="btn-portal-primary">
+                <mat-icon class="icon-xs" *ngIf="!savingCompte">save</mat-icon>
+                <div class="micro-spinner" *ngIf="savingCompte"></div>
+                <span *ngIf="!savingCompte">Enregistrer mes coordonnées</span>
+                <span *ngIf="savingCompte">Sauvegarde...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Sécurité du Mot de Passe -->
+        <div class="settings-card">
+          <div class="settings-card-header">
+            <mat-icon class="icon-sm">security</mat-icon>
+            <h3>Sécurité & Mot de Passe</h3>
+          </div>
+
+          <form (ngSubmit)="changerMotDePasse()" class="luxury-form">
+            <div class="form-field">
+              <label for="oldPwd">Mot de passe actuel *</label>
+              <div class="input-wrap">
+                <mat-icon class="input-icon">lock</mat-icon>
+                <input id="oldPwd" type="password" [(ngModel)]="motDePasseForm.ancienMotDePasse" name="ancienMotDePasse" required />
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="newPwd">Nouveau mot de passe *</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">key</mat-icon>
+                  <input id="newPwd" type="password" [(ngModel)]="motDePasseForm.nouveauMotDePasse" name="nouveauMotDePasse" required minlength="6" />
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="confPwd">Confirmer le nouveau mot de passe *</label>
+                <div class="input-wrap">
+                  <mat-icon class="input-icon">key</mat-icon>
+                  <input id="confPwd" type="password" [(ngModel)]="motDePasseForm.confirmMotDePasse" name="confirmMotDePasse" required />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions-right">
+              <button type="submit" [disabled]="savingPassword" class="btn-portal-primary">
+                <mat-icon class="icon-xs" *ngIf="!savingPassword">lock_reset</mat-icon>
+                <div class="micro-spinner" *ngIf="savingPassword"></div>
+                <span *ngIf="!savingPassword">Mettre à jour le mot de passe</span>
+                <span *ngIf="savingPassword">Modification...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================================================== -->
+  <!-- MODAL : ANNULATION DE RENDEZ-VOUS                    -->
+  <!-- ==================================================== -->
+  <div class="modal-backdrop" *ngIf="cancelModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge danger-badge"><mat-icon>event_busy</mat-icon></div>
+        <h3>Annulation de Rendez-vous</h3>
+      </div>
+      <div class="modal-body">
+        <p>
+          Êtes-vous certain de vouloir annuler votre séance du
+          <strong>{{ selectedRdvToCancel?.dateHeure | date:'EEEE dd MMMM à HH:mm' }}</strong> ?
+        </p>
+        <p class="modal-subtext">Ce créneau sera immédiatement libéré pour les autres clients du salon.</p>
+
+        <div class="form-field">
+          <label for="cancelMotifInput">Motif de l'annulation (facultatif)</label>
+          <input
+            id="cancelMotifInput"
+            type="text"
+            class="diag-input"
+            [(ngModel)]="cancelMotif"
+            placeholder="Ex: Empêchement professionnel, imprévu..."
+          />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost-modal" (click)="fermerModalAnnulation()">Retour</button>
+        <button type="button" class="btn-danger-modal" [disabled]="submittingCancel" (click)="confirmerAnnulation()">
+          <span *ngIf="!submittingCancel">Confirmer l'annulation</span>
+          <span *ngIf="submittingCancel">Annulation...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL : LAISSER UN AVIS SUR PRESTATION               -->
+  <!-- ==================================================== -->
+  <div class="modal-backdrop" *ngIf="avisPrestationModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge gold-badge"><mat-icon>rate_review</mat-icon></div>
+        <h3>Évaluer votre soin : {{ selectedPrestationNom }}</h3>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtext">Votre avis permet de valoriser nos artisans et d'améliorer constamment nos services.</p>
+
+        <div class="star-rating-selector modal-stars">
+          <button
+            type="button"
+            class="star-btn"
+            *ngFor="let s of [1, 2, 3, 4, 5]"
+            (click)="avisNote = s"
+            [class.star-filled]="s <= avisNote"
+          >
+            <mat-icon>{{ s <= avisNote ? 'star' : 'star_border' }}</mat-icon>
+          </button>
+          <span class="rating-legend">{{ avisNote }}/5 étoiles</span>
+        </div>
+
+        <div class="form-field">
+          <label for="avisCommentInput">Votre commentaire d'appréciation</label>
+          <textarea
+            id="avisCommentInput"
+            class="diag-textarea"
+            rows="3"
+            [(ngModel)]="avisCommentaire"
+            placeholder="Accueil, écoute du styliste, résultat de la coiffure..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost-modal" (click)="fermerModalAvisPrestation()">Fermer</button>
+        <button type="button" class="btn-portal-primary" [disabled]="submittingAvisPrestation" (click)="soumettreAvisPrestation()">
+          <span *ngIf="!submittingAvisPrestation">Envoyer mon évaluation</span>
+          <span *ngIf="submittingAvisPrestation">Transmission...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL : DÉPOSER UNE RÉCLAMATION                      -->
+  <!-- ==================================================== -->
+  <div class="modal-backdrop" *ngIf="reclamationModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-icon-badge warning-badge"><mat-icon>support_agent</mat-icon></div>
+        <h3>Déposer une Réclamation</h3>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtext">La direction du salon {{ salon()?.nom || '' }} étudiera votre message avec attention.</p>
+
+        <div class="form-field">
+          <label for="recObjetInput">Objet de la demande *</label>
+          <input
+            id="recObjetInput"
+            type="text"
+            class="diag-input"
+            [(ngModel)]="reclamationObjet"
+            placeholder="Ex: Retard important sur créneau, problème de facturation..."
+          />
+        </div>
+
+        <div class="form-field">
+          <label for="recDescInput">Description détaillée *</label>
+          <textarea
+            id="recDescInput"
+            class="diag-textarea"
+            rows="4"
+            [(ngModel)]="reclamationDescription"
+            placeholder="Expliquez en détail les circonstances de votre insatisfaction..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost-modal" (click)="fermerModalReclamation()">Annuler</button>
+        <button type="button" class="btn-portal-primary" [disabled]="submittingReclamation" (click)="soumettreReclamation()">
+          <span *ngIf="!submittingReclamation">Transmettre la réclamation</span>
+          <span *ngIf="submittingReclamation">Envoi en cours...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Template Compte Désactivé par le Salon -->
+<ng-template #compteDesactiveTpl>
+  <div class="portal-disabled-screen">
+    <div class="disabled-card">
+      <mat-icon class="icon-xl">block</mat-icon>
+      <h2>Accès client restreint</h2>
+      <p>Votre compte client dans ce salon a été temporairement suspendu par la direction du salon.</p>
+      <a [routerLink]="['/']" class="btn-portal-primary">Retour à l'accueil</a>
+    </div>
+  </div>
+</ng-template>

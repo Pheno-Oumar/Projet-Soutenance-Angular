@@ -1,0 +1,449 @@
+<div class="compte-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mon Compte Propriétaire</h1>
+      <p class="page-subtitle">Gérez vos coordonnées personnelles, vos rôles opérationnels et sécurisez vos accès</p>
+    </div>
+  </div>
+
+  <!-- ALERTS -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-box alert-success">
+      <mat-icon class="alert-icon">check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement de votre compte...</span>
+    </div>
+  } @else if (compte()) {
+    <!-- ACCOUNT SUMMARY HERO -->
+    <div class="account-hero-card">
+      <div class="account-avatar">
+        {{ compte()?.prenom?.charAt(0) }}{{ compte()?.nom?.charAt(0) }}
+      </div>
+
+      <div class="account-hero-info">
+        <div class="hero-name-row">
+          <h2 class="hero-name">{{ compte()?.prenom }} {{ compte()?.nom }}</h2>
+          <span class="role-badge">Propriétaire</span>
+          @if (isRoleActive('COIFFEUR')) {
+            <span class="role-badge role-badge-sub">Coiffeur</span>
+          }
+          @if (isRoleActive('MANAGER')) {
+            <span class="role-badge role-badge-sub">Manager</span>
+          }
+          <span class="status-badge" [class.status-active]="compte()?.statut">
+            {{ compte()?.statut ? 'Compte Actif' : 'Compte Inactif' }}
+          </span>
+        </div>
+
+        <div class="hero-meta-row">
+          <span>
+            <mat-icon class="meta-icon">email</mat-icon>
+            {{ compte()?.email }}
+          </span>
+
+          @if (compte()?.telephone) {
+            <span>
+              <mat-icon class="meta-icon">phone</mat-icon>
+              {{ compte()?.telephone }}
+            </span>
+          }
+
+          @if (compte()?.dateCreation) {
+            <span>
+              <mat-icon class="meta-icon">event</mat-icon>
+              Inscrit le {{ compte()?.dateCreation | date:'dd/MM/yyyy' }}
+            </span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMS GRID -->
+    <div class="forms-grid">
+      <!-- FORM 1: INFORMATIONS PERSONNELLES -->
+      <div class="form-card">
+        <div class="card-header">
+          <mat-icon class="header-icon">person</mat-icon>
+          <div>
+            <h3 class="card-title">Informations Personnelles</h3>
+            <p class="card-desc">Modifiez votre état civil et vos moyens de contact directs</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="enregistrerProfil()" class="form-body">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Prénom *</label>
+              <input
+                type="text"
+                [(ngModel)]="profilForm.prenom"
+                name="prenom"
+                required
+                class="form-control"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Nom *</label>
+              <input
+                type="text"
+                [(ngModel)]="profilForm.nom"
+                name="nom"
+                required
+                class="form-control"
+              />
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>Date de Naissance</label>
+              <input
+                type="date"
+                [(ngModel)]="profilForm.dateNaissance"
+                name="dateNaissance"
+                class="form-control"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Téléphone</label>
+              <input
+                type="tel"
+                [(ngModel)]="profilForm.telephone"
+                name="telephone"
+                placeholder="+221 XX XXX XX XX"
+                class="form-control"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Adresse Email</label>
+            <input
+              type="email"
+              [value]="compte()?.email"
+              disabled
+              class="form-control disabled"
+            />
+            <span class="field-hint">L'adresse email est votre identifiant unique de connexion et ne peut être modifiée ici.</span>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="isSavingProfil()">
+              <mat-icon class="btn-icon" [class.animate-spin]="isSavingProfil()">
+                {{ isSavingProfil() ? 'refresh' : 'check' }}
+              </mat-icon>
+              Enregistrer les modifications
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- FORM 2: SÉCURITÉ & MOT DE PASSE -->
+      <div class="form-card">
+        <div class="card-header">
+          <mat-icon class="header-icon">lock</mat-icon>
+          <div>
+            <h3 class="card-title">Sécurité & Mot de Passe</h3>
+            <p class="card-desc">Protégez l'accès à la gestion de votre salon</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="changerMotDePasse()" class="form-body">
+          <div class="form-group">
+            <label>Mot de passe actuel *</label>
+            <input
+              type="password"
+              [(ngModel)]="mdpForm.ancienMotDePasse"
+              name="ancienMotDePasse"
+              required
+              placeholder="••••••••"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Nouveau mot de passe *</label>
+            <input
+              type="password"
+              [(ngModel)]="mdpForm.nouveauMotDePasse"
+              name="nouveauMotDePasse"
+              required
+              placeholder="••••••••"
+              class="form-control"
+            />
+            <span class="field-hint">Minimum 8 caractères avec majuscules, chiffres et symboles.</span>
+          </div>
+
+          <div class="form-group">
+            <label>Confirmer le nouveau mot de passe *</label>
+            <input
+              type="password"
+              [(ngModel)]="mdpForm.confirmationMotDePasse"
+              name="confirmationMotDePasse"
+              required
+              placeholder="••••••••"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="isSavingMdp()">
+              <mat-icon class="btn-icon" [class.animate-spin]="isSavingMdp()">
+                {{ isSavingMdp() ? 'refresh' : 'lock_reset' }}
+              </mat-icon>
+              Mettre à jour le mot de passe
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- CARD 3: MES RÔLES DANS LE SALON -->
+      <div class="form-card card-full-width">
+        <div class="card-header">
+          <mat-icon class="header-icon">admin_panel_settings</mat-icon>
+          <div>
+            <h3 class="card-title">Mes Rôles dans le Salon</h3>
+            <p class="card-desc">Attribuez-vous des casquettes opérationnelles supplémentaires pour intervenir directement dans le salon</p>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <!-- Information sur les règles de rôles -->
+          <div class="roles-policy-banner">
+            <div class="policy-item">
+              <mat-icon class="policy-icon">lock</mat-icon>
+              <div>
+                <strong>Rôle Propriétaire permanent :</strong>
+                <span>Vous conservez toujours le rôle Propriétaire. Il ne peut être cédé que via un transfert de propriété.</span>
+              </div>
+            </div>
+            <div class="policy-item">
+              <mat-icon class="policy-icon">storefront</mat-icon>
+              <div>
+                <strong>Espace Client inclus :</strong>
+                <span>En tant que membre du salon, vous disposez automatiquement du rôle Client pour vos rendez-vous et commandes.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Liste des Rôles -->
+          <div class="roles-grid">
+            <!-- Rôle Propriétaire (Verrouillé) -->
+            <div class="role-card locked-role">
+              <div class="role-card-header">
+                <div class="role-icon-box proprio-box">
+                  <mat-icon>shield</mat-icon>
+                </div>
+                <div class="role-card-info">
+                  <h4 class="role-title">Propriétaire du Salon</h4>
+                  <p class="role-desc">Plein contrôle administratif, financier et managérial sur le salon.</p>
+                </div>
+              </div>
+              <div class="role-card-badge">
+                <mat-icon class="lock-icon">lock</mat-icon>
+                <span>Permanent (Non retirable)</span>
+              </div>
+            </div>
+
+            <!-- Rôle Client (Automatique) -->
+            <div class="role-card locked-role">
+              <div class="role-card-header">
+                <div class="role-icon-box client-box">
+                  <mat-icon>person</mat-icon>
+                </div>
+                <div class="role-card-info">
+                  <h4 class="role-title">Espace Client</h4>
+                  <p class="role-desc">Prise de rendez-vous, commandes boutique et suivi de vos soins personnels.</p>
+                </div>
+              </div>
+              <div class="role-card-badge client-badge">
+                <mat-icon class="check-icon">check</mat-icon>
+                <span>Automatique</span>
+              </div>
+            </div>
+
+            <!-- Rôles Opérationnels Configurables -->
+            @for (opt of availableOperationalRoles; track opt.key) {
+              <div
+                class="role-card configurable-role"
+                [class.role-card-selected]="isRoleActive(opt.key)"
+                (click)="toggleOperationalRole(opt.key)"
+              >
+                <div class="role-card-header">
+                  <div class="role-icon-box" [ngClass]="opt.badgeClass">
+                    <mat-icon>
+                      @switch (opt.key) {
+                        @case ('COIFFEUR') { content_cut }
+                        @case ('MANAGER') { supervisor_account }
+                        @case ('RECEPTIONNISTE') { point_of_sale }
+                        @case ('COMPTABLE') { payments }
+                        @case ('RESPONSABLE_STOCK') { inventory_2 }
+                        @default { work }
+                      }
+                    </mat-icon>
+                  </div>
+                  <div class="role-card-info">
+                    <h4 class="role-title">{{ opt.label }}</h4>
+                    <p class="role-desc">{{ opt.description }}</p>
+                  </div>
+                </div>
+
+                <div class="role-toggle-wrapper">
+                  <input
+                    type="checkbox"
+                    [checked]="isRoleActive(opt.key)"
+                    (click)="$event.stopPropagation()"
+                    (change)="toggleOperationalRole(opt.key)"
+                    class="role-checkbox"
+                  />
+                  <span class="toggle-status-text">
+                    {{ isRoleActive(opt.key) ? 'Activé' : 'Désactivé' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="form-actions mt-3">
+            <button
+              type="button"
+              (click)="enregistrerMesRoles()"
+              class="btn btn-primary"
+              [disabled]="isSavingRoles()"
+            >
+              <mat-icon class="btn-icon" [class.animate-spin]="isSavingRoles()">
+                {{ isSavingRoles() ? 'refresh' : 'save' }}
+              </mat-icon>
+              Enregistrer mes rôles
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4: CESSION & TRANSFERT DE PROPRIÉTÉ -->
+      <div class="form-card card-full-width transfer-card">
+        <div class="card-header">
+          <mat-icon class="header-icon transfer-icon">swap_horiz</mat-icon>
+          <div>
+            <h3 class="card-title">Cession & Transfert de Propriété</h3>
+            <p class="card-desc">Transférez la direction et la propriété du salon à un autre compte utilisateur</p>
+          </div>
+        </div>
+
+        <div class="form-body">
+          <div class="transfer-intro">
+            <p>
+              Le rôle de <strong>Propriétaire</strong> confère l'autorité légale et managériale sur le salon.
+              C'est uniquement par cette procédure de <strong>transfert explicite</strong> que vous pouvez céder votre rôle à une tierce personne.
+            </p>
+            <button
+              type="button"
+              (click)="openTransferModal()"
+              class="btn btn-outline-danger"
+            >
+              <mat-icon class="btn-icon">vpn_key</mat-icon>
+              Transférer la propriété du salon...
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<!-- MODAL TRANSFERT DE PROPRIÉTÉ -->
+@if (showTransferModal()) {
+  <div class="modal-overlay" (click)="closeTransferModal()">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header modal-header-warning">
+        <mat-icon class="modal-header-icon">warning</mat-icon>
+        <div>
+          <h3 class="modal-title">Cession de Propriété du Salon</h3>
+          <p class="modal-subtitle">Cette opération est irréversible et transmet tous les pouvoirs au nouveau propriétaire.</p>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        @if (transferError()) {
+          <div class="alert-box alert-error mb-3">
+            <mat-icon class="alert-icon">error_outline</mat-icon>
+            <span>{{ transferError() }}</span>
+          </div>
+        }
+
+        <div class="warning-callout">
+          <p>
+            En confirmant cette action :
+          </p>
+          <ul>
+            <li>Le compte désigné recevra immédiatement le rôle <strong>PROPRIETAIRE</strong>.</li>
+            <li>Vous perdrez le rôle de Propriétaire sur ce salon (vous conserverez vos rôles opérationnels ou client).</li>
+            <li>Toutes les sessions actives seront révoquées par mesure de sécurité.</li>
+          </ul>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>Email du nouveau propriétaire *</label>
+          <input
+            type="email"
+            [(ngModel)]="transferForm.nouvelEmailProprietaire"
+            placeholder="exemple@email.com"
+            class="form-control"
+            required
+          />
+          <span class="field-hint">Le compte utilisateur doit exister préalablement sur la plateforme.</span>
+        </div>
+
+        <div class="form-group mb-3">
+          <label>Votre mot de passe actuel (confirmation de sécurité) *</label>
+          <input
+            type="password"
+            [(ngModel)]="transferForm.motDePasseConfirmation"
+            placeholder="••••••••"
+            class="form-control"
+            required
+          />
+          <span class="field-hint">Saisissez votre mot de passe pour attester de votre consentement formel.</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          (click)="closeTransferModal()"
+          class="btn btn-secondary"
+          [disabled]="isTransferring()"
+        >
+          Annuler
+        </button>
+        <button
+          type="button"
+          (click)="executerTransfert()"
+          class="btn btn-danger"
+          [disabled]="isTransferring()"
+        >
+          <mat-icon class="btn-icon" [class.animate-spin]="isTransferring()">
+            {{ isTransferring() ? 'refresh' : 'check' }}
+          </mat-icon>
+          Confirmer le transfert
+        </button>
+      </div>
+    </div>
+  </div>
+}

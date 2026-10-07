@@ -1,0 +1,326 @@
+<div class="cart-checkout-page">
+  <!-- EN-TÊTE DU TUNNEL PANIER -->
+  <header class="cart-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <a [routerLink]="['/' + slugSalon + '/boutique']">Boutique</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span class="active-crumb">Commande Click & Collect</span>
+      </nav>
+
+      <span class="sub-badge">CLICK & COLLECT · RETRAIT GRATUIT AU COMPTOIR</span>
+      <h1 class="page-title">Finalisation de Votre Commande</h1>
+      <p class="page-desc">
+        Réservez vos soins capillaires professionnels en ligne et retirez-les sans frais au comptoir de votre salon.
+      </p>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main class="cart-content">
+    <div class="content-container">
+      <!-- ========================================================
+           ÉCRAN DE SUCCÈS APRÈS CONFIRMATION
+      ======================================================== -->
+      <div *ngIf="orderConfirmed()" class="success-screen" appRevealOnScroll>
+        <div class="success-card" appTilt3d [maxTilt]="4">
+          <div class="success-icon-box">
+            <mat-icon class="success-icon">check_circle</mat-icon>
+          </div>
+
+          <span class="success-sub">Commande Click & Collect confirmée</span>
+          <h2 class="success-title">Vos soins sont en cours de préparation !</h2>
+          <p class="success-desc">
+            Présentez ce bon de commande à la caisse de <strong>{{ salonNom }}</strong> pour récupérer vos articles.
+          </p>
+
+          <div class="pickup-code-box">
+            <span class="code-label">Code secret de retrait au comptoir :</span>
+            <strong class="code-number">{{ orderReference() }}</strong>
+
+            <!-- Simulation de code-barres épuré luxe -->
+            <div class="barcode-graphic" aria-hidden="true">
+              <span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span>
+              <span class="bar b1"></span><span class="bar b4"></span><span class="bar b2"></span>
+              <span class="bar b1"></span><span class="bar b3"></span><span class="bar b2"></span>
+              <span class="bar b4"></span><span class="bar b1"></span><span class="bar b2"></span>
+            </div>
+          </div>
+
+          <div class="recap-box">
+            <div class="recap-row">
+              <span class="recap-key">Lieu de retrait :</span>
+              <strong class="recap-val">{{ salonNom }} · {{ salonAdresse }}</strong>
+            </div>
+            <div class="recap-row">
+              <span class="recap-key">Délai de mise à disposition :</span>
+              <span class="recap-val highlight-ready">Prêt sous 2h ouvrées</span>
+            </div>
+            <div class="recap-row">
+              <span class="recap-key">Règlement :</span>
+              <span class="recap-val">Au comptoir lors du retrait (espèces, carte, mobile money)</span>
+            </div>
+          </div>
+
+          <div class="success-actions">
+            <button
+              type="button"
+              class="btn-back-boutique"
+              (click)="nouvelleCommande()"
+            >
+              <mat-icon class="icon-xs">storefront</mat-icon>
+              <span>Continuer mes achats en boutique</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           ÉCRAN PANIER VIDE
+      ======================================================== -->
+      <div *ngIf="!orderConfirmed() && !cartStore.hasItems()" class="empty-cart-card" appRevealOnScroll>
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">shopping_bag</mat-icon>
+        </div>
+        <h3>Votre panier Click & Collect est vide</h3>
+        <p>Explorez notre sélection de soins d'exception et de rituels professionnels.</p>
+        <a [routerLink]="['/' + slugSalon + '/boutique']" class="btn-discover">
+          <mat-icon class="icon-xs">storefront</mat-icon>
+          <span>Découvrir la boutique</span>
+        </a>
+      </div>
+
+      <!-- ========================================================
+           TUNNEL ACTIF (ARTICLES, RETRAIT, COORDONNÉES & SUMMARY)
+      ======================================================== -->
+      <div *ngIf="!orderConfirmed() && cartStore.hasItems()" class="cart-layout-grid">
+        <!-- COLONNE GAUCHE : DÉTAIL COMMANDE -->
+        <div class="cart-details-col">
+          <!-- CARTE 1 : ARTICLES DU PANIER -->
+          <section class="checkout-card" appRevealOnScroll>
+            <div class="card-header-row">
+              <div class="card-title-group">
+                <span class="step-num">1</span>
+                <div>
+                  <h2>Articles Sélectionnés ({{ cartStore.nombreArticles() }})</h2>
+                  <p>Ajustez les quantités ou retirez des articles de votre commande.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn-clear-all"
+                (click)="cartStore.viderPanier(slugSalon)"
+                title="Vider le panier"
+              >
+                Vider le panier
+              </button>
+            </div>
+
+            <div class="items-list" *ngIf="cartStore.panier() as p">
+              <div *ngFor="let item of p.lignes" class="cart-item-row">
+                <div class="item-img-box">
+                  <div class="item-placeholder">
+                    <mat-icon class="icon-sm">shopping_bag</mat-icon>
+                  </div>
+                </div>
+
+                <div class="item-meta">
+                  <strong class="item-name">{{ item.produitNom }}</strong>
+                  <span class="item-unit">{{ item.prixUnitaire | number:'1.0-0' }} FCFA / unité</span>
+                </div>
+
+                <!-- Stepper de Quantité -->
+                <div class="qty-stepper-mini">
+                  <button
+                    type="button"
+                    class="btn-step-mini"
+                    (click)="cartStore.modifierQuantite(slugSalon, item.produitId, item.quantite - 1)"
+                    aria-label="Diminuer"
+                  >
+                    <mat-icon class="icon-xs">remove</mat-icon>
+                  </button>
+                  <span class="step-val">{{ item.quantite }}</span>
+                  <button
+                    type="button"
+                    class="btn-step-mini"
+                    (click)="cartStore.modifierQuantite(slugSalon, item.produitId, item.quantite + 1)"
+                    aria-label="Augmenter"
+                  >
+                    <mat-icon class="icon-xs">add</mat-icon>
+                  </button>
+                </div>
+
+                <!-- Sous-total article -->
+                <span class="item-subtotal">{{ item.sousTotal | number:'1.0-0' }} FCFA</span>
+
+                <!-- Bouton supprimer -->
+                <button
+                  type="button"
+                  class="btn-delete-item"
+                  (click)="cartStore.supprimerArticle(slugSalon, item.produitId)"
+                  title="Supprimer cet article"
+                >
+                  <mat-icon class="icon-xs">close</mat-icon>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- CARTE 2 : LIEU & INSTRUCTIONS DE RETRAIT -->
+          <section class="checkout-card" appRevealOnScroll>
+            <div class="card-title-group">
+              <span class="step-num">2</span>
+              <div>
+                <h2>Lieu & Modalités de Retrait</h2>
+                <p>Vos produits vous attendront directement au comptoir de votre salon.</p>
+              </div>
+            </div>
+
+            <div class="pickup-info-box">
+              <div class="pickup-salon-details">
+                <div class="pickup-icon-wrap">
+                  <mat-icon class="icon-sm">storefront</mat-icon>
+                </div>
+                <div>
+                  <strong>{{ salonNom }}</strong>
+                  <p>{{ salonAdresse }}</p>
+                  <span class="pickup-tel">Contact salon : {{ salonTelephone }}</span>
+                </div>
+              </div>
+
+              <div class="pickup-timing-badge">
+                <mat-icon class="icon-xs">schedule</mat-icon>
+                <span>Mise à disposition estimée : <strong>sous 2 heures ouvrées</strong></span>
+              </div>
+            </div>
+          </section>
+
+          <!-- CARTE 3 : COORDONNÉES DU BÉNÉFICIAIRE -->
+          <section class="checkout-card" appRevealOnScroll>
+            <div class="card-title-group">
+              <span class="step-num">3</span>
+              <div>
+                <h2>Coordonnées pour le Retrait</h2>
+                <p>Nécessaires pour vous notifier dès que votre commande est scellée.</p>
+              </div>
+            </div>
+
+            <div *ngIf="authService.isAuthenticated()" class="authenticated-user-pill">
+              <mat-icon class="icon-sm">verified</mat-icon>
+              <div>
+                <strong>Commande au nom de {{ nomClient }}</strong>
+                <span>{{ emailClient }} · {{ telephoneClient }}</span>
+              </div>
+            </div>
+
+            <div *ngIf="!authService.isAuthenticated()" class="guest-inputs-grid">
+              <div class="form-group">
+                <label>Nom & Prénom pour le retrait *</label>
+                <input
+                  type="text"
+                  class="form-input"
+                  placeholder="Ex : Fatou Diallo"
+                  [(ngModel)]="nomClient"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Téléphone pour notification SMS *</label>
+                <input
+                  type="tel"
+                  class="form-input"
+                  placeholder="Ex : +223 70 00 00 00"
+                  [(ngModel)]="telephoneClient"
+                />
+              </div>
+
+              <div class="form-group full">
+                <label>Email de confirmation</label>
+                <input
+                  type="email"
+                  class="form-input"
+                  placeholder="fatou.diallo@gmail.com"
+                  [(ngModel)]="emailClient"
+                />
+              </div>
+
+              <div class="form-group full">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">
+                  <input type="checkbox" [(ngModel)]="creerCompte" />
+                  <span>Créer un compte pour suivre mes commandes</span>
+                </label>
+                <div *ngIf="creerCompte" style="margin-top: 10px;">
+                  <label>Mot de passe (minimum 6 caractères) *</label>
+                  <input
+                    type="password"
+                    class="form-input"
+                    placeholder="Votre mot de passe"
+                    [(ngModel)]="motDePasse"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- COLONNE DROITE : RÉCAPITULATIF COLLANT -->
+        <aside class="cart-summary-col">
+          <div class="sticky-cart-summary" appTilt3d [maxTilt]="3">
+            <h2 class="summary-title">Récapitulatif Click & Collect</h2>
+
+            <div class="summary-rows-box">
+              <div class="sum-row">
+                <span>Articles ({{ cartStore.nombreArticles() }}) :</span>
+                <strong>{{ cartStore.montantTotal() | number:'1.0-0' }} FCFA</strong>
+              </div>
+              <div class="sum-row">
+                <span>Frais de préparation au salon :</span>
+                <span class="free-pill">GRATUIT</span>
+              </div>
+              <div class="sum-row">
+                <span>Mode de livraison :</span>
+                <span>Retrait au comptoir</span>
+              </div>
+
+              <hr class="sum-hr" />
+
+              <div class="sum-row total-row">
+                <span>Total à régler au retrait :</span>
+                <strong class="total-val">{{ cartStore.montantTotal() | number:'1.0-0' }} FCFA</strong>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn-confirm-checkout"
+              [disabled]="submitting()"
+              (click)="validerCommande()"
+            >
+              <div *ngIf="submitting()" class="spinner-inline"></div>
+              <mat-icon *ngIf="!submitting()" class="icon-sm">shopping_bag</mat-icon>
+              <span>{{ submitting() ? 'Validation en cours...' : 'Confirmer ma commande' }}</span>
+            </button>
+
+            <!-- 3 Badges de Réassurance Click & Collect -->
+            <div class="reassurance-box">
+              <div class="r-item">
+                <mat-icon class="r-icon">verified</mat-icon>
+                <span>Produits 100% officiels certifiés salon</span>
+              </div>
+              <div class="r-item">
+                <mat-icon class="r-icon">payments</mat-icon>
+                <span>Paiement sur place lors du retrait</span>
+              </div>
+              <div class="r-item">
+                <mat-icon class="r-icon">timer</mat-icon>
+                <span>Commande mise de côté pendant 48 heures</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>

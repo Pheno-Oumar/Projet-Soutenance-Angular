@@ -1,0 +1,184 @@
+<div class="dashboard-container">
+      <!-- En-tête -->
+      <header class="dashboard-header">
+        <div class="header-titles">
+          <div class="badge-role">
+            <span class="dot"></span>
+            Supervision Globale
+          </div>
+          <h1>Tableau de Bord Système</h1>
+          <p>Supervisez en temps réel le réseau de salons, les comptes et la santé financière de la plateforme.</p>
+        </div>
+        <div class="header-actions">
+          <button (click)="chargerKpis()" [disabled]="isLoading()" class="btn-refresh" title="Actualiser les données">
+            <mat-icon class="icon-sm" [class.spin]="isLoading()">refresh</mat-icon>
+            <span>{{ isLoading() ? 'Actualisation...' : 'Actualiser' }}</span>
+          </button>
+          <a routerLink="/admin-plateforme/salons/nouveau" class="btn-primary">
+            <mat-icon class="icon-sm">add</mat-icon>
+            <span>Nouveau Salon</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Erreur ou Alerte -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <mat-icon class="icon-sm">error_outline</mat-icon>
+        <span>{{ errorMessage() }}</span>
+        <button (click)="chargerKpis()" class="btn-retry">Réessayer</button>
+      </div>
+
+      <!-- Cartes KPI (60-30-10 & 3D Tilt) -->
+      <section class="kpi-grid">
+        <!-- Salons -->
+        <div class="kpi-card card-3d">
+          <div class="kpi-icon-wrap gold-icon">
+            <mat-icon class="kpi-mat-icon">storefront</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Salons du Réseau</span>
+            <div class="kpi-number">{{ kpis()?.nombreSalonsTotal ?? 0 }}</div>
+            <div class="kpi-tags">
+              <span class="tag-active">{{ kpis()?.nombreSalonsActifs ?? 0 }} actifs</span>
+              <span class="tag-inactive" *ngIf="(kpis()?.nombreSalonsInactifs ?? 0) > 0">
+                {{ kpis()?.nombreSalonsInactifs }} inactifs
+              </span>
+            </div>
+          </div>
+          <a routerLink="/admin-plateforme/salons" class="kpi-link-arrow" title="Voir les salons">
+            <mat-icon class="icon-sm">arrow_forward</mat-icon>
+          </a>
+        </div>
+
+        <!-- Comptes Utilisateurs -->
+        <div class="kpi-card card-3d">
+          <div class="kpi-icon-wrap primary-icon">
+            <mat-icon class="kpi-mat-icon">people</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Comptes Utilisateurs</span>
+            <div class="kpi-number">{{ kpis()?.nombreComptesTotal ?? 0 }}</div>
+            <div class="kpi-tags">
+              <span class="tag-active">{{ kpis()?.nombreComptesActifs ?? 0 }} actifs</span>
+              <span class="tag-inactive" *ngIf="(kpis()?.nombreComptesInactifs ?? 0) > 0">
+                {{ kpis()?.nombreComptesInactifs }} suspendus
+              </span>
+            </div>
+          </div>
+          <a routerLink="/admin-plateforme/audit" class="kpi-link-arrow" title="Journal des comptes">
+            <mat-icon class="icon-sm">arrow_forward</mat-icon>
+          </a>
+        </div>
+
+        <!-- Rendez-vous & Prestations -->
+        <div class="kpi-card card-3d">
+          <div class="kpi-icon-wrap gold-icon">
+            <mat-icon class="kpi-mat-icon">event</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Activité Globale</span>
+            <div class="kpi-number">{{ kpis()?.nombreRendezVousTotal ?? 0 }}</div>
+            <div class="kpi-tags">
+              <span class="tag-info">{{ kpis()?.nombrePrestationsTerminees ?? 0 }} prestations finies</span>
+              <span class="tag-subtle">/ {{ kpis()?.nombrePrestationsTotal ?? 0 }} créées</span>
+            </div>
+          </div>
+          <span class="kpi-meta-badge">Cumulé</span>
+        </div>
+
+        <!-- Chiffre d'Affaires Global -->
+        <div class="kpi-card card-3d highlight-card">
+          <div class="kpi-icon-wrap gold-solid-icon">
+            <mat-icon class="kpi-mat-icon">payments</mat-icon>
+          </div>
+          <div class="kpi-content">
+            <span class="kpi-label">Volume d'Affaires Global</span>
+            <div class="kpi-number ca-number">{{ formatDevise(kpis()?.chiffreAffairesGlobal ?? 0) }}</div>
+            <div class="kpi-tags">
+              <span class="tag-gold-solid">Plateforme AON</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Graphiques Interactifs Chart.js -->
+      <section class="charts-grid">
+        <!-- Graphique 1: Activité Prestations & RDV -->
+        <div class="chart-card card-3d">
+          <div class="chart-header">
+            <div>
+              <h3>Activité Prestations & Rendez-vous</h3>
+              <p>Comparaison des volumes globaux enregistrés</p>
+            </div>
+            <span class="badge-pill">Indicateurs Opérationnels</span>
+          </div>
+          <div class="chart-body">
+            <canvas #activityCanvas></canvas>
+          </div>
+        </div>
+
+        <!-- Graphique 2: Répartition Salons & Statuts -->
+        <div class="chart-card card-3d">
+          <div class="chart-header">
+            <div>
+              <h3>Santé & Statuts du Réseau</h3>
+              <p>Ratio salons et comptes actifs vs inactifs</p>
+            </div>
+            <span class="badge-pill">Disponibilité</span>
+          </div>
+          <div class="chart-body doughnut-body">
+            <canvas #doughnutCanvas></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Raccourcis Rapides vers les Modules -->
+      <section class="quick-shortcuts">
+        <h2 class="shortcuts-title">Accès Direct aux Modules d'Administration</h2>
+        <div class="shortcuts-grid">
+          <a routerLink="/admin-plateforme/salons" class="shortcut-card card-3d">
+            <div class="shortcut-icon gold-accent">
+              <mat-icon>storefront</mat-icon>
+            </div>
+            <div class="shortcut-text">
+              <h4>Réseau de Salons</h4>
+              <p>Carte interactive Leaflet, fiches détaillées, activation et métriques</p>
+            </div>
+            <span class="shortcut-arrow">→</span>
+          </a>
+
+          <a routerLink="/admin-plateforme/regles" class="shortcut-card card-3d">
+            <div class="shortcut-icon primary-accent">
+              <mat-icon>gavel</mat-icon>
+            </div>
+            <div class="shortcut-text">
+              <h4>Règles de la Plateforme</h4>
+              <p>Gouvernance globale, politiques de fonctionnement et conditions</p>
+            </div>
+            <span class="shortcut-arrow">→</span>
+          </a>
+
+          <a routerLink="/admin-plateforme/audit" class="shortcut-card card-3d">
+            <div class="shortcut-icon gold-accent">
+              <mat-icon>verified_user</mat-icon>
+            </div>
+            <div class="shortcut-text">
+              <h4>Journaux d'Audit & Sécurité</h4>
+              <p>Traçabilité des actions sensibles, filtres par IP, acteur et date</p>
+            </div>
+            <span class="shortcut-arrow">→</span>
+          </a>
+
+          <a routerLink="/admin-plateforme/rgpd" class="shortcut-card card-3d">
+            <div class="shortcut-icon primary-accent">
+              <mat-icon>policy</mat-icon>
+            </div>
+            <div class="shortcut-text">
+              <h4>Conformité RGPD</h4>
+              <p>Traitement des demandes de suppression et droit à l'oubli</p>
+            </div>
+            <span class="shortcut-arrow">→</span>
+          </a>
+        </div>
+      </section>
+    </div>

@@ -1,0 +1,202 @@
+<div class="fermetures-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Fermetures Exceptionnelles</h1>
+      <p class="page-subtitle">Gérez les congés du salon, jours fériés et fermetures temporaires imprévues</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Ajouter une fermeture
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- LIST OF CLOSURES -->
+  <div class="fermetures-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des fermetures exceptionnelles...</span>
+      </div>
+    } @else if (fermetures().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">event_busy</mat-icon>
+        <h3>Aucune fermeture enregistrée</h3>
+        <p>Toutes les dates régulières d'ouverture s'appliquent actuellement.</p>
+        <button type="button" class="btn-primary" (click)="openCreateModal()">Programmer une fermeture</button>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Période</th>
+              <th>Statut</th>
+              <th>Motif</th>
+              <th>Enregistré le</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of fermetures(); track f.id) {
+              <tr>
+                <td>
+                  <div class="period-cell">
+                    <strong>Du {{ f.dateDebut | date:'dd/MM/yyyy' }}</strong>
+                    <span>au {{ f.dateFin | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  @switch (getStatut(f)) {
+                    @case ('EN_COURS') {
+                      <span class="badge badge-ongoing">En cours</span>
+                    }
+                    @case ('A_VENIR') {
+                      <span class="badge badge-upcoming">À venir</span>
+                    }
+                    @case ('PASSEE') {
+                      <span class="badge badge-past">Passée</span>
+                    }
+                  }
+                </td>
+
+                <td>
+                  <span class="motif-text">{{ f.motif || 'Aucun motif renseigné' }}</span>
+                </td>
+
+                <td>
+                  <span class="date-text">{{ f.dateCreation | date:'dd/MM/yyyy' }}</span>
+                </td>
+
+                <td class="text-right actions-cell">
+                  <!-- Mettre fin immédiatement (si en cours) -->
+                  @if (canEndEarly(f)) {
+                    <button
+                      type="button"
+                      class="btn-action btn-end-early"
+                      (click)="mettreFinFermeture(f)"
+                      title="Mettre fin aujourd'hui"
+                    >
+                      Mettre fin
+                    </button>
+                  }
+
+                  <!-- Modifier (uniquement si non passée) -->
+                  @if (canEdit(f)) {
+                    <button
+                      type="button"
+                      class="btn-action btn-edit"
+                      (click)="openEditModal(f)"
+                      title="Modifier"
+                    >
+                      Modifier
+                    </button>
+                  }
+
+                  <!-- Supprimer (si future) -->
+                  @if (canDelete(f)) {
+                    <button
+                      type="button"
+                      class="btn-action btn-delete"
+                      (click)="supprimerFermeture(f)"
+                      title="Supprimer"
+                    >
+                      Supprimer
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- ADD / EDIT MODAL -->
+  @if (showModal) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">{{ isEditMode ? 'Modifier la Fermeture' : 'Nouvelle Fermeture Exceptionnelle' }}</h2>
+          <button type="button" class="btn-close" (click)="closeModal()"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="soumettreFormulaire()">
+          <div class="modal-body">
+            @if (isEditMode && isStartedClosure) {
+              <div class="info-alert">
+                <mat-icon class="info-icon">info</mat-icon>
+                <span>Cette fermeture est actuellement en cours. Sa date de début ne peut plus être modifiée.</span>
+              </div>
+            }
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="dateDebut" class="form-label">Date de début *</label>
+                <input
+                  id="dateDebut"
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="formData.dateDebut"
+                  (change)="onDateDebutChange()"
+                  name="dateDebut"
+                  [min]="isEditMode && isStartedClosure ? null : minDateDebut"
+                  [disabled]="isEditMode && isStartedClosure"
+                  required
+                />
+                <small class="helper-text">
+                  {{ isEditMode && isStartedClosure ? 'Date verrouillée car la fermeture a débuté.' : 'Ne peut pas être dans le passé.' }}
+                </small>
+              </div>
+
+              <div class="form-group col-half">
+                <label for="dateFin" class="form-label">Date de fin *</label>
+                <input
+                  id="dateFin"
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="formData.dateFin"
+                  name="dateFin"
+                  [min]="minDateFin"
+                  required
+                />
+                <small class="helper-text">Doit être égale ou postérieure au début.</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="motif" class="form-label">Motif de la fermeture</label>
+              <textarea
+                id="motif"
+                class="form-control"
+                [(ngModel)]="formData.motif"
+                name="motif"
+                rows="3"
+                placeholder="Ex: Travaux de rénovation, Jour férié de Tabaski, Fête nationale..."
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Enregistrement...' : (isEditMode ? 'Sauvegarder' : 'Créer la fermeture') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</div>

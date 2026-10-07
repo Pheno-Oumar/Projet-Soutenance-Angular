@@ -1,0 +1,63 @@
+:host {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+}
+
+.hero-3d-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webgl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  pointer-events: none;
+  outline: none;
+}
+
+/* Halo doux en arrière-plan sans or */
+.ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200, 182, 166, 0.22) 0%, rgba(74, 59, 50, 0.05) 45%, transparent 70%);
+  filter: blur(48px);
+  pointer-events: none;
+  z-index: -1;
+  animation: glow-breathe 6s ease-in-out infinite alternate;
+}
+
+@keyframes glow-breathe {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 768px) {
+  .ambient-glow {
+    width: 220px;
+    height: 220px;
+    filter: blur(28px);
+  }
+}

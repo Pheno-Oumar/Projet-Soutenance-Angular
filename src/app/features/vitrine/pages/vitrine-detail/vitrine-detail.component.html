@@ -1,0 +1,798 @@
+<div class="vitrine-page" *ngIf="!chargement()">
+  <!-- NAVBAR DÉDIÉE AU SALON (Aucun lien plateforme / Kady's) -->
+  <app-salon-navbar
+    [salon]="salon()"
+    [slugSalon]="slugSalon"
+    [panierCount]="panierService.nombreArticles()"
+    [montantTotal]="panierService.montantTotal()"
+    (openPanier)="toggleCartDrawer()"
+    (openBooking)="openBookingWizard()"
+    (selectTab)="activeTab.set($event)"
+  />
+
+  <!-- HERO SECTION 3D PRESTIGE -->
+  <section class="salon-hero-section">
+    <div
+      class="hero-bg-cover"
+      [style.backgroundImage]="'url(' + resolveCoverUrl(salon()) + ')'"
+    >
+      <div class="hero-gradient-overlay"></div>
+    </div>
+
+    <div class="hero-container">
+      <div class="hero-brand-card">
+        <!-- Logo & Pastille Stories Live -->
+        <div class="hero-logo-box" [class.has-live-stories]="stories().length > 0" (click)="openStoryViewer()">
+          <img
+            *ngIf="salon()?.logoUrl"
+            [src]="salon()!.logoUrl | safeMedia"
+            [alt]="salon()?.nom || 'Salon'"
+            class="hero-logo-img"
+            referrerpolicy="no-referrer"
+          />
+          <div *ngIf="!salon()?.logoUrl" class="hero-logo-placeholder">
+            <span>{{ salon()?.nom ? salon()?.nom?.charAt(0) : 'S' }}</span>
+          </div>
+
+          <div *ngIf="stories().length > 0" class="hero-story-ring" title="Regarder les stories du jour">
+            <span class="story-tag-live">STORY</span>
+          </div>
+        </div>
+
+        <div class="hero-text-details">
+          <div class="hero-badges-row">
+            <span class="badge-partner">
+              <mat-icon class="icon-xs">verified</mat-icon> Salon Partenaire d'Excellence
+            </span>
+            <span class="badge-rating">
+              <mat-icon class="icon-xs">star</mat-icon> 4.9 / 5 (140+ avis vérifiés)
+            </span>
+            <button
+              (click)="toggleFavorite()"
+              class="btn-fav-salon"
+              [class.active]="isSalonFavorite"
+              title="Ajouter aux favoris"
+            >
+              <mat-icon class="icon-xs">{{ isSalonFavorite ? 'favorite' : 'favorite_border' }}</mat-icon>
+              <span>{{ isSalonFavorite ? 'Favori' : 'Mettre en favori' }}</span>
+            </button>
+          </div>
+
+          <h1 class="hero-salon-title">{{ salon()?.nom || 'Maison de Coiffure' }}</h1>
+          <p class="hero-salon-tagline">
+            {{ salon()?.description || 'L\'art de sublimer votre beauté naturelle à travers des prestations et rituels capillaires d\'exception.' }}
+          </p>
+
+          <!-- Quick Info Bar (Adresse, Tel, Horaires) -->
+          <div class="hero-quick-bar">
+            <div class="quick-info-item" *ngIf="salon()?.adresse">
+              <span class="q-icon"><mat-icon class="icon-xs">location_on</mat-icon></span>
+              <span class="q-val">{{ salon()?.adresse }}</span>
+            </div>
+            <div class="quick-info-item" *ngIf="salon()?.telephone">
+              <span class="q-icon"><mat-icon class="icon-xs">phone</mat-icon></span>
+              <a [href]="'tel:' + salon()?.telephone" class="q-val-link">{{ salon()?.telephone }}</a>
+            </div>
+            <div class="quick-info-item">
+              <span class="q-icon"><mat-icon class="icon-xs">schedule</mat-icon></span>
+              <span class="q-val">Aujourd'hui : <strong>{{ horairesAujourdhui() }}</strong></span>
+            </div>
+            <div class="quick-info-item">
+              <span class="q-icon"><mat-icon class="icon-xs">flash_on</mat-icon></span>
+              <span class="q-val">Paiement sur place ou en ligne</span>
+            </div>
+          </div>
+
+          <!-- CTAs Principaux -->
+          <div class="hero-cta-group">
+            <button (click)="openBookingWizard()" class="btn-hero-primary-book">
+              <mat-icon class="icon-sm">calendar_month</mat-icon>
+              <span>Prendre Rendez-vous en Ligne</span>
+            </button>
+            <button (click)="activeTab.set('PRESTATIONS')" class="btn-hero-secondary-tarifs">
+              <span>Voir la Carte des Soins & Tarifs</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BANDEAU STORIES DU JOUR (Si stories actives du salon) -->
+  <section class="salon-stories-banner" *ngIf="stories().length > 0">
+    <div class="stories-container" (click)="openStoryViewer()">
+      <div class="story-pulse-bubble">
+        <mat-icon class="icon-sm">photo_camera</mat-icon>
+      </div>
+      <div class="story-banner-info">
+        <strong>En direct du salon aujourd'hui ({{ stories().length }} stor{{ stories().length > 1 ? 'ies' : 'y' }})</strong>
+        <p>Découvrez les réalisations et l'ambiance du salon postées il y a moins de 24h.</p>
+      </div>
+      <button class="btn-open-story">
+        <span>Regarder les Stories</span>
+        <mat-icon class="icon-xs">arrow_forward</mat-icon>
+      </button>
+    </div>
+  </section>
+
+  <!-- NAVIGATION DES ONGLETS DU SALON -->
+  <section class="salon-tabs-nav-bar" id="section-prestations">
+    <div class="tabs-container">
+      <button
+        [class.active]="activeTab() === 'PRESTATIONS'"
+        (click)="activeTab.set('PRESTATIONS')"
+        class="tab-btn"
+      >
+        <mat-icon class="icon-sm">spa</mat-icon>
+        <span class="tab-text">Prestations & Tarifs</span>
+        <span class="tab-counter">{{ services().length }}</span>
+      </button>
+
+      <button
+        [class.active]="activeTab() === 'BOUTIQUE'"
+        (click)="activeTab.set('BOUTIQUE')"
+        class="tab-btn"
+      >
+        <mat-icon class="icon-sm">shopping_bag</mat-icon>
+        <span class="tab-text">Boutique & Soins</span>
+        <span class="tab-counter">{{ produits().length }}</span>
+      </button>
+
+      <button
+        [class.active]="activeTab() === 'COIFFEURS'"
+        (click)="activeTab.set('COIFFEURS')"
+        class="tab-btn"
+      >
+        <mat-icon class="icon-sm">content_cut</mat-icon>
+        <span class="tab-text">Notre Équipe</span>
+        <span class="tab-counter">{{ coiffeurs().length }}</span>
+      </button>
+
+      <button
+        [class.active]="activeTab() === 'GALERIE'"
+        (click)="activeTab.set('GALERIE')"
+        class="tab-btn"
+      >
+        <mat-icon class="icon-sm">photo_camera</mat-icon>
+        <span class="tab-text">Galerie Réalisations</span>
+        <span class="tab-counter">{{ realisations().length }}</span>
+      </button>
+
+      <button
+        [class.active]="activeTab() === 'AVIS'"
+        (click)="activeTab.set('AVIS')"
+        class="tab-btn"
+      >
+        <mat-icon class="icon-sm">star</mat-icon>
+        <span class="tab-text">Avis Clients</span>
+        <span class="tab-counter">{{ avis().length }}</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- CONTENU DES ONGLETS -->
+  <main class="salon-tab-content-area">
+    <!-- ============================================== -->
+    <!-- TAB 1 : PRESTATIONS & VARIANTES DÉTAILLÉES      -->
+    <!-- ============================================== -->
+    <section *ngIf="activeTab() === 'PRESTATIONS'" class="tab-view-prestations">
+      <!-- Filtres et Recherche de Prestations -->
+      <div class="services-filter-bar">
+        <div class="category-pills">
+          <button
+            [class.active]="selectedServiceCategory === 'TOUS'"
+            (click)="selectedServiceCategory = 'TOUS'"
+            class="pill-btn"
+          >
+            Tous les soins
+          </button>
+          <button
+            [class.active]="selectedServiceCategory === 'coupes'"
+            (click)="selectedServiceCategory = 'coupes'"
+            class="pill-btn"
+          >
+            <mat-icon class="icon-xs">content_cut</mat-icon> Coupes & Brushing
+          </button>
+          <button
+            [class.active]="selectedServiceCategory === 'colorations'"
+            (click)="selectedServiceCategory = 'colorations'"
+            class="pill-btn"
+          >
+            <mat-icon class="icon-xs">palette</mat-icon> Colorations & Balayages
+          </button>
+          <button
+            [class.active]="selectedServiceCategory === 'tresses'"
+            (click)="selectedServiceCategory = 'tresses'"
+            class="pill-btn"
+          >
+            <mat-icon class="icon-xs">auto_awesome</mat-icon> Tresses & Nattes Afro
+          </button>
+          <button
+            [class.active]="selectedServiceCategory === 'soins'"
+            (click)="selectedServiceCategory = 'soins'"
+            class="pill-btn"
+          >
+            <mat-icon class="icon-xs">spa</mat-icon> Soins & Botox
+          </button>
+          <button
+            [class.active]="selectedServiceCategory === 'barbe'"
+            (click)="selectedServiceCategory = 'barbe'"
+            class="pill-btn"
+          >
+            <mat-icon class="icon-xs">face</mat-icon> Barbershop & Barbe
+          </button>
+        </div>
+
+        <div class="service-search-box">
+          <span class="s-icon"><mat-icon class="icon-xs">search</mat-icon></span>
+          <input
+            type="text"
+            [(ngModel)]="serviceSearchQuery"
+            placeholder="Rechercher une prestation (ex: balayage, nattes, barbe...)"
+            class="service-search-input"
+          />
+        </div>
+      </div>
+
+      <!-- Liste des Prestations avec Images et Variantes -->
+      <div class="services-cards-grid">
+        <div *ngFor="let service of filteredServices" class="service-luxury-card">
+          <!-- Image de la Prestation -->
+          <div class="service-card-media">
+            <img
+              [src]="resolveServiceImage(service)"
+              [alt]="service.nom"
+              class="service-img"
+              loading="lazy"
+            />
+            <div class="service-badge-cat">{{ getServiceTag(service) }}</div>
+          </div>
+
+          <!-- Corps de la Carte -->
+          <div class="service-card-body">
+            <div class="service-header-row">
+              <h3 class="service-name">{{ service.nom }}</h3>
+              <div class="service-lead-price">
+                <span class="from-text">dès</span>
+                <span class="price-val">{{ (service.variantes && service.variantes[0]?.prix) || 5000 | number:'1.0-0' }} FCFA</span>
+              </div>
+            </div>
+
+            <p class="service-desc">
+              {{ service.description || 'Prestation professionnelle réalisée avec des produits de haute qualité par nos experts coiffeurs.' }}
+            </p>
+
+            <!-- Déploiement des Variantes (Visuel, Hypnotisant) -->
+            <div class="service-variantes-section" *ngIf="service.variantes && service.variantes.length > 0">
+              <span class="variantes-title">Choisissez votre formule / longueur :</span>
+
+              <div class="variantes-list">
+                <div
+                  *ngFor="let variante of service.variantes"
+                  class="variante-row"
+                  [class.is-selected]="isVarianteSelected(variante)"
+                >
+                  <div class="variante-thumb-box">
+                    <img
+                      [src]="resolveVarianteImage(variante)"
+                      [alt]="variante.nom"
+                      class="variante-thumb-img"
+                      loading="lazy"
+                      referrerpolicy="no-referrer"
+                    />
+                  </div>
+                  <div class="variante-info">
+                    <span class="v-name">{{ variante.nom }}</span>
+                    <span class="v-duration"><mat-icon class="icon-xs align-middle">schedule</mat-icon> {{ variante.dureeMinutes }} min</span>
+                  </div>
+                  <div class="variante-action-cell">
+                    <span class="v-price">{{ variante.prix | number:'1.0-0' }} FCFA</span>
+                    <button
+                      (click)="openBookingWizard(service, variante)"
+                      class="btn-select-variante"
+                    >
+                      Choisir & Réserver
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton Réserver Direct -->
+            <button
+              (click)="openBookingWizard(service)"
+              class="btn-card-book-main"
+            >
+              <mat-icon class="icon-xs">calendar_month</mat-icon>
+              <span>Réserver cette prestation</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- État vide -->
+      <div *ngIf="filteredServices.length === 0" class="empty-tab-state">
+        <mat-icon class="empty-icon">content_cut</mat-icon>
+        <h3>Aucune prestation ne correspond à votre filtre</h3>
+        <p>Essayez de réinitialiser la recherche ou de sélectionner une autre catégorie.</p>
+        <button (click)="selectedServiceCategory = 'TOUS'; serviceSearchQuery = ''" class="btn-reset-filter">
+          Voir toutes les prestations
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2 : BOUTIQUE PRODUITS & CATÉGORIES VISUELLES -->
+    <!-- ============================================== -->
+    <section *ngIf="activeTab() === 'BOUTIQUE'" class="tab-view-boutique" id="section-boutique">
+      <!-- Bannière Click & Collect -->
+      <div class="boutique-hero-banner">
+        <div class="b-banner-text">
+          <h2><mat-icon class="icon-sm">shopping_bag</mat-icon> Boutique & Soins Professionnels</h2>
+          <p>Prolongez l'expérience du salon chez vous avec notre sélection exclusive de soins capillaires. Retrait disponible en Click & Collect au comptoir en 2h.</p>
+        </div>
+        <div class="b-banner-cart-preview" (click)="toggleCartDrawer()">
+          <mat-icon class="icon-xs cart-pill-icon">shopping_bag</mat-icon>
+          <span>Mon Panier Click & Collect : <strong>{{ panierService.nombreArticles() }} article(s)</strong></span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </div>
+      </div>
+
+      <!-- SÉLECTEUR VISUEL DES CATÉGORIES DE PRODUITS AVEC IMAGES -->
+      <div class="categories-showcase" *ngIf="categoriesProduits().length > 0">
+        <div
+          class="category-card-visual"
+          [class.active]="selectedCategoryProduitId === null"
+          (click)="selectedCategoryProduitId = null"
+        >
+          <div class="cat-img-box">
+            <mat-icon class="icon-sm cat-icon-all">auto_awesome</mat-icon>
+          </div>
+          <span class="cat-label">Toutes les catégories</span>
+        </div>
+
+        <div
+          *ngFor="let cat of categoriesProduits()"
+          class="category-card-visual"
+          [class.active]="selectedCategoryProduitId === cat.id"
+          (click)="selectedCategoryProduitId = cat.id"
+        >
+          <div class="cat-img-box">
+            <img
+              [src]="resolveCategoryImage(cat)"
+              [alt]="cat.nom"
+              class="cat-img"
+              loading="lazy"
+            />
+          </div>
+          <span class="cat-label">{{ cat.nom }}</span>
+        </div>
+      </div>
+
+      <!-- Grille de Produits Cosmétiques -->
+      <div class="produits-grid">
+        <div *ngFor="let produit of filteredProduits" class="produit-luxury-card">
+          <div class="produit-media-wrap">
+            <img
+              [src]="resolveProduitImage(produit)"
+              [alt]="produit.nom"
+              class="produit-img"
+              loading="lazy"
+            />
+            <span class="badge-stock" [class.in-stock]="produit.statut">
+              <mat-icon class="stock-check-icon" *ngIf="produit.statut">check</mat-icon>
+              {{ produit.statut ? 'En stock au salon' : 'Rupture temporaire' }}
+            </span>
+          </div>
+
+          <div class="produit-card-body">
+            <span class="produit-category-tag">{{ produit.categorieNom || 'Soin Capillaire Professionnel' }}</span>
+            <h4 class="produit-title">{{ produit.nom }}</h4>
+            <p class="produit-description">
+              {{ produit.description || 'Formule professionnelle enrichie pour hydrater, nourrir et protéger la fibre capillaire.' }}
+            </p>
+
+            <div class="produit-bottom-row">
+              <span class="produit-price">{{ produit.prixVente | number:'1.0-0' }} FCFA</span>
+              <button
+                (click)="ajouterProduitAuPanier(produit)"
+                [disabled]="!produit.statut"
+                class="btn-add-cart"
+                title="Ajouter au panier Click & Collect"
+              >
+                <span>+ Ajouter</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- État vide boutique -->
+      <div *ngIf="filteredProduits.length === 0" class="empty-tab-state">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <h3>Aucun produit disponible dans cette catégorie</h3>
+        <p>Les produits du salon sont régulièrement réapprovisionnés.</p>
+        <button (click)="selectedCategoryProduitId = null" class="btn-reset-filter">
+          Voir tous les produits
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3 : ÉQUIPE DES COIFFEURS                   -->
+    <!-- ============================================== -->
+    <section *ngIf="activeTab() === 'COIFFEURS'" class="tab-view-equipe" id="section-equipe">
+      <div class="tab-section-intro">
+        <h2><mat-icon class="icon-sm">content_cut</mat-icon> Rencontrez Nos Artistes Coiffeurs</h2>
+        <p>Des professionnels passionnés, formés aux meilleures techniques de coiffure, de coloration et de rituels de soins.</p>
+      </div>
+
+      <div class="coiffeurs-grid">
+        <div *ngFor="let coiffeur of coiffeurs(); let i = index" class="coiffeur-profile-card">
+          <div class="coiffeur-avatar-box">
+            <img
+              [src]="resolveCoiffeurPhoto(i, coiffeur.photoProfilUrl)"
+              [alt]="coiffeur.coiffeurNom"
+              class="coiffeur-photo"
+              loading="lazy"
+            />
+            <div class="coiffeur-badge-note">
+              <span>{{ getCoiffeurRating(coiffeur, i) }}</span>
+            </div>
+          </div>
+
+          <div class="coiffeur-info">
+            <h3 class="coiffeur-name">{{ coiffeur.coiffeurPrenom }} {{ coiffeur.coiffeurNom }}</h3>
+            <span class="coiffeur-role">{{ coiffeur.nomAffichage || coiffeur.biographie || 'Coiffeur Styliste' }}</span>
+            <p class="coiffeur-bio">
+              {{ coiffeur.description || 'Passionné(e) par l\'art du cheveu, à votre écoute pour concrétiser la coiffure qui mettra en valeur votre personnalité.' }}
+            </p>
+            <button
+              (click)="selectedCoiffeurId = coiffeur.id; openBookingWizard()"
+              class="btn-book-with-coiffeur"
+            >
+              Prendre RDV avec {{ coiffeur.coiffeurPrenom }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 4 : GALERIE RÉALISATIONS DU SALON          -->
+    <!-- ============================================== -->
+    <section *ngIf="activeTab() === 'GALERIE'" class="tab-view-galerie" id="section-galerie">
+      <div class="tab-section-intro">
+        <h2><mat-icon class="icon-sm">photo_camera</mat-icon> Le Lookbook du Salon</h2>
+        <p>Explorez les créations réalisées en direct dans nos fauteuils. Cliquez sur un look pour vous en inspirer.</p>
+      </div>
+
+      <div class="galerie-grid">
+        <div *ngFor="let real of realisations()" class="realisation-card-3d" (click)="openLightbox(real)">
+          <img
+            [src]="resolveRealisationMedia(real)"
+            [alt]="real.titre"
+            class="real-img"
+            loading="lazy"
+          />
+          <div class="real-overlay">
+            <span class="real-tag">Style Réalisé · Cliquez pour zoomer <mat-icon class="icon-xs">search</mat-icon></span>
+            <h4 class="real-title">{{ real.titre }}</h4>
+            <p class="real-desc">{{ real.description }}</p>
+            <button (click)="$event.stopPropagation(); openBookingWizard()" class="btn-real-book">
+              <span>Je veux ce look</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="realisations().length === 0" class="empty-tab-state">
+        <mat-icon class="empty-icon">photo_camera</mat-icon>
+        <h3>Galerie en cours de mise à jour</h3>
+        <p>Notre équipe publiera bientôt les photos des dernières réalisations du salon.</p>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 5 : AVIS CLIENTS CERTIFIÉS                 -->
+    <!-- ============================================== -->
+    <section *ngIf="activeTab() === 'AVIS'" class="tab-view-avis" id="section-avis">
+      <div class="avis-header-dashboard">
+        <div class="score-overall-box">
+          <span class="big-score">{{ moyenneAvis() > 0 ? (moyenneAvis() | number:'1.1-1') : '5.0' }}</span>
+          <div class="stars-gold">
+            <mat-icon>star</mat-icon>
+            <mat-icon>star</mat-icon>
+            <mat-icon>star</mat-icon>
+            <mat-icon>star</mat-icon>
+            <mat-icon>star</mat-icon>
+          </div>
+          <span class="verified-count">{{ avis().length > 0 ? ('Basé sur ' + avis().length + ' avis client' + (avis().length > 1 ? 's' : '') + ' vérifié' + (avis().length > 1 ? 's' : '')) : 'Avis vérifiés de nos clients' }}</span>
+        </div>
+        <div class="satisfaction-pitch">
+          <h3>98% de clients satisfaits</h3>
+          <p>Tous les avis affichés proviennent de clients ayant réalisé une prestation dans notre salon.</p>
+        </div>
+      </div>
+
+      <div class="avis-cards-list">
+        <div *ngFor="let a of avis(); let i = index" class="avis-card">
+          <div class="avis-user-row">
+            <img [src]="resolveAvatar(i)" alt="Client" class="avis-avatar" />
+            <div class="avis-author-info">
+              <span class="client-name">{{ a.clientNomComplet || 'Cliente vérifiée' }}</span>
+              <span class="review-date">{{ a.dateCreation | date:'longDate' }}</span>
+            </div>
+            <div class="rating-stars">
+              <mat-icon *ngFor="let star of [1,2,3,4,5]" [class.filled]="star <= (a.note || 5)">star</mat-icon>
+            </div>
+          </div>
+          <p class="avis-comment">« {{ a.commentaire }} »</p>
+          <span class="badge-verified-purchase">
+            <mat-icon class="icon-xs">verified</mat-icon> Prestation réalisée au salon
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="avis().length === 0" class="empty-tab-state">
+        <mat-icon class="empty-icon">star</mat-icon>
+        <h3>Soyez le premier à donner votre avis</h3>
+        <p>Réservez une prestation au salon et partagez votre expérience.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL WIZARD DE RÉSERVATION 3D                 -->
+  <!-- ============================================== -->
+  <div class="booking-wizard-backdrop" *ngIf="bookingModalOpen" (click)="closeBookingWizard()">
+    <div class="booking-wizard-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="step-indicator">RÉSERVATION EN DIRECT</span>
+          <h2 class="modal-title">Prendre Rendez-vous chez {{ salon()?.nom }}</h2>
+        </div>
+        <button (click)="closeBookingWizard()" class="btn-close-modal">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Étape 1 : Prestations sélectionnées -->
+        <div class="wizard-step-box">
+          <h4 class="step-title">1. Prestations sélectionnées</h4>
+          <div class="selected-variantes-tags" *ngIf="selectedVariantes.length > 0">
+            <div *ngFor="let v of selectedVariantes" class="v-tag-selected">
+              <span>{{ v.nom }}</span>
+              <span class="v-tag-price">{{ v.prix | number:'1.0-0' }} FCFA</span>
+              <span class="v-tag-dur">({{ v.dureeMinutes }} min)</span>
+              <button (click)="toggleVarianteSelection(v)" class="btn-remove-v">
+                <mat-icon class="icon-xs">close</mat-icon>
+              </button>
+            </div>
+          </div>
+          <p *ngIf="selectedVariantes.length === 0" class="alert-no-v">
+            <mat-icon class="icon-xs">warning</mat-icon> Aucune formule sélectionnée. Veuillez en choisir une ci-dessous.
+          </p>
+          <div class="recap-totals">
+            <span>Durée totale estimée : <strong>{{ totalDureeEstimee() }} min</strong></span>
+            <span>Total estimé : <strong>{{ totalPrixEstime() | number:'1.0-0' }} FCFA</strong></span>
+          </div>
+        </div>
+
+        <!-- Étape 2 : Choix du Coiffeur -->
+        <div class="wizard-step-box" *ngIf="coiffeurs().length > 0">
+          <h4 class="step-title">2. Coiffeur souhaité</h4>
+          <div class="coiffeurs-picker-row">
+            <button
+              [class.active]="selectedCoiffeurId === null"
+              (click)="selectedCoiffeurId = null; chargerCreneauxDisponibles()"
+              class="coiffeur-choice-btn"
+            >
+              <span>Premier coiffeur disponible</span>
+            </button>
+            <button
+              *ngFor="let c of coiffeurs()"
+              [class.active]="selectedCoiffeurId === c.id"
+              (click)="selectedCoiffeurId = c.id; chargerCreneauxDisponibles()"
+              class="coiffeur-choice-btn"
+            >
+              <span>{{ c.coiffeurPrenom }} ({{ c.nomAffichage || c.biographie || 'Coiffeur' }})</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Étape 3 : Date & Créneaux disponibles -->
+        <div class="wizard-step-box">
+          <h4 class="step-title">3. Date & Créneau horaire</h4>
+          <div class="date-picker-row">
+            <label>Date du rendez-vous :</label>
+            <input
+              type="date"
+              [(ngModel)]="selectedDate"
+              (change)="onDateChange()"
+              class="date-input"
+            />
+          </div>
+
+          <!-- Spinner créneaux -->
+          <div *ngIf="loadingSlots" class="slots-loading">
+            <div class="spinner-gold"></div>
+            <span>Calcul des créneaux en temps réel...</span>
+          </div>
+
+          <!-- Grille des créneaux -->
+          <div *ngIf="!loadingSlots && availableSlots.length > 0" class="slots-grid">
+            <button
+              *ngFor="let slot of availableSlots"
+              [class.selected]="selectedCreneau?.heureDebut === slot.heureDebut"
+              (click)="selectCreneau(slot)"
+              class="slot-btn"
+            >
+              <span class="slot-time">{{ slot.heureDebut }}</span>
+              <span class="slot-end">- {{ slot.heureFin }}</span>
+            </button>
+          </div>
+
+          <div *ngIf="!loadingSlots && availableSlots.length === 0" class="alert-no-slots">
+            <mat-icon class="icon-xs">event_busy</mat-icon> Aucun créneau disponible à cette date pour cette durée. Veuillez tester une autre date.
+          </div>
+        </div>
+
+        <!-- Étape 4 : Remarques optionnelles -->
+        <div class="wizard-step-box">
+          <h4 class="step-title">4. Précisions ou demandes particulières (optionnel)</h4>
+          <textarea
+            [(ngModel)]="bookingNotes"
+            placeholder="Ex : cheveux très épais, besoin d'un massage crânien..."
+            rows="2"
+            class="notes-textarea"
+          ></textarea>
+        </div>
+
+        <!-- Note transparence affluence et priorité -->
+        <div class="booking-notice-box">
+          <div class="notice-icon">
+            <mat-icon class="icon-sm">info</mat-icon>
+          </div>
+          <div class="notice-content">
+            <span class="notice-title">Information importante pour le jour J :</span>
+            <p class="notice-desc">
+              Votre créneau réservé garantit votre priorité. Toutefois, selon l'affluence en direct au salon ou les finitions sur un client précédent, il se pourrait qu'un léger temps d'attente survienne à votre arrivée. Notre équipe vous accueillera et vous prendra en charge au plus vite !
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="closeBookingWizard()" class="btn-cancel-modal">Annuler</button>
+        <button
+          (click)="confirmerRendezVous()"
+          [disabled]="selectedVariantes.length === 0 || !selectedCreneau || submittingBooking"
+          class="btn-confirm-booking"
+        >
+          <span *ngIf="!submittingBooking">Confirmer mon Rendez-vous</span>
+          <mat-icon class="icon-xs" *ngIf="!submittingBooking">arrow_forward</mat-icon>
+          <span *ngIf="submittingBooking">Validation en cours...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TIROIR PANIER CLICK & COLLECT DU SALON        -->
+  <!-- ============================================== -->
+  <div class="cart-drawer-overlay" *ngIf="cartDrawerOpen" (click)="toggleCartDrawer()">
+    <div class="cart-drawer" (click)="$event.stopPropagation()">
+      <div class="cart-drawer-header">
+        <div>
+          <h3><mat-icon class="icon-xs">shopping_bag</mat-icon> Panier Click & Collect</h3>
+          <span class="cart-salon-subtitle">{{ salon()?.nom }}</span>
+        </div>
+        <button (click)="toggleCartDrawer()" class="btn-close-drawer">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="cart-drawer-body">
+        <div *ngIf="panierService.nombreArticles() === 0" class="empty-cart-state">
+          <mat-icon class="empty-cart-icon">shopping_cart</mat-icon>
+          <h4>Votre panier Click & Collect est vide</h4>
+          <p>Ajoutez des soins et produits capillaires pour les retirer au salon.</p>
+        </div>
+
+        <div *ngIf="panierService.panier()?.lignes as lignes" class="cart-items-list">
+          <div *ngFor="let ligne of lignes" class="cart-item-row">
+            <div class="item-info">
+              <span class="item-name">{{ ligne.produitNom }}</span>
+              <span class="item-unit-price">{{ ligne.prixUnitaire | number:'1.0-0' }} FCFA</span>
+            </div>
+            <div class="item-actions">
+              <span class="item-subtotal">{{ ligne.sousTotal | number:'1.0-0' }} FCFA</span>
+              <div class="qty-stepper">
+                <button
+                  (click)="panierService.modifierQuantite(slugSalon, ligne.produitId, ligne.quantite - 1)"
+                  class="btn-qty"
+                >-</button>
+                <span class="qty-num">{{ ligne.quantite }}</span>
+                <button
+                  (click)="panierService.modifierQuantite(slugSalon, ligne.produitId, ligne.quantite + 1)"
+                  class="btn-qty"
+                >+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-drawer-footer" *ngIf="panierService.nombreArticles() > 0">
+        <div class="total-row">
+          <span>Total à régler :</span>
+          <span class="total-amount">{{ panierService.montantTotal() | number:'1.0-0' }} FCFA</span>
+        </div>
+        <p class="pickup-notice">
+          <mat-icon class="icon-xs">info</mat-icon> Retrait rapide au comptoir du salon sous 2h.
+        </p>
+        <button (click)="passerCommandePanier()" class="btn-checkout">
+          Valider la commande Click & Collect
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORIES VIEWER FULLSCREEN (Dédié au salon) -->
+  <app-story-viewer-modal
+    *ngIf="activeSalonStory"
+    [salonStory]="activeSalonStory"
+    (close)="closeStoryViewer()"
+  />
+
+  <!-- FOOTER DÉDIÉ AU SALON (Aucun lien vers la plateforme) -->
+  <app-salon-footer [salon]="salon()" [slugSalon]="slugSalon" [horaires]="horaires()" />
+
+  <!-- LIGHTBOX PLEIN ÉCRAN POUR RÉALISATIONS (Lookbook) -->
+  <div class="lightbox-overlay" *ngIf="activeLightboxRealisation" (click)="closeLightbox()">
+    <div class="lightbox-modal" (click)="$event.stopPropagation()">
+      <button class="btn-close-lightbox" (click)="closeLightbox()" title="Fermer">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+      <div class="lightbox-image-container">
+        <img
+          [src]="resolveRealisationMedia(activeLightboxRealisation)"
+          [alt]="activeLightboxRealisation.titre"
+          class="lightbox-img"
+        />
+      </div>
+      <div class="lightbox-info-bar">
+        <div>
+          <span class="lightbox-tag">
+            <mat-icon class="icon-xs">auto_awesome</mat-icon> Réalisation d'Artisan Coiffeur
+          </span>
+          <h3 class="lightbox-title">{{ activeLightboxRealisation.titre }}</h3>
+          <p class="lightbox-desc" *ngIf="activeLightboxRealisation.description">
+            {{ activeLightboxRealisation.description }}
+          </p>
+        </div>
+        <button
+          (click)="closeLightbox(); openBookingWizard()"
+          class="btn-lightbox-book"
+        >
+          <span>Prendre RDV pour ce look</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING SCROLL TO TOP FAB -->
+  <button
+    *ngIf="showScrollTop"
+    (click)="scrollToTop()"
+    class="btn-fab-scroll-top"
+    title="Retour en haut"
+    aria-label="Retour en haut de page"
+  >
+    <mat-icon class="icon-sm">arrow_upward</mat-icon>
+  </button>
+</div>

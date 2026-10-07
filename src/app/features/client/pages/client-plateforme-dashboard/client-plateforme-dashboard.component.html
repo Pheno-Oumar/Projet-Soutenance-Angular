@@ -1,0 +1,484 @@
+<app-public-navbar />
+<div class="plateforme-dashboard-page">
+  <!-- Top Banner -->
+  <header class="plateforme-header">
+    <div class="header-container">
+      <div class="user-intro">
+        <div class="user-avatar-circle">
+          <span class="user-avatar-letter">{{ userName.charAt(0).toUpperCase() }}</span>
+        </div>
+        <div>
+          <span class="user-role-badge">ESPACE PERSONNEL CLIENT</span>
+          <h1 class="user-title">Bonjour, {{ userName }}</h1>
+          <p class="user-sub">Tableau de bord transversal multi-salons de votre beauté capillaire</p>
+        </div>
+      </div>
+
+      <div class="header-shortcuts">
+        <a routerLink="/explore" class="btn-explore-shortcut">
+          <mat-icon class="icon-xs">search</mat-icon>
+          <span>Explorer les salons</span>
+        </a>
+        <a routerLink="/kadys" class="btn-kadys-shortcut">
+          <mat-icon class="icon-xs">auto_awesome</mat-icon>
+          <span>Kady's Reels</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Horizontal Navigation Tabs -->
+  <nav class="plateforme-nav-tabs">
+    <div class="nav-container">
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'PROFIL_CAPILLAIRE'"
+        (click)="activeTab.set('PROFIL_CAPILLAIRE')"
+      >
+        <mat-icon class="icon-xs">biotech</mat-icon>
+        <span>Mon Profil Capillaire</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'RENDEZ_VOUS'"
+        (click)="activeTab.set('RENDEZ_VOUS')"
+      >
+        <mat-icon class="icon-xs">calendar_month</mat-icon>
+        <span>Mes Rendez-vous</span>
+        <span class="tab-badge">{{ rendezVous().length }}</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'COMMANDES'"
+        (click)="activeTab.set('COMMANDES')"
+      >
+        <mat-icon class="icon-xs">shopping_bag</mat-icon>
+        <span>Mes Commandes</span>
+        <span class="tab-badge">{{ commandes().length }}</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'FAVORIS'"
+        (click)="activeTab.set('FAVORIS')"
+      >
+        <mat-icon class="icon-xs">favorite</mat-icon>
+        <span>Salons & Coiffeurs</span>
+        <span class="tab-badge">{{ salonsFavoris().length + coiffeursFavoris().length }}</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'INSPIRATIONS'"
+        (click)="activeTab.set('INSPIRATIONS')"
+      >
+        <mat-icon class="icon-xs">auto_awesome</mat-icon>
+        <span>Inspirations Kady's</span>
+        <span class="tab-badge">{{ inspirations().length }}</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'COMPTE'"
+        (click)="activeTab.set('COMPTE')"
+      >
+        <mat-icon class="icon-xs">manage_accounts</mat-icon>
+        <span>Mon Compte</span>
+      </button>
+
+      <button
+        class="nav-tab-item"
+        [class.active]="activeTab() === 'RGPD'"
+        (click)="activeTab.set('RGPD')"
+      >
+        <mat-icon class="icon-xs">shield</mat-icon>
+        <span>Réclamations & RGPD</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Content Sections -->
+  <main class="plateforme-tab-content">
+    <!-- 1. PROFIL CAPILLAIRE TAB -->
+    <div *ngIf="activeTab() === 'PROFIL_CAPILLAIRE'" class="tab-pane">
+      <div class="profil-capillaire-wrapper">
+        <div class="card-diagnostic">
+          <div class="diagnostic-intro">
+            <h3>Diagnostic Capillaire Personnalisé</h3>
+            <p>Ces informations permettent à tous les coiffeurs des salons partenaires d'adapter les soins et produits à la nature exacte de vos cheveux.</p>
+          </div>
+
+          <div class="diagnostic-grid">
+            <div class="form-group">
+              <label>Type de cheveux :</label>
+              <select [(ngModel)]="profilForm.typeCheveux" class="form-select">
+                <option value="">Sélectionner...</option>
+                <option value="Lisses">Type 1 : Lisses</option>
+                <option value="Ondulés">Type 2 : Ondulés</option>
+                <option value="Bouclés">Type 3 : Bouclés</option>
+                <option value="Frisés">Type 4A / 4B : Frisés</option>
+                <option value="Crépus">Type 4C : Crépus</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Texture :</label>
+              <select [(ngModel)]="profilForm.texture" class="form-select">
+                <option value="">Sélectionner...</option>
+                <option value="Fins">Fins</option>
+                <option value="Moyens">Moyens</option>
+                <option value="Épais">Épais</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Longueur :</label>
+              <select [(ngModel)]="profilForm.longueur" class="form-select">
+                <option value="">Sélectionner...</option>
+                <option value="Très courts">Très courts / Rasés</option>
+                <option value="Courts">Courts</option>
+                <option value="Mi-longs">Mi-longs</option>
+                <option value="Longs">Longs</option>
+                <option value="Très longs">Très longs</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>État du cuir chevelu :</label>
+              <select [(ngModel)]="profilForm.cuirChevelu" class="form-select">
+                <option value="">Sélectionner...</option>
+                <option value="Normal">Normal</option>
+                <option value="Sec">Sec / Desquamation</option>
+                <option value="Gras">Gras</option>
+                <option value="Sensible / Irrité">Sensible / Irrité</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label>Sensibilités, allergies ou produits à éviter :</label>
+            <input
+              type="text"
+              [(ngModel)]="profilForm.allergiesProduits"
+              placeholder="Ex : Huile essentielle de tea tree, décolorations chimiques fortes, sulfates..."
+              class="form-input"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Observations et préférences de coiffage :</label>
+            <textarea
+              [(ngModel)]="profilForm.observations"
+              rows="3"
+              placeholder="Ex : Préfère un coiffage doux sans chaleur excessive, transition vers le naturel..."
+              class="form-textarea"
+            ></textarea>
+          </div>
+
+          <button
+            (click)="enregistrerProfilCapillaire()"
+            [disabled]="savingProfil"
+            class="btn-save-diagnostic"
+          >
+            <span *ngIf="!savingProfil">Enregistrer mon diagnostic</span>
+            <span *ngIf="savingProfil">Sauvegarde en cours...</span>
+          </button>
+        </div>
+
+        <!-- Secret PIN Box -->
+        <div class="card-pin-code">
+          <mat-icon class="icon-lg">lock</mat-icon>
+          <h4>Code PIN Secret d'Accès</h4>
+          <p>Définissez un code confidentiel à 4 chiffres. Vous pourrez le communiquer oralement à votre coiffeur au salon pour lui déverrouiller l'accès à votre fiche capillaire complète.</p>
+
+          <div class="pin-status-pill" [class.has-pin]="profilCapillaire()?.hasCodeProfil">
+            {{ profilCapillaire()?.hasCodeProfil ? 'PIN Actif et Protégé' : 'Aucun code PIN défini' }}
+          </div>
+
+          <div class="pin-input-row">
+            <input
+              type="password"
+              maxlength="6"
+              [(ngModel)]="pinCode"
+              placeholder="Ex : 4920"
+              class="input-pin"
+            />
+            <button
+              (click)="definirCodePin()"
+              [disabled]="savingPin || !pinCode"
+              class="btn-save-pin"
+            >
+              Mettre à jour
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. RENDEZ-VOUS TAB -->
+    <div *ngIf="activeTab() === 'RENDEZ_VOUS'" class="tab-pane">
+      <div *ngIf="rendezVous().length === 0" class="empty-plateforme-card">
+        <mat-icon class="icon-xl">calendar_month</mat-icon>
+        <h3>Aucun rendez-vous sur la plateforme</h3>
+        <p>Explorez les salons de coiffure pour réserver votre prochain rendez-vous en ligne.</p>
+        <a routerLink="/explore" class="btn-empty-action">Découvrir les salons</a>
+      </div>
+
+      <div *ngIf="rendezVous().length > 0" class="global-rdv-list">
+        <div *ngFor="let r of rendezVous()" class="global-rdv-card-3d">
+          <div class="card-left">
+            <span class="salon-name-badge">Salon partenaire</span>
+            <h4 class="rdv-date">{{ r.dateHeure | date:'fullDate' }} à {{ r.dateHeure | date:'HH:mm' }}</h4>
+            <div class="services-row">
+              <span *ngFor="let s of r.services" class="chip-service">
+                <mat-icon class="icon-xs">content_cut</mat-icon> {{ s }}
+              </span>
+            </div>
+            <span *ngIf="r.coiffeurNom" class="hairdresser-txt">Coiffeur : {{ r.coiffeurNom }}</span>
+          </div>
+
+          <div class="card-right">
+            <span class="rdv-status-badge" [attr.data-statut]="r.statut">{{ r.statut }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. COMMANDES TAB -->
+    <div *ngIf="activeTab() === 'COMMANDES'" class="tab-pane">
+      <div *ngIf="commandes().length === 0" class="empty-plateforme-card">
+        <mat-icon class="icon-xl">shopping_bag</mat-icon>
+        <h3>Aucune commande passée</h3>
+        <p>Commandez vos produits capillaires préférés dans les boutiques des salons.</p>
+        <a routerLink="/explore" class="btn-empty-action">Explorer les boutiques</a>
+      </div>
+
+      <div *ngIf="commandes().length > 0" class="global-orders-grid">
+        <div *ngFor="let cmd of commandes()" class="global-order-card">
+          <div class="order-top">
+            <span class="order-num">N° {{ cmd.numeroCommande }}</span>
+            <span class="order-status" [attr.data-statut]="cmd.statut">{{ cmd.statut }}</span>
+          </div>
+
+          <!-- Pickup code box -->
+          <div *ngIf="cmd.codeRetrait" class="order-pickup-box">
+            <span class="label">CODE DE RETRAIT AU COMPTOIR</span>
+            <span class="code">{{ cmd.codeRetrait }}</span>
+          </div>
+
+          <div class="order-items">
+            <div *ngFor="let l of cmd.lignes" class="item">
+              <span>{{ l.quantite }}x {{ l.produitNom }}</span>
+              <span>{{ l.sousTotal | number:'1.0-0' }} FCFA</span>
+            </div>
+          </div>
+
+          <div class="order-total">
+            <span>Total :</span>
+            <span>{{ cmd.montantTotal | number:'1.0-0' }} FCFA</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. FAVORIS TAB -->
+    <div *ngIf="activeTab() === 'FAVORIS'" class="tab-pane">
+      <h3 class="subsection-title">Salons Favoris ({{ salonsFavoris().length }})</h3>
+      <div *ngIf="salonsFavoris().length === 0" class="empty-sub">
+        <p>Aucun salon en favori.</p>
+      </div>
+      <div class="favs-grid" *ngIf="salonsFavoris().length > 0">
+        <div *ngFor="let s of salonsFavoris()" class="fav-card">
+          <div class="fav-icon-box">
+            <mat-icon class="icon-md">storefront</mat-icon>
+          </div>
+          <div class="fav-meta">
+            <h4>{{ s.salonNom }}</h4>
+            <a [routerLink]="['/' + s.salonSlug + '/vitrine']" class="link-vitrine">Voir la vitrine <mat-icon class="icon-xs">arrow_forward</mat-icon></a>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="subsection-title" style="margin-top: 36px;">Coiffeurs Favoris ({{ coiffeursFavoris().length }})</h3>
+      <div *ngIf="coiffeursFavoris().length === 0" class="empty-sub">
+        <p>Aucun coiffeur en favori.</p>
+      </div>
+      <div class="favs-grid" *ngIf="coiffeursFavoris().length > 0">
+        <div *ngFor="let c of coiffeursFavoris()" class="fav-card">
+          <div class="fav-icon-box">
+            <mat-icon class="icon-md">content_cut</mat-icon>
+          </div>
+          <div class="fav-meta">
+            <h4>{{ c.coiffeurNomComplet }}</h4>
+            <span class="salon-name-sub">@{{ c.salonNom }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SALONS RÉCEMMENT CONSULTÉS (Point 55) -->
+      <div *ngIf="salonsRecents().length > 0" style="margin-top: 36px;">
+        <h3 class="subsection-title">
+          <mat-icon class="icon-sm">history</mat-icon> Salons Récemment Consultés ({{ salonsRecents().length }})
+        </h3>
+        <div class="favs-grid">
+          <div *ngFor="let slug of salonsRecents()" class="fav-card recent-salon-card">
+            <div class="fav-icon-box">
+              <mat-icon class="icon-md">storefront</mat-icon>
+            </div>
+            <div class="fav-meta">
+              <h4>Salon {{ slug }}</h4>
+              <a [routerLink]="['/' + slug + '/vitrine']" class="link-vitrine">Retourner au salon <mat-icon class="icon-xs">arrow_forward</mat-icon></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. INSPIRATIONS KADY'S TAB -->
+    <div *ngIf="activeTab() === 'INSPIRATIONS'" class="tab-pane">
+      <div *ngIf="inspirations().length === 0" class="empty-plateforme-card">
+        <mat-icon class="icon-xl">auto_awesome</mat-icon>
+        <h3>Aucune inspiration likée</h3>
+        <p>Double-tapez sur les vidéos du flux Kady's pour sauvegarder vos looks favoris ici !</p>
+        <a routerLink="/kadys" class="btn-empty-action">Ouvrir Kady's Reels</a>
+      </div>
+
+      <div *ngIf="inspirations().length > 0" class="inspirations-grid">
+        <div *ngFor="let insp of inspirations()" class="inspiration-card">
+          <div class="insp-video-box">
+            <video
+              [appHlsVideo]="insp.urlVideo"
+              playsinline
+              muted
+              loop
+              onmouseover="this.play()"
+              onmouseout="this.pause()"
+              class="insp-video"
+            ></video>
+            <span class="insp-heart-badge">
+              <mat-icon class="icon-xs">favorite</mat-icon> {{ insp.totalLikes }}
+            </span>
+          </div>
+          <div class="insp-body">
+            <h4>{{ insp.titre }}</h4>
+            <span class="salon-tag">@{{ insp.salonNom }}</span>
+            <a
+              [routerLink]="['/' + insp.salonSlug + '/vitrine']"
+              [queryParams]="{ bookLook: insp.id }"
+              class="btn-book-look-insp"
+            >
+              Réserver ce style <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MON COMPTE TAB -->
+    <div *ngIf="activeTab() === 'COMPTE'" class="tab-pane">
+      <div class="compte-security-wrapper">
+        <div class="card-compte-info">
+          <h3>Informations Personnelles</h3>
+          <div class="compte-field-row">
+            <span class="label">Nom complet :</span>
+            <span class="val">{{ compte()?.prenom }} {{ compte()?.nom }}</span>
+          </div>
+          <div class="compte-field-row">
+            <span class="label">Adresse Email :</span>
+            <span class="val">{{ compte()?.email }}</span>
+          </div>
+          <div class="compte-field-row">
+            <span class="label">Téléphone :</span>
+            <span class="val">{{ compte()?.telephone || 'Non renseigné' }}</span>
+          </div>
+        </div>
+
+        <div class="card-password">
+          <h3>Modifier mon mot de passe</h3>
+          <div class="form-group">
+            <label>Ancien mot de passe :</label>
+            <input type="password" [(ngModel)]="ancienMotDePasse" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Nouveau mot de passe :</label>
+            <input type="password" [(ngModel)]="nouveauMotDePasse" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Confirmer le mot de passe :</label>
+            <input type="password" [(ngModel)]="confirmMotDePasse" class="form-input" />
+          </div>
+          <button
+            (click)="changerMotDePasse()"
+            [disabled]="savingPassword || !ancienMotDePasse || !nouveauMotDePasse"
+            class="btn-save-pwd"
+          >
+            Mettre à jour mon mot de passe
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. RÉCLAMATIONS & RGPD TAB -->
+    <div *ngIf="activeTab() === 'RGPD'" class="tab-pane">
+      <div class="rgpd-wrapper">
+        <!-- New Complaint -->
+        <div class="card-reclamation">
+          <h3>Déposer une réclamation auprès d'un salon</h3>
+          <p>Un problème avec une prestation ou une commande ? Transmettez directement votre réclamation au manager du salon.</p>
+
+          <div class="form-group">
+            <label>Slug ou identifiant du salon :</label>
+            <input
+              type="text"
+              [(ngModel)]="reclamationSalonSlug"
+              placeholder="Ex : salon-prestige"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>Objet :</label>
+            <input
+              type="text"
+              [(ngModel)]="reclamationObjet"
+              placeholder="Ex : Retard important / Article manquant"
+              class="form-input"
+            />
+          </div>
+          <div class="form-group">
+            <label>Description du litige :</label>
+            <textarea
+              [(ngModel)]="reclamationDesc"
+              rows="3"
+              placeholder="Détaillez les circonstances de votre réclamation..."
+              class="form-textarea"
+            ></textarea>
+          </div>
+          <button
+            (click)="soumettreReclamation()"
+            [disabled]="submittingReclamation"
+            class="btn-send-reclamation"
+          >
+            Envoyer la réclamation
+          </button>
+        </div>
+
+        <!-- RGPD Rights -->
+        <div class="card-rgpd-actions">
+          <h3>Vos droits et protection des données (RGPD)</h3>
+          <p>Conformément aux normes RGPD, vous disposez d'un contrôle total sur l'ensemble de vos données personnelles.</p>
+
+          <div class="rgpd-button-row">
+            <button (click)="demanderExportDonnees()" class="btn-rgpd-export">
+              <mat-icon class="icon-sm">download</mat-icon> Exporter toutes mes données (Portabilité)
+            </button>
+            <button (click)="demanderSuppressionCompte()" class="btn-rgpd-delete">
+              <mat-icon class="icon-sm">delete_forever</mat-icon> Demander la suppression de mon compte (Droit à l'oubli)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

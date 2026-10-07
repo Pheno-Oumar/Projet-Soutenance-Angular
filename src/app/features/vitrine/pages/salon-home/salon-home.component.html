@@ -1,0 +1,651 @@
+<div class="salon-home-page">
+  <!-- ========================================================= -->
+  <!-- SECTION 1 : HERO BANNER 3D THREE.JS HAUTE FIDÉLITÉ        -->
+  <!-- ========================================================= -->
+  <header class="home-hero-section">
+    <!-- Canevas 3D WebGL Three.js : Rubans de soie & particules en arrière-plan -->
+    <app-salon-hero-3d />
+    <div class="hero-bg-overlay" aria-hidden="true"></div>
+
+    <div class="hero-container">
+      <div class="hero-brand-pill" appRevealOnScroll [revealDelay]="100">
+        <span class="status-indicator" [class.is-open]="ouverture().isOpen"></span>
+        <span class="status-text">{{ ouverture().message }}</span>
+      </div>
+
+      <h1 class="hero-title" appRevealOnScroll [revealDelay]="200">
+        {{ salon()?.nom || 'Maison de Beauté' }}
+      </h1>
+
+      <p class="hero-desc" appRevealOnScroll [revealDelay]="300">
+        {{ salon()?.description || 'Votre maison de beauté dédiée à l’art capillaire d’exception. Découvrez nos rituels de soin signatures, nos coiffeurs experts et notre boutique officielle.' }}
+      </p>
+
+      <div class="hero-actions-row" appRevealOnScroll [revealDelay]="400">
+        <a [routerLink]="['/' + slugSalon + '/services']" class="btn-hero-primary">
+          <mat-icon class="icon-sm">calendar_month</mat-icon>
+          <span>Réserver un rendez-vous</span>
+        </a>
+        <a [routerLink]="['/' + slugSalon + '/boutique']" class="btn-hero-secondary">
+          <mat-icon class="icon-sm">shopping_bag</mat-icon>
+          <span>Boutique du salon</span>
+        </a>
+        <a [routerLink]="['/' + slugSalon + '/realisations']" class="btn-hero-reels">
+          <mat-icon class="icon-sm">play_arrow</mat-icon>
+          <span>Réalisations & Styles</span>
+        </a>
+      </div>
+
+      <!-- Barre de réassurance Hero -->
+      <div class="hero-highlights" appRevealOnScroll [revealDelay]="500">
+        <div class="highlight-item">
+          <mat-icon class="hl-icon">verified</mat-icon>
+          <div class="hl-text">
+            <strong>Soins d’Artisans</strong>
+            <span>Prestations sur-mesure</span>
+          </div>
+        </div>
+        <div class="highlight-item">
+          <mat-icon class="hl-icon">schedule</mat-icon>
+          <div class="hl-text">
+            <strong>Réservation Directe</strong>
+            <span>Créneaux en temps réel</span>
+          </div>
+        </div>
+        <div class="highlight-item">
+          <mat-icon class="hl-icon">storefront</mat-icon>
+          <div class="hl-text">
+            <strong>Click & Collect</strong>
+            <span>Retrait offert au comptoir</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 2 : RUBAN DE STORIES 24H DU SALON                 -->
+  <!-- ========================================================= -->
+  <section class="section-stories-bar" *ngIf="stories().length > 0" appRevealOnScroll>
+    <div class="stories-container">
+      <div class="stories-scroll-row">
+        <!-- Bulle 1 : Le Salon lui-même -->
+        <button
+          type="button"
+          class="story-bubble-btn"
+          (click)="openStory(stories()[0], 0)"
+        >
+          <div class="story-avatar-ring has-story">
+            <img
+              *ngIf="salon()?.logoUrl"
+              [src]="salon()!.logoUrl | safeMedia"
+              [alt]="salon()?.nom || 'Story'"
+              class="story-avatar-img"
+            />
+            <div *ngIf="!salon()?.logoUrl" class="story-avatar-fallback">
+              <mat-icon>spa</mat-icon>
+            </div>
+          </div>
+          <span class="story-label">{{ salon()?.nom ? (salon()?.nom?.split(' ')?.slice(0, 2)?.join(' ')) : 'Le Salon' }}</span>
+        </button>
+
+        <!-- Liste des stories actives du salon -->
+        <button
+          type="button"
+          class="story-bubble-btn"
+          *ngFor="let s of stories(); let i = index"
+          (click)="openStory(s, i)"
+        >
+          <div class="story-avatar-ring has-story">
+            <img
+              *ngIf="s.typeMedia === 'IMAGE' && s.mediaUrl"
+              [src]="s.mediaUrl | safeMedia"
+              alt="Story"
+              class="story-avatar-img"
+            />
+            <video
+              *ngIf="s.typeMedia === 'VIDEO' && s.mediaUrl"
+              [appHlsVideo]="s.mediaUrl"
+              playsinline
+              muted
+              loop
+              autoplay
+              class="story-avatar-img"
+            ></video>
+            <div *ngIf="!s.mediaUrl" class="story-avatar-fallback">
+              <mat-icon>auto_awesome</mat-icon>
+            </div>
+          </div>
+          <span class="story-label">Story {{ i + 1 }}</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 3 : MESSAGE D'ACCUEIL CONTEXTUEL ET INTELLIGENT   -->
+  <!-- ========================================================= -->
+  <section class="section-greeting" appRevealOnScroll>
+    <div class="greeting-container">
+      <div class="greeting-card">
+        <div class="greeting-left">
+          <div class="greeting-badge">
+            <mat-icon class="icon-xs">auto_awesome</mat-icon>
+            <span>Bienvenue chez votre artisan</span>
+          </div>
+          <h2 class="greeting-title">
+            {{ salutation() }}<span *ngIf="clientDisplayName()"> {{ clientDisplayName() }}</span>,
+            prenez place dans notre univers.
+          </h2>
+          <p class="greeting-sub">
+            Chaque instant passé dans notre maison est pensé pour révéler la beauté naturelle et la force de votre chevelure.
+          </p>
+        </div>
+
+        <div class="greeting-right">
+          <div class="affluence-box">
+            <div class="affluence-icon">
+              <mat-icon>face</mat-icon>
+            </div>
+            <div class="affluence-text">
+              <span class="affluence-number">{{ coiffeurs().length || 3 }} coiffeurs</span>
+              <span class="affluence-label">à votre écoute aujourd'hui</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 4 : CARROUSEL DES PRESTATIONS SIGNATURES          -->
+  <!-- ========================================================= -->
+  <section class="section-signatures" id="section-prestations" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="section-header-row">
+        <div>
+          <span class="section-tag">L’Art du Geste</span>
+          <h2 class="section-heading">Prestations Signatures</h2>
+        </div>
+        <a [routerLink]="['/' + slugSalon + '/services']" class="btn-section-link">
+          <span>Consulter toute la carte</span>
+          <mat-icon class="icon-sm">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      <div class="signatures-grid">
+        <article
+          class="signature-card"
+          *ngFor="let item of variantesSignatures()"
+          appTilt3d
+          [maxTilt]="6"
+        >
+          <div class="card-media">
+            <img
+              *ngIf="item.imageUrl"
+              [src]="item.imageUrl | safeMedia"
+              [alt]="item.varianteNom"
+              class="card-img"
+            />
+            <div *ngIf="!item.imageUrl" class="card-media-fallback">
+              <mat-icon class="icon-lg">spa</mat-icon>
+            </div>
+            <span class="card-duration-badge">
+              <mat-icon class="icon-xs">schedule</mat-icon>
+              {{ item.dureeMinutes }} min
+            </span>
+          </div>
+
+          <div class="card-body">
+            <span class="card-service-name">{{ item.serviceNom }}</span>
+            <h3 class="card-title">{{ item.varianteNom }}</h3>
+
+            <div class="card-footer-row">
+              <span class="card-price">{{ item.prix | number:'1.0-0' }} FCFA</span>
+
+              <button
+                type="button"
+                class="btn-add-rdv"
+                [class.is-added]="isVarianteSelected(item.id)"
+                (click)="onAddVariante($event, item)"
+                aria-label="Ajouter au rendez-vous"
+              >
+                <mat-icon class="icon-sm">
+                  {{ isVarianteSelected(item.id) ? 'check' : 'add' }}
+                </mat-icon>
+                <span>{{ isVarianteSelected(item.id) ? 'Sélectionné' : 'Ajouter au RDV' }}</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 5 : TEASER VIDÉO RÉALISATIONS TIKTOK-LIKE         -->
+  <!-- ========================================================= -->
+  <section class="section-realisations" id="section-galerie" *ngIf="realisationsAvecVideo().length > 0" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="section-header-row">
+        <div>
+          <span class="section-tag">Galerie Vivante</span>
+          <h2 class="section-heading">Styles & Réalisations</h2>
+        </div>
+        <a [routerLink]="['/' + slugSalon + '/realisations']" class="btn-section-link">
+          <span>Voir tout le flux (TikTok-like)</span>
+          <mat-icon class="icon-sm">play_circle_outline</mat-icon>
+        </a>
+      </div>
+
+      <div class="realisations-reels-grid">
+        <a
+          *ngFor="let reel of realisationsAvecVideo()"
+          [routerLink]="['/' + slugSalon + '/realisations/' + reel.id]"
+          class="reel-card"
+          appTilt3d
+          [maxTilt]="8"
+          (mouseenter)="playPreview(vid)"
+          (mouseleave)="pausePreview(vid)"
+        >
+          <div class="reel-media-wrapper">
+            <video
+              #vid
+              [appHlsVideo]="reel.urlVideo"
+              class="reel-video"
+              muted
+              playsinline
+              loop
+              preload="metadata"
+            ></video>
+
+            <!-- Indicateur Play au centre (fading au survol) -->
+            <div class="reel-center-play">
+              <div class="play-pulse-circle">
+                <mat-icon class="play-icon">play_arrow</mat-icon>
+              </div>
+            </div>
+
+            <!-- Badges superposés TikTok style -->
+            <div class="reel-views-badge">
+              <mat-icon class="icon-xs">play_arrow</mat-icon>
+              <span>{{ formatCount(reel.totalVues) }}</span>
+            </div>
+
+            <div class="reel-likes-badge">
+              <mat-icon class="icon-xs">favorite</mat-icon>
+              <span>{{ formatCount(reel.totalLikes) }}</span>
+            </div>
+          </div>
+
+          <div class="reel-info">
+            <span class="reel-artist" *ngIf="reel.coiffeurNomComplet">
+              <mat-icon class="icon-xs">person</mat-icon>
+              {{ reel.coiffeurNomComplet }}
+            </span>
+            <h4 class="reel-title">{{ reel.titre }}</h4>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 6 : CARROUSEL BOUTIQUE SOINS & CLICK & COLLECT    -->
+  <!-- ========================================================= -->
+  <section class="section-boutique" id="section-boutique" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="section-header-row">
+        <div>
+          <span class="section-tag">Rituels à Domicile</span>
+          <h2 class="section-heading">Boutique & Soins du Salon</h2>
+        </div>
+        <a [routerLink]="['/' + slugSalon + '/boutique']" class="btn-section-link">
+          <span>Explorer toute la boutique</span>
+          <mat-icon class="icon-sm">shopping_bag</mat-icon>
+        </a>
+      </div>
+
+      <div class="boutique-products-grid">
+        <article
+          class="product-card"
+          *ngFor="let p of produits()"
+          appTilt3d
+          [maxTilt]="6"
+        >
+          <div class="product-media">
+            <img
+              *ngIf="p.imageUrl"
+              [src]="p.imageUrl | safeMedia"
+              [alt]="p.nom"
+              class="product-img"
+            />
+            <div *ngIf="!p.imageUrl" class="product-media-fallback">
+              <mat-icon class="icon-lg">inventory_2</mat-icon>
+            </div>
+            <span class="stock-badge">
+              <mat-icon class="icon-xs">storefront</mat-icon>
+              En stock au salon
+            </span>
+          </div>
+
+          <div class="product-body">
+            <span class="product-brand" *ngIf="p.categorieNom">{{ p.categorieNom }}</span>
+            <h3 class="product-name">{{ p.nom }}</h3>
+
+            <div class="product-footer-row">
+              <span class="product-price">{{ p.prixVente | number:'1.0-0' }} FCFA</span>
+
+              <button
+                type="button"
+                class="btn-add-cart"
+                (click)="onAddProduitToCart($event, p)"
+                aria-label="Ajouter au panier Click & Collect"
+              >
+                <mat-icon class="icon-sm">add_shopping_cart</mat-icon>
+                <span>Ajouter</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 7 : L'ÉQUIPE DU SALON (CARTES FLIP 3D)            -->
+  <!-- ========================================================= -->
+  <section class="section-equipe" id="section-equipe" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="section-header-row">
+        <div>
+          <span class="section-tag">Mains d'Experts</span>
+          <h2 class="section-heading">Notre Équipe d'Artisans</h2>
+        </div>
+        <a [routerLink]="['/' + slugSalon + '/equipe']" class="btn-section-link">
+          <span>Faire connaissance avec tous les artistes</span>
+          <mat-icon class="icon-sm">content_cut</mat-icon>
+        </a>
+      </div>
+
+      <div class="equipe-cards-grid">
+        <div
+          class="flip-card-wrapper"
+          *ngFor="let coiffeur of coiffeurs()"
+          [class.is-flipped]="isCardFlipped(coiffeur.id)"
+          (click)="toggleCardFlip(coiffeur.id)"
+        >
+          <div class="flip-card-inner">
+            <!-- RECTO : Portrait & Infos de base -->
+            <div class="flip-card-front">
+              <div class="coiffeur-avatar-box">
+                <img
+                  *ngIf="coiffeur.photoProfilUrl"
+                  [src]="coiffeur.photoProfilUrl | safeMedia"
+                  [alt]="coiffeur.coiffeurPrenom"
+                  class="coiffeur-avatar-img"
+                />
+                <div *ngIf="!coiffeur.photoProfilUrl" class="coiffeur-avatar-fallback">
+                  <mat-icon class="icon-xl">face</mat-icon>
+                </div>
+              </div>
+              <h3 class="coiffeur-name">{{ coiffeur.coiffeurPrenom }} {{ coiffeur.coiffeurNom }}</h3>
+              <span class="coiffeur-specialite">{{ coiffeur.nomAffichage || 'Artisan Capillaire' }}</span>
+
+              <div class="coiffeur-rating-pill">
+                <mat-icon class="icon-xs star-icon">star</mat-icon>
+                <span>4.9 / 5</span>
+              </div>
+
+              <span class="flip-hint">
+                <mat-icon class="icon-xs">touch_app</mat-icon>
+                Cliquer pour découvrir
+              </span>
+            </div>
+
+            <!-- VERSO : Bio & Prise de RDV direct -->
+            <div class="flip-card-back">
+              <h4 class="verso-name">{{ coiffeur.coiffeurPrenom }}</h4>
+              <span class="verso-exp" *ngIf="coiffeur.anneeExperience">
+                {{ coiffeur.anneeExperience }} années d'expérience
+              </span>
+              <p class="verso-bio">
+                {{ coiffeur.biographie || coiffeur.description || 'Passionné(e) par la mise en valeur des textures capillaires et l’exigence du travail bien fait.' }}
+              </p>
+
+              <button
+                type="button"
+                class="btn-verso-book"
+                (click)="bookWithCoiffeur($event, coiffeur)"
+              >
+                <mat-icon class="icon-sm">calendar_month</mat-icon>
+                <span>Prendre RDV avec {{ coiffeur.coiffeurPrenom }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 8 : TÉMOIGNAGES & AVIS MARQUEE INFINI             -->
+  <!-- ========================================================= -->
+  <section class="section-avis" id="section-avis" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="avis-header-center">
+        <span class="section-tag">Retours d'Expérience</span>
+        <h2 class="section-heading">La Voix de Nos Clients</h2>
+        <div class="global-rating-badge">
+          <mat-icon class="icon-sm star-filled">star</mat-icon>
+          <span class="rating-val">{{ noteMoyenne() }} / 5</span>
+          <span class="rating-count">· Avis Certifiés Vérifiés</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ruban défilant continu (Marquee CSS) -->
+    <div class="marquee-wrapper" aria-hidden="true">
+      <div class="marquee-track">
+        <div class="review-bubble" *ngFor="let a of avisAffiches()">
+          <div class="review-stars">
+            <mat-icon class="star-mini" *ngFor="let s of [1,2,3,4,5]">star</mat-icon>
+          </div>
+          <p class="review-text">« {{ a.commentaire }} »</p>
+          <div class="review-author">
+            <mat-icon class="icon-xs">verified</mat-icon>
+            <strong>{{ a.clientNomComplet || 'Client certifié' }}</strong>
+          </div>
+        </div>
+
+        <!-- Duplication pour boucle infinie sans saut -->
+        <div class="review-bubble" *ngFor="let a of avisAffiches()">
+          <div class="review-stars">
+            <mat-icon class="star-mini" *ngFor="let s of [1,2,3,4,5]">star</mat-icon>
+          </div>
+          <p class="review-text">« {{ a.commentaire }} »</p>
+          <div class="review-author">
+            <mat-icon class="icon-xs">verified</mat-icon>
+            <strong>{{ a.clientNomComplet || 'Client certifié' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-inner text-center mt-3">
+      <a [routerLink]="['/' + slugSalon + '/avis']" class="btn-all-avis">
+        <span>Lire l'ensemble des retours certifiés</span>
+        <mat-icon class="icon-sm">arrow_forward</mat-icon>
+      </a>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 9 : HORAIRES EN DIRECT, CARTE LEAFLET & CONTACT   -->
+  <!-- ========================================================= -->
+  <section class="section-infos" id="section-contact" appRevealOnScroll>
+    <div class="section-inner">
+      <div class="infos-split-grid">
+        <!-- Colonne 1 : Tableau des horaires d'ouverture -->
+        <div class="infos-card">
+          <div class="card-icon-title">
+            <mat-icon class="icon-md">schedule</mat-icon>
+            <h3>Horaires d'Ouverture</h3>
+          </div>
+          <p class="infos-sub">Nous vous accueillons avec ou sans rendez-vous préalable selon disponibilités.</p>
+
+          <ul class="horaires-list">
+            <li
+              class="horaire-row"
+              *ngFor="let h of horaires()"
+              [class.is-today]="h.jourSemaine?.toUpperCase() === ouverture().horaireAujourdhui?.jourSemaine?.toUpperCase()"
+            >
+              <span class="day-name">
+                {{ h.jourSemaine | titlecase }}
+                <span class="today-tag" *ngIf="h.jourSemaine?.toUpperCase() === ouverture().horaireAujourdhui?.jourSemaine?.toUpperCase()">
+                  Aujourd'hui
+                </span>
+              </span>
+              <span class="hours-val" *ngIf="h.actif !== false">
+                {{ h.heureOuverture.substring(0, 5) }} - {{ h.heureFermeture.substring(0, 5) }}
+              </span>
+              <span class="hours-val closed-val" *ngIf="h.actif === false">
+                Fermé
+              </span>
+            </li>
+          </ul>
+
+          <div class="contact-quick-links">
+            <a *ngIf="salon()?.telephone" [href]="'tel:' + salon()!.telephone" class="quick-link-btn">
+              <mat-icon class="icon-sm">call</mat-icon>
+              <span>{{ salon()!.telephone }}</span>
+            </a>
+            <a *ngIf="salon()?.email" [href]="'mailto:' + salon()!.email" class="quick-link-btn">
+              <mat-icon class="icon-sm">mail</mat-icon>
+              <span>{{ salon()!.email }}</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Colonne 2 : Carte Interactive Leaflet -->
+        <div class="infos-card map-card">
+          <div class="card-icon-title">
+            <mat-icon class="icon-md">location_on</mat-icon>
+            <div>
+              <h3>Accès au Salon</h3>
+              <span class="address-sub">{{ salon()?.adresse || 'Adresse du salon' }}</span>
+            </div>
+          </div>
+
+          <div class="leaflet-map-box">
+            <div #mapElement class="leaflet-map-element"></div>
+          </div>
+
+          <button type="button" class="btn-gps-route" (click)="openGoogleMaps()">
+            <mat-icon class="icon-sm">navigation</mat-icon>
+            <span>Ouvrir l'itinéraire GPS (Google Maps / Waze)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- SECTION 10 : BANNIÈRE DE CONVERSION FINALE                -->
+  <!-- ========================================================= -->
+  <section class="section-cta-banner" appRevealOnScroll>
+    <div class="cta-banner-container">
+      <div class="cta-banner-content">
+        <span class="banner-pill">Votre Rendez-vous en Ligne</span>
+        <h2 class="banner-heading">Offrez à votre chevelure le soin d'excellence qu'elle mérite.</h2>
+        <p class="banner-sub">
+          Réservez en quelques clics chez {{ salon()?.nom || 'notre maison de beauté' }}, sans avance de frais.
+        </p>
+
+        <div class="banner-actions">
+          <button type="button" class="btn-banner-primary" (click)="openBookingDrawer()">
+            <mat-icon class="icon-sm">calendar_month</mat-icon>
+            <span>Prendre un Rendez-vous Immédiat</span>
+          </button>
+          <a [routerLink]="['/' + slugSalon + '/services']" class="btn-banner-secondary">
+            <span>Explorer les Prestations</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= -->
+  <!-- MODAL VISIONNEUSE DE STORY PLEIN ÉCRAN                    -->
+  <!-- ========================================================= -->
+  <div
+    class="story-modal-overlay"
+    *ngIf="selectedStory()"
+    (pointerdown)="pauseStory()"
+    (pointerup)="resumeStory()"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="story-modal-card">
+      <!-- Barre de progression temporelle en haut -->
+      <div class="story-progress-bar-wrap">
+        <div class="story-progress-fill" [style.width.%]="storyProgress()"></div>
+      </div>
+
+      <!-- En-tête story avec logo salon et bouton fermer -->
+      <div class="story-modal-header">
+        <div class="story-modal-brand">
+          <div class="story-header-avatar">
+            <img
+              *ngIf="salon()?.logoUrl"
+              [src]="salon()!.logoUrl | safeMedia"
+              alt="Logo"
+            />
+            <div *ngIf="!salon()?.logoUrl" class="story-header-fallback">
+              <mat-icon class="icon-xs">spa</mat-icon>
+            </div>
+          </div>
+          <span class="story-header-name">{{ salon()?.nom || 'Le Salon' }}</span>
+        </div>
+
+        <button type="button" class="btn-close-story" (click)="closeStory()" aria-label="Fermer la story">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <!-- Média central (Image ou Vidéo) -->
+      <div class="story-media-view">
+        <img
+          *ngIf="selectedStory()?.typeMedia === 'IMAGE'"
+          [src]="selectedStory()!.mediaUrl | safeMedia"
+          alt="Story Media"
+          class="story-full-img"
+        />
+        <video
+          *ngIf="selectedStory()?.typeMedia === 'VIDEO'"
+          [appHlsVideo]="selectedStory()!.mediaUrl"
+          class="story-full-video"
+          autoplay
+          playsinline
+          loop
+        ></video>
+      </div>
+
+      <!-- Flèches de navigation latérale -->
+      <button type="button" class="btn-story-nav prev-btn" (click)="$event.stopPropagation(); prevStory()">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+      <button type="button" class="btn-story-nav next-btn" (click)="$event.stopPropagation(); nextStory()">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <!-- Pied de la story avec action -->
+      <div class="story-modal-footer">
+        <button type="button" class="btn-story-book" (click)="closeStory(); openBookingDrawer()">
+          <mat-icon class="icon-sm">calendar_month</mat-icon>
+          <span>Réserver ce style</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

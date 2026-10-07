@@ -1,0 +1,323 @@
+.client-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.back-nav {
+  margin-bottom: 0.5rem;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--primary-color, #4A3B32);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.back-link svg,
+.back-link mat-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-link:hover {
+  transform: translateX(-4px);
+  color: var(--accent-marron-clair, #C8B6A6);
+}
+
+/* ALERTS */
+.alert-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.alert-error {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #991B1B;
+}
+
+.alert-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* LOADING */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+  color: #716257;
+  font-weight: 500;
+}
+
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid rgba(74, 59, 50, 0.15);
+  border-top-color: var(--primary-color, #4A3B32);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* CLIENT HEADER CARD */
+.client-header-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  box-shadow: 0 10px 25px -5px rgba(74, 59, 50, 0.08), 0 8px 10px -6px rgba(74, 59, 50, 0.04);
+  border: 1px solid rgba(200, 182, 166, 0.25);
+}
+
+.client-avatar-large {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4A3B32 0%, #8C7A6B 50%, #C8B6A6 100%);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  font-weight: 700;
+  box-shadow: 0 8px 16px rgba(74, 59, 50, 0.2);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.client-main-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.client-full-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary-color, #4A3B32);
+  margin: 0;
+}
+
+.client-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  color: #6B5E55;
+  font-size: 0.95rem;
+}
+
+.client-meta-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.meta-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1.15rem;
+  color: var(--accent-marron-clair, #C8B6A6);
+}
+
+/* TABS NAV */
+.tabs-nav {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid rgba(200, 182, 166, 0.3);
+  padding-bottom: 0.25rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #7A6C62;
+  cursor: pointer;
+  border-radius: 10px 10px 0 0;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  color: var(--primary-color, #4A3B32);
+  background: rgba(200, 182, 166, 0.15);
+}
+
+.tab-btn.active {
+  color: var(--primary-color, #4A3B32);
+  background: #FFFFFF;
+  border-bottom: 3px solid var(--primary-color, #4A3B32);
+  box-shadow: 0 4px 12px rgba(74, 59, 50, 0.06);
+}
+
+/* TAB CONTENT PANE */
+.tab-pane {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 25px -5px rgba(74, 59, 50, 0.06);
+  border: 1px solid rgba(200, 182, 166, 0.25);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* PROFIL CAPILLAIRE GRID */
+.profil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.profil-item {
+  background: #FAF7F2;
+  padding: 1.25rem;
+  border-radius: 14px;
+  border: 1px solid rgba(200, 182, 166, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.profil-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8C7A6B;
+  font-weight: 600;
+}
+
+.profil-val {
+  font-size: 1.05rem;
+  color: var(--primary-color, #4A3B32);
+  font-weight: 600;
+}
+
+.text-red {
+  color: #DC2626 !important;
+}
+
+.obs-box {
+  background: #FAF7F2;
+  border-left: 4px solid var(--primary-color, #4A3B32);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0 14px 14px 0;
+}
+
+.obs-box h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--primary-color, #4A3B32);
+}
+
+.obs-box p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #55483F;
+  line-height: 1.5;
+}
+
+/* DATA TABLE */
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table th {
+  padding: 1rem 1.25rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #8C7A6B;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(200, 182, 166, 0.25);
+}
+
+.data-table td {
+  padding: 1rem 1.25rem;
+  font-size: 0.95rem;
+  color: #4A3B32;
+  border-bottom: 1px solid rgba(200, 182, 166, 0.15);
+}
+
+.data-table tr:hover td {
+  background: #FAF7F2;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background: #EAE3DC;
+  color: #4A3B32;
+}
+
+/* EMPTY STATE */
+.empty-tab-box {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #8C7A6B;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .client-header-card {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .client-meta-row {
+    justify-content: center;
+  }
+}

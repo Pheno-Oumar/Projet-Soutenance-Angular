@@ -1,0 +1,1181 @@
+<div class="page-container">
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Caisse, Prestations & Encaissement</h1>
+      <p class="page-subtitle">Ouverture journalière, gestion du salon, encaissement au comptoir et facturation</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="ouvrirModalEncaissementRapide()">
+        <mat-icon class="icon-sm">bolt</mat-icon> Encaissement Express
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Bandeau Session de Caisse -->
+  <div class="caisse-status-card" [class.caisse-ouverte]="sessionCourante()" [class.caisse-fermee]="!sessionCourante()">
+    <div class="caisse-status-info">
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span class="status-text">
+          {{ sessionCourante() ? 'Session de Caisse Ouverte' : 'Session de Caisse Fermée' }}
+        </span>
+      </div>
+
+      <div *ngIf="sessionCourante()" class="caisse-metrics">
+        <div class="metric-item">
+          <span class="metric-label">Ouverte le :</span>
+          <span class="metric-val">{{ sessionCourante()?.dateOuverture | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Fond de caisse :</span>
+          <span class="metric-val">{{ sessionCourante()?.soldeOuverture | number }} FCFA</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Total Encaissé :</span>
+          <span class="metric-val text-success">+{{ sessionCourante()?.totalEntrees | number }} FCFA</span>
+        </div>
+      </div>
+
+      <div *ngIf="!sessionCourante()" class="caisse-closed-msg">
+        La caisse est actuellement fermée. Pour encaisser des règlements au comptoir, veuillez ouvrir une nouvelle session journalière.
+      </div>
+    </div>
+
+    <div class="caisse-status-actions">
+      <button
+        *ngIf="!sessionCourante()"
+        class="btn-primary"
+        (click)="ouvrirModalOuverture()"
+      >
+        <mat-icon class="icon-sm">lock_open</mat-icon> Ouvrir la Caisse
+      </button>
+
+      <button
+        *ngIf="sessionCourante()"
+        class="btn-secondary btn-danger-soft"
+        (click)="ouvrirModalCloture()"
+      >
+        <mat-icon class="icon-sm">lock</mat-icon> Clôturer la Caisse
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre d'Onglets Principale -->
+  <div class="tabs-bar">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'factures'"
+      (click)="changerOnglet('factures')"
+    >
+      <mat-icon class="icon-sm">receipt_long</mat-icon> Factures & Encaissements
+      <span class="tab-badge" *ngIf="factures().length > 0">{{ factures().length }}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'journal'"
+      (click)="changerOnglet('journal')"
+    >
+      <mat-icon class="icon-sm">bar_chart</mat-icon> Journal de Caisse
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'prestations'"
+      (click)="changerOnglet('prestations')"
+    >
+      <mat-icon class="icon-sm">chair</mat-icon> Prestations en cours
+      <span class="tab-badge" *ngIf="prestations().length > 0">{{ prestations().length }}</span>
+    </button>
+  </div>
+
+  <!-- ONGLET 1 : PRESTATIONS -->
+  <div *ngIf="activeTab === 'prestations'" class="section-card">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h2 class="section-title">Prestations du Salon</h2>
+        <span class="badge-count">{{ prestations().length }}</span>
+      </div>
+
+      <!-- Filtres par Statut -->
+      <div class="filter-pills">
+        <button
+          class="pill-btn"
+          [class.active]="selectedStatut === 'TOUTES'"
+          (click)="changerStatutFiltre('TOUTES')"
+        >
+          Toutes
+        </button>
+        <button
+          class="pill-btn"
+          [class.active]="selectedStatut === 'EN_ATTENTE'"
+          (click)="changerStatutFiltre('EN_ATTENTE')"
+        >
+          <mat-icon class="icon-xs">schedule</mat-icon> En attente
+        </button>
+        <button
+          class="pill-btn"
+          [class.active]="selectedStatut === 'EN_COURS'"
+          (click)="changerStatutFiltre('EN_COURS')"
+        >
+          <mat-icon class="icon-xs">content_cut</mat-icon> En cours
+        </button>
+        <button
+          class="pill-btn"
+          [class.active]="selectedStatut === 'TERMINEE'"
+          (click)="changerStatutFiltre('TERMINEE')"
+        >
+          <mat-icon class="icon-xs">check_circle</mat-icon> Terminées
+        </button>
+      </div>
+    </div>
+
+    <!-- Chargement -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des prestations...</p>
+    </div>
+
+    <!-- Aucune prestation -->
+    <div *ngIf="!isLoading() && prestations().length === 0" class="empty-state">
+      <p>Aucune prestation trouvée pour ce statut.</p>
+    </div>
+
+    <!-- Table des Prestations -->
+    <div *ngIf="!isLoading() && prestations().length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Réf / Date</th>
+            <th>Client</th>
+            <th>Services & Coiffeur</th>
+            <th>Montant</th>
+            <th>Statut</th>
+            <th>Facture & Paiement</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of prestations()">
+            <td>
+              <strong class="text-brown">#{{ p.id }}</strong>
+              <div class="text-muted text-xs">{{ (p.dateHeureDebut || p.datePrestation) | date:'dd/MM/yyyy HH:mm' }}</div>
+            </td>
+            <td>
+              <strong>{{ p.prenomClient ? (p.prenomClient + ' ' + (p.nomClient || '')) : (p.clientNom || 'Client Comptoir') }}</strong>
+              <div class="text-muted text-xs" *ngIf="p.telephoneClient || p.clientEmail">
+                <mat-icon class="icon-xs">call</mat-icon> {{ p.telephoneClient || p.clientEmail }}
+              </div>
+            </td>
+            <td>
+              <div *ngFor="let l of p.lignes" class="ligne-item">
+                <span>{{ l.varianteNom || l.serviceNom || 'Prestation' }}</span>
+                <span class="text-muted" *ngIf="l.prixReel"> ({{ l.prixReel | number }} FCFA)</span>
+              </div>
+              <div class="text-muted text-xs mt-1" *ngIf="p.coiffeurPrenom">
+                <mat-icon class="icon-xs">person</mat-icon> Coiffeur : {{ p.coiffeurPrenom }} {{ p.coiffeurNom }}
+              </div>
+            </td>
+            <td>
+              <strong>{{ p.montantTotal | number }} FCFA</strong>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-success': p.statut === 'TERMINEE',
+                  'badge-warning': p.statut === 'EN_COURS',
+                  'badge-info': p.statut === 'EN_ATTENTE',
+                  'badge-danger': p.statut === 'ANNULEE'
+                }"
+              >
+                <mat-icon class="icon-xs" *ngIf="p.statut === 'EN_ATTENTE'">schedule</mat-icon>
+                <mat-icon class="icon-xs" *ngIf="p.statut === 'EN_COURS'">content_cut</mat-icon>
+                <mat-icon class="icon-xs" *ngIf="p.statut === 'TERMINEE'">check_circle</mat-icon>
+                {{ p.statut === 'EN_ATTENTE' ? 'En attente' : p.statut === 'EN_COURS' ? 'En cours' : p.statut === 'TERMINEE' ? 'Terminée' : p.statut }}
+              </span>
+            </td>
+            <td>
+              <div *ngIf="p.facture || p.factureId">
+                <span class="badge-facture" (click)="ouvrirDetailFacture(p.facture?.id || p.factureId)">
+                  <mat-icon class="icon-xs">receipt_long</mat-icon> Facture #{{ p.facture?.numeroFacture || p.facture?.id || p.factureId }}
+                </span>
+                <span *ngIf="p.facture && p.facture.resteAPayer === 0" class="text-success font-semibold inline-flex items-center gap-1">
+                  <mat-icon class="icon-xs">check_circle</mat-icon> Réglée
+                </span>
+                <span *ngIf="p.facture && p.facture.resteAPayer > 0" class="text-danger font-semibold">Reste : {{ p.facture.resteAPayer | number }} F</span>
+              </div>
+              <span *ngIf="!p.facture && !p.factureId" class="text-muted text-xs">—</span>
+            </td>
+            <td class="text-right">
+              <div class="table-actions">
+                <!-- Bouton Installer (si EN_ATTENTE) -->
+                <button
+                  *ngIf="p.statut === 'EN_ATTENTE'"
+                  class="btn-tbl btn-start"
+                  (click)="demarrerPrestation(p)"
+                  title="Installer le client au fauteuil (démarrer)"
+                >
+                  <mat-icon class="icon-xs">chair</mat-icon> Installer
+                </button>
+
+                <!-- Bouton Annuler Prestation en attente -->
+                <button
+                  *ngIf="p.statut === 'EN_ATTENTE'"
+                  class="btn-tbl btn-danger-soft"
+                  (click)="annulerPrestation(p)"
+                  title="Annuler ce ticket"
+                >
+                  <mat-icon class="icon-xs">close</mat-icon>
+                </button>
+
+                <!-- Bouton Terminer Prestation (si EN_COURS) -->
+                <button
+                  *ngIf="p.statut === 'EN_COURS'"
+                  class="btn-tbl btn-finish"
+                  (click)="terminerPrestation(p)"
+                  title="Valider la fin de la coiffure"
+                >
+                  <mat-icon class="icon-xs">check</mat-icon> Terminer
+                </button>
+
+                <!-- Bouton Encaisser (si facture avec solde restant) -->
+                <button
+                  *ngIf="(p.facture?.id || p.factureId) && (p.facture ? p.facture.resteAPayer > 0 : true)"
+                  class="btn-tbl btn-pay"
+                  (click)="ouvrirModalEncaissement(p.facture?.id || p.factureId, p.facture?.resteAPayer || p.montantTotal, p)"
+                  title="Encaisser la facture"
+                >
+                  <mat-icon class="icon-xs">payments</mat-icon> Encaisser
+                </button>
+
+                <!-- Bouton Reçu (si facture réglée) -->
+                <button
+                  *ngIf="(p.facture?.id || p.factureId) && p.facture && p.facture.resteAPayer === 0"
+                  class="btn-tbl btn-receipt"
+                  (click)="ouvrirTicket(p.facture.id, p)"
+                  title="Voir et imprimer le reçu"
+                >
+                  <mat-icon class="icon-xs">receipt_long</mat-icon> Reçu
+                </button>
+
+                <!-- Bouton Détail Facture -->
+                <button
+                  *ngIf="p.facture?.id || p.factureId"
+                  class="btn-tbl btn-view"
+                  (click)="ouvrirDetailFacture(p.facture?.id || p.factureId)"
+                  title="Consulter la facture"
+                >
+                  <mat-icon class="icon-xs">visibility</mat-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ONGLET 2 : FACTURES & RÈGLEMENTS -->
+  <div *ngIf="activeTab === 'factures'" class="section-card">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h2 class="section-title">Factures & Encaissements</h2>
+        <span class="badge-count">{{ factures().length }}</span>
+      </div>
+
+      <div class="filter-pills">
+        <button
+          class="pill-btn"
+          [class.active]="selectedFactureFiltre === 'TOUTES'"
+          (click)="changerFactureFiltre('TOUTES')"
+        >
+          Toutes
+        </button>
+        <button
+          class="pill-btn"
+          [class.active]="selectedFactureFiltre === 'IMPAYEES'"
+          (click)="changerFactureFiltre('IMPAYEES')"
+        >
+          <mat-icon class="icon-xs">warning</mat-icon> À encaisser
+        </button>
+        <button
+          class="pill-btn"
+          [class.active]="selectedFactureFiltre === 'REGLEES'"
+          (click)="changerFactureFiltre('REGLEES')"
+        >
+          <mat-icon class="icon-xs">check_circle</mat-icon> Soldées
+        </button>
+      </div>
+    </div>
+
+    <!-- Chargement Factures -->
+    <div *ngIf="isLoadingFactures()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des factures...</p>
+    </div>
+
+    <div *ngIf="!isLoadingFactures() && factures().length === 0" class="empty-state">
+      <p>Aucune facture trouvée pour ce filtre.</p>
+    </div>
+
+    <div *ngIf="!isLoadingFactures() && factures().length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>N° Facture</th>
+            <th>Date</th>
+            <th>Client</th>
+            <th>Net à Payer</th>
+            <th>Reste Dû</th>
+            <th>Statut</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of factures()">
+            <td>
+              <strong class="text-brown">#{{ f.numeroFacture || f.id }}</strong>
+            </td>
+            <td>
+              <span class="text-muted text-xs">{{ f.dateEmission | date:'dd/MM/yyyy HH:mm' }}</span>
+            </td>
+            <td>
+              <strong class="client-name">{{ f.clientNom || 'Client Comptoir' }}</strong>
+              <div class="text-muted text-xs" *ngIf="f.clientTelephone">
+                <mat-icon class="icon-xs">call</mat-icon> {{ f.clientTelephone }}
+              </div>
+            </td>
+            <td>
+              <strong>{{ (f.montantNet || (f.montantTotal - (f.remise || 0))) | number }} FCFA</strong>
+              <span *ngIf="f.remise && f.remise > 0" class="badge-discount-subtle" title="Remise commerciale accordée">
+                -{{ f.remise | number }} F
+              </span>
+            </td>
+            <td>
+              <span *ngIf="f.resteAPayer === 0" class="badge-zero-due">0 FCFA</span>
+              <strong *ngIf="f.resteAPayer > 0" class="text-danger font-bold">
+                {{ f.resteAPayer | number }} FCFA
+              </strong>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="{
+                  'badge-success': f.resteAPayer === 0,
+                  'badge-warning': f.resteAPayer > 0 && f.montantPaye > 0,
+                  'badge-danger': f.montantPaye === 0
+                }"
+              >
+                {{ f.resteAPayer === 0 ? 'PAYÉE' : (f.montantPaye > 0 ? 'PARTIELLE' : 'À ENCAISSER') }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="table-actions">
+                <button
+                  *ngIf="f.resteAPayer > 0"
+                  class="btn-tbl btn-pay"
+                  (click)="ouvrirModalEncaissement(f.id, f.resteAPayer)"
+                  title="Encaisser le solde"
+                >
+                  <mat-icon class="icon-xs">payments</mat-icon> Encaisser
+                </button>
+                <button
+                  class="btn-tbl btn-view"
+                  (click)="ouvrirDetailFacture(f.id)"
+                  title="Voir tous les détails de la facture"
+                >
+                  <mat-icon class="icon-xs">visibility</mat-icon> Détails
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ONGLET 3 : JOURNAL DE CAISSE -->
+  <div *ngIf="activeTab === 'journal'" class="section-card">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h2 class="section-title">Journal & Écritures de Caisse</h2>
+      </div>
+    </div>
+
+    <div *ngIf="!sessionCourante()" class="empty-state">
+      <p>Aucune session de caisse n'est active actuellement. Ouvrez la caisse pour visualiser les écritures de la journée.</p>
+    </div>
+
+    <div *ngIf="sessionCourante()">
+      <div class="journal-stats-grid">
+        <div class="journal-stat-card">
+          <span class="label">Fond de caisse initial</span>
+          <div class="val">{{ sessionCourante()?.soldeOuverture | number }} FCFA</div>
+        </div>
+        <div class="journal-stat-card">
+          <span class="label">Total Entrées (Paiements)</span>
+          <div class="val text-success">+{{ sessionCourante()?.totalEntrees | number }} FCFA</div>
+        </div>
+        <div class="journal-stat-card">
+          <span class="label">Total Sorties (Remboursements)</span>
+          <div class="val text-danger">-{{ sessionCourante()?.totalSorties | number }} FCFA</div>
+        </div>
+        <div class="journal-stat-card">
+          <span class="label">Solde Théorique Actuel</span>
+          <div class="val text-brown font-extrabold">
+            {{ ((sessionCourante()?.soldeOuverture || 0) + (sessionCourante()?.totalEntrees || 0) - (sessionCourante()?.totalSorties || 0)) | number }} FCFA
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="sessionCourante()?.operations?.length === 0" class="empty-state">
+        <p>Aucune opération enregistrée dans cette session pour l'instant.</p>
+      </div>
+
+      <div *ngIf="(sessionCourante()?.operations?.length || 0) > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date / Heure</th>
+              <th>Type</th>
+              <th>Motif / Réf</th>
+              <th>Caissier</th>
+              <th class="text-right">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let op of sessionCourante()?.operations || []">
+              <td>{{ op.dateOperation | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="badge" [ngClass]="op.type === 'ENTREE' ? 'badge-success' : 'badge-danger'">
+                  {{ op.type }}
+                </span>
+              </td>
+              <td>{{ op.motif || 'Opération de caisse' }}</td>
+              <td><span class="badge badge-secondary">{{ op.auteurNom || 'Réception' }}</span></td>
+              <td class="text-right font-bold" [ngClass]="op.type === 'ENTREE' ? 'text-success' : 'text-danger'">
+                {{ op.type === 'ENTREE' ? '+' : '-' }}{{ op.montant | number }} FCFA
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ouverture Caisse -->
+  <div *ngIf="isOuvertureModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Ouverture de la Caisse Journalière</h2>
+        <button class="modal-close" (click)="fermerModalOuverture()">×</button>
+      </div>
+      <form (ngSubmit)="validerOuvertureCaisse()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Indiquez le montant présent physiquement dans le tiroir-caisse à l'ouverture du salon.
+          </p>
+
+          <div class="form-group">
+            <label for="soldeOuverture">Fond de caisse initial (FCFA) *</label>
+            <input
+              id="soldeOuverture"
+              type="number"
+              min="0"
+              class="form-input"
+              [(ngModel)]="ouvertureDto.soldeOuverture"
+              name="soldeOuverture"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="notesOuverture">Remarques / Observations</label>
+            <textarea
+              id="notesOuverture"
+              rows="2"
+              class="form-input"
+              [(ngModel)]="ouvertureDto.notes"
+              name="notes"
+              placeholder="Ex : Monnaie prête, billets reçus de la banque..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalOuverture()">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmittingOuverture()">
+            {{ isSubmittingOuverture() ? 'Ouverture...' : 'Confirmer l\'ouverture' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Clôture Caisse -->
+  <div *ngIf="isClotureModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Clôture de la Session de Caisse</h2>
+        <button class="modal-close" (click)="fermerModalCloture()">×</button>
+      </div>
+      <form (ngSubmit)="validerClotureCaisse()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Veuillez effectuer le comptage physique des espèces dans le tiroir-caisse.
+          </p>
+
+          <div class="form-group">
+            <label for="soldeFermeture">Montant réel compté (FCFA) *</label>
+            <input
+              id="soldeFermeture"
+              type="number"
+              min="0"
+              class="form-input"
+              [(ngModel)]="clotureDto.soldeFermeture"
+              name="soldeFermeture"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="notesCloture">Notes de clôture / Écarts constatés</label>
+            <textarea
+              id="notesCloture"
+              rows="2"
+              class="form-input"
+              [(ngModel)]="clotureDto.notes"
+              name="notes"
+              placeholder="Ex : Conforme au centime près, aucun écart..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalCloture()">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmittingCloture()">
+            {{ isSubmittingCloture() ? 'Clôture...' : 'Valider la clôture' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Modal Encaissement Express -->
+  <div *ngIf="isEncaissementRapideModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title"><mat-icon class="icon-sm">bolt</mat-icon> Encaissement Express</h2>
+        <button class="modal-close" (click)="fermerModalEncaissementRapide()">×</button>
+      </div>
+      <form (ngSubmit)="validerRechercheEncaissementRapide()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Entrez le numéro de la facture ou l'identifiant pour encaisser immédiatement au comptoir.
+          </p>
+
+          <div class="form-group">
+            <label for="factureNum">Identifiant ou N° de la Facture *</label>
+            <input
+              id="factureNum"
+              type="text"
+              class="form-input"
+              [(ngModel)]="factureNumeroOuIdRecherche"
+              name="factureNumeroOuIdRecherche"
+              placeholder="Ex : FAC-BEAUTY-IN-BLACK-202610-40D4 ou 12"
+              required
+            />
+          </div>
+
+          <!-- Raccourcis Factures Impayées -->
+          <div *ngIf="facturesImpayees().length > 0" class="mt-3">
+            <label style="font-size: 0.82rem; font-weight: 600; color: #64748b; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.35rem;">
+              <mat-icon class="icon-xs">lightbulb</mat-icon> Factures en attente de règlement au salon :
+            </label>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; max-height: 140px; overflow-y: auto;">
+              <button
+                type="button"
+                *ngFor="let f of facturesImpayees()"
+                class="btn-tbl btn-outline"
+                style="font-size: 0.78rem; padding: 0.3rem 0.6rem; cursor: pointer; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff;"
+                (click)="factureNumeroOuIdRecherche = f.numeroFacture || (f.id + ''); validerRechercheEncaissementRapide()"
+                title="Cliquer pour encaisser directement cette facture"
+              >
+                <strong>#{{ f.numeroFacture || f.id }}</strong> ({{ (f.resteAPayer !== undefined ? f.resteAPayer : f.montantTotal) | number }} FCFA)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalEncaissementRapide()">Annuler</button>
+          <button type="submit" class="btn-primary">
+            Rechercher & Encaisser →
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Encaissement -->
+  <div *ngIf="isEncaissementModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Encaisser la Facture #{{ selectedFacture?.numeroFacture || selectedFactureId }}</h2>
+        <button class="modal-close" (click)="fermerModalEncaissement()">×</button>
+      </div>
+      <form (ngSubmit)="validerEncaissement()">
+        <div class="modal-body">
+          <div *ngIf="selectedFacture" class="facture-summary-banner">
+            <div>Total prestation : <strong>{{ selectedFacture.montantTotal | number }} FCFA</strong></div>
+            <div>Déjà versé : <strong>{{ selectedFacture.montantPaye | number }} FCFA</strong></div>
+            <div class="text-danger font-bold">Reste dû : {{ selectedFacture.resteAPayer | number }} FCFA</div>
+          </div>
+
+          <div class="form-group">
+            <label for="montantPaiement">Montant à encaisser (FCFA) *</label>
+            <input
+              id="montantPaiement"
+              type="number"
+              min="1"
+              class="form-input"
+              [(ngModel)]="encaissementDto.montant"
+              name="montant"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Type de règlement *</label>
+            <div class="mode-paiement-options">
+              <label class="mode-pill" [class.selected]="encaissementDto.type === 'SOLDE'">
+                <input
+                  type="radio"
+                  name="typePaiement"
+                  value="SOLDE"
+                  [(ngModel)]="encaissementDto.type"
+                />
+                <mat-icon class="icon-xs">check_circle</mat-icon> Solde complet
+              </label>
+
+              <label class="mode-pill" [class.selected]="encaissementDto.type === 'ACOMPTE'">
+                <input
+                  type="radio"
+                  name="typePaiement"
+                  value="ACOMPTE"
+                  [(ngModel)]="encaissementDto.type"
+                />
+                <mat-icon class="icon-xs">hourglass_top</mat-icon> Acompte partiel
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Mode de règlement *</label>
+            <div class="mode-paiement-options">
+              <label class="mode-pill" [class.selected]="encaissementDto.modePaiement === 'ESPECES'">
+                <input
+                  type="radio"
+                  name="modePaiement"
+                  value="ESPECES"
+                  [(ngModel)]="encaissementDto.modePaiement"
+                />
+                <mat-icon class="icon-xs">payments</mat-icon> Espèces
+              </label>
+
+              <label class="mode-pill" [class.selected]="encaissementDto.modePaiement === 'WAVE'">
+                <input
+                  type="radio"
+                  name="modePaiement"
+                  value="WAVE"
+                  [(ngModel)]="encaissementDto.modePaiement"
+                />
+                <mat-icon class="icon-xs">account_balance_wallet</mat-icon> Wave
+              </label>
+
+              <label class="mode-pill" [class.selected]="encaissementDto.modePaiement === 'ORANGE_MONEY'">
+                <input
+                  type="radio"
+                  name="modePaiement"
+                  value="ORANGE_MONEY"
+                  [(ngModel)]="encaissementDto.modePaiement"
+                />
+                <mat-icon class="icon-xs">smartphone</mat-icon> Orange Money
+              </label>
+
+              <label class="mode-pill" [class.selected]="encaissementDto.modePaiement === 'CARTE_BANCAIRE'">
+                <input
+                  type="radio"
+                  name="modePaiement"
+                  value="CARTE_BANCAIRE"
+                  [(ngModel)]="encaissementDto.modePaiement"
+                />
+                <mat-icon class="icon-xs">credit_card</mat-icon> Carte Bancaire
+              </label>
+            </div>
+          </div>
+
+          <!-- Calculatrice de monnaie rendue pour Espèces -->
+          <div *ngIf="encaissementDto.modePaiement === 'ESPECES'" class="monnaie-calculator">
+            <label for="montantRemis">Montant remis par le client (FCFA)</label>
+            <input
+              id="montantRemis"
+              type="number"
+              class="form-input"
+              [(ngModel)]="montantRemisParClient"
+              name="montantRemis"
+              placeholder="Ex : 10000"
+            />
+
+            <div class="quick-cash-row">
+              <button type="button" class="quick-cash-btn" (click)="definirMontantRemis(encaissementDto.montant)">
+                Montant exact
+              </button>
+              <button type="button" class="quick-cash-btn" (click)="definirMontantRemis(5000)">
+                5 000 F
+              </button>
+              <button type="button" class="quick-cash-btn" (click)="definirMontantRemis(10000)">
+                10 000 F
+              </button>
+              <button type="button" class="quick-cash-btn" (click)="definirMontantRemis(20000)">
+                20 000 F
+              </button>
+            </div>
+
+            <div *ngIf="montantRemisParClient > 0" class="monnaie-rendue-banner">
+              <span>Monnaie à rendre au client :</span>
+              <span class="monnaie-val">{{ monnaieRendue() | number }} FCFA</span>
+            </div>
+          </div>
+
+          <!-- Référence pour Mobile Money -->
+          <div *ngIf="encaissementDto.modePaiement === 'WAVE' || encaissementDto.modePaiement === 'ORANGE_MONEY'" class="form-group mt-2">
+            <label for="refPaiement">ID / Référence de transaction</label>
+            <input
+              id="refPaiement"
+              type="text"
+              class="form-input"
+              [(ngModel)]="encaissementDto.referencePaiement"
+              name="referencePaiement"
+              placeholder="Ex : TXN-987654 ou N° Wave"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalEncaissement()">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isSubmittingEncaissement()">
+            {{ isSubmittingEncaissement() ? 'Validation...' : 'Valider l\'encaissement' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Reçu de Caisse Imprimable -->
+  <div *ngIf="isTicketModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-md">
+      <div class="modal-header">
+        <h2 class="modal-title"><mat-icon class="icon-sm">receipt_long</mat-icon> Reçu de Caisse</h2>
+        <button class="modal-close" (click)="fermerTicket()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="ticket-receipt-card" id="printableTicket">
+          <div class="ticket-header">
+            <div class="ticket-salon-nom">HAIR STYLE SALON</div>
+            <div class="ticket-meta">Ticket de caisse & Reçu de paiement</div>
+            <div class="ticket-meta">Facture #{{ ticketFacture?.numeroFacture || ticketFacture?.id }}</div>
+            <div class="ticket-meta">{{ (ticketFacture?.dateEmission || '') | date:'dd/MM/yyyy HH:mm' }}</div>
+          </div>
+
+          <div class="ticket-body-info" *ngIf="ticketPrestation">
+            <div>Client : <strong>{{ ticketPrestation.prenomClient }} {{ ticketPrestation.nomClient }}</strong></div>
+            <div *ngIf="ticketPrestation.telephoneClient">Tél : {{ ticketPrestation.telephoneClient }}</div>
+            <div *ngIf="ticketPrestation.coiffeurPrenom">Coiffeur : {{ ticketPrestation.coiffeurPrenom }} {{ ticketPrestation.coiffeurNom }}</div>
+          </div>
+
+          <div class="ticket-items-list" *ngIf="ticketPrestation?.lignes && ticketPrestation!.lignes.length > 0">
+            <div *ngFor="let l of ticketPrestation!.lignes" class="ticket-item-row">
+              <span>{{ l.varianteNom || l.serviceNom }}</span>
+              <strong>{{ (l.prixReel || l.prix) | number }} F</strong>
+            </div>
+          </div>
+
+          <div class="ticket-total-section">
+            <span>TOTAL TTC</span>
+            <span>{{ ticketFacture?.montantTotal | number }} FCFA</span>
+          </div>
+
+          <div class="ticket-item-row text-success font-semibold">
+            <span>Total Réglé :</span>
+            <span>{{ ticketFacture?.montantPaye | number }} FCFA</span>
+          </div>
+
+          <div class="ticket-item-row text-danger font-semibold" *ngIf="ticketFacture && ticketFacture.resteAPayer > 0">
+            <span>Reste Dû :</span>
+            <span>{{ ticketFacture.resteAPayer | number }} FCFA</span>
+          </div>
+
+          <div class="ticket-footer">
+            <p><mat-icon class="icon-xs" style="vertical-align: middle; font-size: 16px; width: 16px; height: 16px;">check</mat-icon> Merci pour votre visite et votre confiance !</p>
+            <p>Hair Style • Système de Gestion Salon</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerTicket()">Fermer</button>
+        <button type="button" class="btn-primary" (click)="imprimerTicket()">
+          <mat-icon class="icon-sm">print</mat-icon> Imprimer le Reçu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détail Facture -->
+  <div *ngIf="isFactureModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h2 class="modal-title">Détail Facture #{{ detailFacture?.numeroFacture || detailFacture?.id }}</h2>
+        <button class="modal-close" (click)="fermerDetailFacture()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="isLoadingFacture()" class="loading-state">
+          <div class="spinner"></div>
+          <p>Chargement de la facture...</p>
+        </div>
+
+        <div *ngIf="!isLoadingFacture() && detailFacture" class="facture-details-content">
+          <!-- Bandeau Identité Client & Coiffeur -->
+          <div class="detail-client-banner">
+            <div class="detail-client-info-group">
+              <div class="client-avatar"><mat-icon class="icon-md">person</mat-icon></div>
+              <div class="client-meta">
+                <h3 class="client-name">{{ detailFacture.clientNom || 'Client Comptoir' }}</h3>
+                <p class="client-phone" *ngIf="detailFacture.clientTelephone">
+                  <mat-icon class="icon-xs">call</mat-icon> {{ detailFacture.clientTelephone }}
+                </p>
+              </div>
+            </div>
+            <div class="coiffeur-badge-box" *ngIf="detailFacture.coiffeurNom">
+              <span class="coiffeur-label">Coiffeur assigné</span>
+              <strong class="coiffeur-val">
+                <mat-icon class="icon-xs">person</mat-icon> {{ detailFacture.coiffeurNom }}
+              </strong>
+            </div>
+          </div>
+
+          <!-- Prestations & Soins Effectués -->
+          <div class="detail-section" *ngIf="detailFacture.lignesPrestation && detailFacture.lignesPrestation.length > 0">
+            <h4 class="detail-section-title"><mat-icon class="icon-sm">content_cut</mat-icon> Prestations & Soins réalisés</h4>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Variante / Formule</th>
+                    <th class="text-right">Tarif</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let l of detailFacture.lignesPrestation">
+                    <td><strong>{{ l.serviceNom }}</strong></td>
+                    <td><span class="badge-outline">{{ l.varianteNom || 'Standard' }}</span></td>
+                    <td class="text-right font-semibold">{{ l.prixReel | number }} FCFA</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Récapitulatif Financier -->
+          <div class="facture-summary-grid">
+            <div class="facture-stat">
+              <span class="label">Date d'émission :</span>
+              <strong>{{ detailFacture.dateEmission | date:'dd/MM/yyyy HH:mm' }}</strong>
+            </div>
+            <div class="facture-stat">
+              <span class="label">Montant Brut :</span>
+              <strong>{{ detailFacture.montantTotal | number }} FCFA</strong>
+            </div>
+            <div class="facture-stat" *ngIf="detailFacture.remise && detailFacture.remise > 0">
+              <span class="label">Remise Commerciale :</span>
+              <strong class="text-danger">-{{ detailFacture.remise | number }} FCFA</strong>
+              <small class="text-muted d-block text-xs" *ngIf="detailFacture.motifRemise">({{ detailFacture.motifRemise }})</small>
+            </div>
+            <div class="facture-stat">
+              <span class="label">Montant Net :</span>
+              <strong class="text-primary">{{ (detailFacture.montantNet || (detailFacture.montantTotal - (detailFacture.remise || 0))) | number }} FCFA</strong>
+            </div>
+            <div class="facture-stat">
+              <span class="label">Total Réglé :</span>
+              <strong class="text-success">{{ detailFacture.montantPaye | number }} FCFA</strong>
+            </div>
+            <div class="facture-stat">
+              <span class="label">Reste à Payer :</span>
+              <strong [class.text-danger]="detailFacture.resteAPayer > 0" [class.text-success]="detailFacture.resteAPayer === 0">
+                {{ detailFacture.resteAPayer | number }} FCFA
+              </strong>
+            </div>
+          </div>
+
+          <!-- Historique des Paiements -->
+          <h3 class="subsection-title">Paiements enregistrés</h3>
+          <div *ngIf="detailFacture.paiements?.length === 0" class="text-muted text-center py-2">
+            Aucun paiement enregistré pour cette facture.
+          </div>
+
+          <div *ngIf="detailFacture.paiements && detailFacture.paiements.length > 0" class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Montant</th>
+                  <th>Statut</th>
+                  <th class="text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let pay of detailFacture.paiements">
+                  <td>
+                    <strong>#{{ pay.numeroPaiement || pay.id }}</strong>
+                    <div *ngIf="pay.paiementOrigineNumero" class="text-xs text-muted">
+                      Remboursement de #{{ pay.paiementOrigineNumero }}
+                    </div>
+                  </td>
+                  <td>{{ pay.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td><span class="badge badge-secondary">{{ pay.type || pay.moyenPaiement }}</span></td>
+                  <td>
+                    <strong>{{ pay.montant | number }} FCFA</strong>
+                    <div *ngIf="pay.montantRembourse && pay.montantRembourse > 0" class="text-xs text-danger">
+                      Remboursé : {{ pay.montantRembourse | number }} FCFA
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      class="badge"
+                      [ngClass]="{
+                        'badge-success': pay.statut === 'PAYE',
+                        'badge-warning': pay.statut === 'PARTIELLEMENT_REMBOURSE',
+                        'badge-danger': pay.statut === 'REMBOURSE',
+                        'badge-secondary': pay.statut === 'ANNULE'
+                      }"
+                    >
+                      {{ pay.statut === 'PARTIELLEMENT_REMBOURSE' ? 'PARTIEL. REMBOURSÉ' : pay.statut }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <button
+                      *ngIf="pay.statut !== 'REMBOURSE' && pay.statut !== 'ANNULE' && !pay.paiementOrigineId && (!pay.montantRemboursable || pay.montantRemboursable > 0)"
+                      class="btn-tbl btn-refund"
+                      (click)="ouvrirModalRemboursement(pay)"
+                      title="Rembourser ce paiement"
+                    >
+                      <mat-icon class="icon-xs">replay</mat-icon> Rembourser
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerDetailFacture()">Fermer</button>
+        <button
+          *ngIf="detailFacture"
+          type="button"
+          class="btn-tbl btn-receipt"
+          style="padding: 0.5rem 1rem;"
+          (click)="ouvrirTicket(detailFacture.id)"
+        >
+          <mat-icon class="icon-xs">print</mat-icon> Imprimer le Reçu
+        </button>
+        <button
+          *ngIf="detailFacture && detailFacture.statut !== 'ANNULEE' && detailFacture.statut !== 'REMBOURSEE'"
+          type="button"
+          class="btn-tbl btn-refund"
+          style="padding: 0.5rem 1rem;"
+          (click)="ouvrirModalRemise(detailFacture)"
+        >
+          <mat-icon class="icon-xs">loyalty</mat-icon> Remise Commerciale
+        </button>
+        <button
+          *ngIf="detailFacture && detailFacture.resteAPayer > 0"
+          type="button"
+          class="btn-primary"
+          (click)="fermerDetailFacture(); ouvrirModalEncaissement(detailFacture.id, detailFacture.resteAPayer)"
+        >
+          <mat-icon class="icon-xs">payments</mat-icon> Encaisser le solde
+        </button>
+    </div>
+  </div>
+
+  <!-- Modal Remboursement -->
+  <div *ngIf="isRemboursementModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Remboursement du Paiement #{{ selectedPaiement?.numeroPaiement || selectedPaiementId }}</h2>
+        <button class="modal-close" (click)="fermerModalRemboursement()">×</button>
+      </div>
+      <form (ngSubmit)="validerRemboursement()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Cette opération déduira les fonds de la caisse et mettra à jour la facture associée.
+          </p>
+
+          <div *ngIf="selectedPaiement" class="facture-summary-banner" style="margin-bottom: 1rem; background: #fff5f5; border-color: #fed7d7;">
+            <div>Paiement initial : <strong>{{ selectedPaiement.montant | number }} FCFA</strong></div>
+            <div *ngIf="selectedPaiement.montantRembourse && selectedPaiement.montantRembourse > 0" class="text-xs text-muted">
+              Déjà remboursé : <strong>{{ selectedPaiement.montantRembourse | number }} FCFA</strong>
+            </div>
+            <div class="text-danger font-bold">
+              Plafond maximal remboursable : {{ calculerMaxRemboursable(selectedPaiement) | number }} FCFA
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="montantRemb">Montant à rembourser (FCFA) *</label>
+            <input
+              id="montantRemb"
+              type="number"
+              min="1"
+              [max]="calculerMaxRemboursable(selectedPaiement) || 9999999"
+              class="form-input"
+              [(ngModel)]="remboursementDto.montant"
+              name="montant"
+              required
+            />
+            <small class="text-muted" *ngIf="selectedPaiement">
+              Ne peut dépasser le solde remboursable de {{ calculerMaxRemboursable(selectedPaiement) | number }} FCFA.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="motifRemb">Motif du remboursement *</label>
+            <textarea
+              id="motifRemb"
+              rows="2"
+              class="form-input"
+              [(ngModel)]="remboursementDto.motif"
+              name="motif"
+              placeholder="Ex : Insatisfaction client, prestation annulée, geste commercial..."
+              required
+            ></textarea>
+          </div>
+
+          <!-- Option d'annulation de prestation (Cohabitation des deux options) -->
+          <div class="form-group" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.75rem 1rem; margin-top: 0.5rem;">
+            <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.9rem; margin-bottom: 0;">
+              <input
+                type="checkbox"
+                [(ngModel)]="remboursementDto.annulerPrestation"
+                name="annulerPrestation"
+                style="margin-top: 0.2rem;"
+              />
+              <div>
+                <strong style="color: #b91c1c; display: flex; align-items: center; gap: 0.35rem;">
+                  <mat-icon class="icon-xs">cancel</mat-icon> Annuler également la prestation associée
+                </strong>
+                <p class="text-muted text-xs" style="margin: 0.2rem 0 0 0;">
+                  Si coché, la facture est clôturée (marquée ANNULÉE) et le client n'a aucun solde restant dû.
+                  Laissez décoché s'il s'agit d'un réajustement ou geste commercial avec prestation maintenue.
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalRemboursement()">Annuler</button>
+          <button type="submit" class="btn-primary btn-danger-action" [disabled]="isSubmittingRemboursement()">
+            {{ isSubmittingRemboursement() ? 'Traitement...' : 'Confirmer le Remboursement' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Remise Commerciale -->
+  <div *ngIf="isRemiseModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Remise Commerciale — Facture #{{ selectedFacturePourRemise?.numeroFacture || selectedFacturePourRemise?.id }}</h2>
+        <button class="modal-close" (click)="fermerModalRemise()">×</button>
+      </div>
+      <form (ngSubmit)="validerRemise()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Appliquez une déduction commerciale ou un geste promotionnel sur cette facture. Le montant net et le reste à payer seront automatiquement recalculés.
+          </p>
+
+          <div *ngIf="selectedFacturePourRemise" class="facture-summary-banner" style="margin-bottom: 1rem; background: #f0fdf4; border-color: #bbf7d0;">
+            <div>Montant brut initial : <strong>{{ selectedFacturePourRemise.montantTotal | number }} FCFA</strong></div>
+            <div>Déjà réglé : <strong>{{ selectedFacturePourRemise.montantPaye | number }} FCFA</strong></div>
+            <div *ngIf="remiseDto.montant > 0" class="text-success font-bold" style="margin-top: 0.25rem;">
+              Nouveau montant net : {{ (selectedFacturePourRemise.montantTotal - remiseDto.montant) | number }} FCFA
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="montantRemiseInput">Montant de la remise (FCFA) *</label>
+            <input
+              id="montantRemiseInput"
+              type="number"
+              min="0"
+              [max]="selectedFacturePourRemise?.montantTotal || 9999999"
+              class="form-input"
+              [(ngModel)]="remiseDto.montant"
+              name="montantRemise"
+              required
+            />
+            <small class="text-muted">
+              Plafond maximal : {{ selectedFacturePourRemise?.montantTotal | number }} FCFA (montant total brut).
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="motifRemiseInput">Motif / Justification de la remise *</label>
+            <textarea
+              id="motifRemiseInput"
+              rows="2"
+              class="form-input"
+              [(ngModel)]="remiseDto.motif"
+              name="motifRemise"
+              placeholder="Ex : Geste commercial suite retard, fidélité client, offre exceptionnelle..."
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalRemise()">Annuler</button>
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="isSubmittingRemise()"
+          >
+            <span *ngIf="isSubmittingRemise()" class="spinner-sm"></span>
+            {{ isSubmittingRemise() ? 'Application...' : 'Appliquer la Remise' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

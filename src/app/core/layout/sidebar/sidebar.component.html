@@ -1,0 +1,185 @@
+<aside
+  class="sidebar-container"
+  [class.sidebar-compact]="isCompact"
+  [class.sidebar-mobile-open]="isMobileOpen"
+  aria-label="Navigation principale"
+>
+  <!-- SIDEBAR HEADER (Logo & Brand) -->
+  <header class="sidebar-header">
+    <div class="brand-link">
+      @if (config().isPlatform) {
+        <!-- Logo Plateforme AON -->
+        <div class="logo-circle platform-logo">
+          <svg viewBox="0 0 48 48" fill="none" class="aon-svg">
+            <path d="M24 4L42 38H6L24 4Z" stroke="url(#sidebarAonGrad)" stroke-width="3" stroke-linejoin="round" />
+            <circle cx="24" cy="26" r="5" fill="#C8B6A6" />
+            <defs>
+              <linearGradient id="sidebarAonGrad" x1="6" y1="4" x2="42" y2="38" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FFFDFC" />
+                <stop offset="0.5" stop-color="#C8B6A6" />
+                <stop offset="1" stop-color="#4A3B32" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text" [class.hidden-compact]="isCompact">
+          <span class="brand-name">AON</span>
+          <span class="brand-role">Gouvernance Système</span>
+        </div>
+      } @else {
+        <!-- Logo Salon 3D ou Monogramme -->
+        <div class="logo-circle salon-logo">
+          @if (salonLogoUrl()) {
+            <img
+              [src]="salonLogoUrl()! | safeMedia"
+              [alt]="salonNom() || 'Salon'"
+              class="sidebar-salon-img"
+              loading="eager"
+              referrerpolicy="no-referrer"
+              (error)="onLogoError()"
+            />
+          } @else {
+            <span class="salon-initial">{{ (salonNom() || 'S').charAt(0).toUpperCase() }}</span>
+          }
+        </div>
+        <div class="brand-text" [class.hidden-compact]="isCompact">
+          <span class="brand-name">{{ (salonNom() || 'Salon') | titlecase }}</span>
+          <span class="brand-role">{{ config().title }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Mobile Close Button -->
+    <button
+      type="button"
+      class="mobile-close-btn"
+      (click)="closeMobileDrawer.emit()"
+      aria-label="Fermer le menu"
+    >
+      <mat-icon class="icon-sm">close</mat-icon>
+    </button>
+  </header>
+
+  <!-- NAVIGATION SECTIONS & SUB-SECTIONS -->
+  <nav class="sidebar-nav">
+    @for (section of config().sections; track section.id) {
+      <div class="nav-section">
+        @if (!isCompact) {
+          <h3 class="section-title">{{ section.title }}</h3>
+        } @else {
+          <div class="section-divider"></div>
+        }
+
+        <ul class="nav-list">
+          @for (item of section.items; track item.id) {
+            <li class="nav-item">
+              @if (item.subItems && item.subItems.length > 0) {
+                <!-- Item with Sub-items (Accordion) -->
+                <button
+                  type="button"
+                  class="nav-link nav-link-parent"
+                  [class.submenu-open]="isSubmenuOpen(item.id)"
+                  (click)="toggleSubmenu(item.id)"
+                >
+                  <span class="item-icon-wrapper">
+                    <mat-icon class="icon-sm">{{ getMatIcon(item.icon) }}</mat-icon>
+                  </span>
+                  @if (!isCompact) {
+                    <span class="item-label">{{ item.label }}</span>
+                    <mat-icon class="chevron-icon" [class.rotated]="isSubmenuOpen(item.id)">expand_more</mat-icon>
+                  }
+                </button>
+
+                <!-- Sub-items List -->
+                @if (!isCompact && isSubmenuOpen(item.id)) {
+                  <ul class="subnav-list">
+                    @for (sub of item.subItems; track sub.id) {
+                      <li class="subnav-item">
+                        <a
+                          [routerLink]="[buildRoute(sub.path)]"
+                          routerLinkActive="active-sublink"
+                          (click)="onLinkClick()"
+                          class="subnav-link"
+                        >
+                          <span class="subnav-dot"></span>
+                          <span>{{ sub.label }}</span>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                }
+              } @else {
+                <!-- Direct Nav Link -->
+                <a
+                  [routerLink]="[buildRoute(item.path)]"
+                  routerLinkActive="active-link"
+                  [routerLinkActiveOptions]="{ exact: item.path === '' }"
+                  (click)="onLinkClick()"
+                  class="nav-link"
+                >
+                  <span class="item-icon-wrapper">
+                    <mat-icon class="icon-sm">{{ getMatIcon(item.icon) }}</mat-icon>
+                  </span>
+                  @if (!isCompact) {
+                    <span class="item-label">{{ item.label }}</span>
+                  }
+                </a>
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+
+  <!-- SIDEBAR FOOTER (User, Role Switcher, Logout) -->
+  <footer class="sidebar-footer">
+    @if (!isCompact) {
+      <div class="user-profile-box">
+        <div class="user-avatar">
+          {{ currentUser()?.prenom?.charAt(0) || 'U' }}
+        </div>
+        <div class="user-details">
+          <span class="profile-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+          <span class="profile-role">{{ activeRole }}</span>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        @if (hasMultipleRoles()) {
+          <button
+            type="button"
+            class="btn-action btn-switch-role"
+            (click)="goToRoleSelection()"
+            title="Changer d'espace métier"
+          >
+            <mat-icon class="icon-sm">swap_horiz</mat-icon>
+            <span>Changer d'espace</span>
+          </button>
+        }
+
+        <button
+          type="button"
+          class="btn-action btn-sidebar-logout"
+          (click)="logout()"
+          title="Déconnexion"
+        >
+          <mat-icon class="icon-sm">logout</mat-icon>
+          <span>Déconnexion</span>
+        </button>
+      </div>
+    } @else {
+      <!-- Compact buttons -->
+      <div class="compact-footer-actions">
+        @if (hasMultipleRoles()) {
+          <button type="button" class="btn-compact-icon" (click)="goToRoleSelection()" title="Changer d'espace">
+            <mat-icon class="icon-sm">swap_horiz</mat-icon>
+          </button>
+        }
+        <button type="button" class="btn-compact-icon" (click)="logout()" title="Déconnexion">
+          <mat-icon class="icon-sm">logout</mat-icon>
+        </button>
+      </div>
+    }
+  </footer>
+</aside>

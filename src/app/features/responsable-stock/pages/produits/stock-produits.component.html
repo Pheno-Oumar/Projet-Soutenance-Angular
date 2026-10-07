@@ -1,0 +1,452 @@
+<div class="produits-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Produits</span>
+      </div>
+      <h1 class="page-title">Catalogue des Produits</h1>
+      <p class="page-subtitle">Gestion des références en boutique, prix, seuils de sécurité et valorisation</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerDonnees()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">
+        <mat-icon class="btn-icon icon-sm">add</mat-icon>
+        <span>Nouveau Produit</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filters Bar -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par nom, description ou catégorie..."
+        class="search-input"
+      />
+      @if (searchQuery) {
+        <button class="clear-search" (click)="searchQuery = ''">×</button>
+      }
+    </div>
+
+    <div class="select-filters">
+      <!-- Filtre Catégorie -->
+      <select [(ngModel)]="selectedCategorieFilter" class="filter-select">
+        <option value="">Toutes les catégories ({{ categories().length }})</option>
+        @for (cat of categories(); track cat.id) {
+          <option [value]="cat.id">{{ cat.nom }}</option>
+        }
+      </select>
+
+      <!-- Filtre Statut -->
+      <select [(ngModel)]="selectedStatutFilter" class="filter-select">
+        <option value="TOUS">Tous les statuts</option>
+        <option value="ACTIF">Actifs uniquement</option>
+        <option value="INACTIF">Inactifs uniquement</option>
+      </select>
+
+      <!-- Filtre État du stock -->
+      <select [(ngModel)]="selectedStockFilter" class="filter-select">
+        <option value="TOUS">Tous les stocks</option>
+        <option value="ALERTE">Stock critique (≤ seuil)</option>
+        <option value="RUPTURE">Rupture totale (= 0)</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Products List -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement du catalogue...</p>
+    </div>
+  } @else if (filteredProduits.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon icon-xl">inventory_2</mat-icon>
+      <h3>Aucun produit trouvé</h3>
+      <p>Modifiez vos critères de recherche ou ajoutez un nouveau produit au catalogue.</p>
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">Ajouter un produit</button>
+    </div>
+  } @else {
+    <div class="produits-grid">
+      @for (prod of filteredProduits; track prod.id) {
+        <div class="produit-card" [class.is-inactive]="!prod.statut">
+          <!-- Card Image & Status -->
+          <div class="card-media">
+            @if (prod.imageUrl) {
+              <img [src]="prod.imageUrl" [alt]="prod.nom" class="produit-img" />
+            } @else {
+              <div class="produit-placeholder">
+                <span class="monogram">{{ prod.nom.substring(0, 2).toUpperCase() }}</span>
+              </div>
+            }
+            <button class="btn-change-image" (click)="ouvrirModalImage(prod)" title="Remplacer la photo">
+              <mat-icon class="icon-xs">photo_camera</mat-icon>
+            </button>
+            <span class="statut-badge" [class.statut-actif]="prod.statut" [class.statut-inactif]="!prod.statut">
+              {{ prod.statut ? 'Actif' : 'Inactif' }}
+            </span>
+          </div>
+
+          <!-- Card Content -->
+          <div class="card-body">
+            <span class="card-category">{{ prod.categorieNom }}</span>
+            <h3 class="card-title" [title]="prod.nom">{{ prod.nom }}</h3>
+            @if (prod.description) {
+              <p class="card-desc">{{ prod.description }}</p>
+            }
+
+            <div class="card-price-row">
+              <span class="price-value">{{ formatMontant(prod.prixVente) }}</span>
+            </div>
+
+            <!-- Stock Level Gauge -->
+            <div class="stock-level-box">
+              <div class="stock-level-header">
+                <span class="stock-level-label">Stock disponible:</span>
+                <span
+                  class="stock-level-value"
+                  [class.text-danger]="(prod.stock?.quantiteDisponible || 0) === 0"
+                  [class.text-warning]="(prod.stock?.quantiteDisponible || 0) > 0 && (prod.stock?.quantiteDisponible || 0) <= (prod.stock?.seuilMinimum || 0)"
+                >
+                  {{ prod.stock?.quantiteDisponible ?? 0 }} unités
+                </span>
+              </div>
+
+              <!-- Jauge -->
+              <div class="gauge-bar">
+                <div
+                  class="gauge-fill"
+                  [class.fill-danger]="(prod.stock?.quantiteDisponible || 0) === 0"
+                  [class.fill-warning]="(prod.stock?.quantiteDisponible || 0) > 0 && (prod.stock?.quantiteDisponible || 0) <= (prod.stock?.seuilMinimum || 0)"
+                  [style.width.%]="Math.min(100, ((prod.stock?.quantiteDisponible || 0) / Math.max(1, (prod.stock?.seuilMaximum || (prod.stock?.seuilMinimum || 5) * 3))) * 100)"
+                ></div>
+              </div>
+
+              <div class="stock-thresholds">
+                <span>Min: {{ prod.stock?.seuilMinimum || 0 }}</span>
+                @if (prod.stock?.seuilMaximum) {
+                  <span>Max: {{ prod.stock?.seuilMaximum }}</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Actions -->
+          <div class="card-footer">
+            <div class="actions-left">
+              <button class="action-btn" (click)="ouvrirModalEdit(prod)" title="Modifier les informations">
+                <mat-icon class="icon-xs">edit</mat-icon>
+              </button>
+
+              <button
+                class="action-btn"
+                [class.btn-deactivate]="prod.statut"
+                [class.btn-activate]="!prod.statut"
+                (click)="basculerStatut(prod)"
+                [title]="prod.statut ? 'Désactiver le produit' : 'Activer le produit'"
+              >
+                <mat-icon class="icon-xs">{{ prod.statut ? 'block' : 'check' }}</mat-icon>
+              </button>
+            </div>
+
+            <button class="btn btn-sm btn-movement" (click)="ouvrirModalMouvement(prod)">
+              <mat-icon class="icon-xs">swap_vert</mat-icon>
+              <span>Ajuster Stock</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL : Création Produit -->
+  @if (isCreateModalOpen()) {
+    <div class="modal-backdrop" (click)="fermerModalCreation()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Nouveau Produit au Catalogue</h3>
+            <p class="modal-subtitle">Ajoutez un article avec ses tarifs, son stock initial et ses seuils</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalCreation()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Catégorie parente *</label>
+              <select [(ngModel)]="newProduitCategorieId" class="form-input">
+                @for (c of categories(); track c.id) {
+                  <option [value]="c.id">{{ c.nom }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group flex-2">
+              <label class="form-label">Nom du produit *</label>
+              <input type="text" [(ngModel)]="newProduitNom" class="form-input" placeholder="Ex: Shampoing Hydratant Argan 500ml" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description détaillée</label>
+            <textarea [(ngModel)]="newProduitDescription" rows="2" class="form-input" placeholder="Bienfaits, utilisation, ingrédients..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prix de vente (FCFA) *</label>
+              <input type="number" min="1" [(ngModel)]="newProduitPrixVente" class="form-input" placeholder="Ex: 8500" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+              <input type="number" min="0" [(ngModel)]="newProduitPrixAchat" class="form-input" placeholder="Ex: 5000" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Quantité initiale en stock *</label>
+              <input type="number" min="0" [(ngModel)]="newProduitQuantiteInitiale" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Seuil minimum d'alerte *</label>
+              <input type="number" min="1" [(ngModel)]="newProduitSeuilMin" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Seuil maximum (optionnel)</label>
+              <input type="number" min="1" [(ngModel)]="newProduitSeuilMax" class="form-input" />
+            </div>
+          </div>
+
+          <!-- Upload Image -->
+          <div class="form-group">
+            <label class="form-label">Photo du produit (optionnelle)</label>
+            <div class="file-upload-zone">
+              <input type="file" (change)="onFileSelectedCreate($event)" accept="image/*" id="create-img-input" class="hidden-file-input" />
+              <label for="create-img-input" class="file-upload-label">
+                @if (createImagePreview) {
+                  <div class="preview-wrap">
+                    <img [src]="createImagePreview" alt="Aperçu" class="image-preview" />
+                    <span>Changer l'image sélectionnée</span>
+                  </div>
+                } @else {
+                  <div class="upload-placeholder">
+                    <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                    <span>Cliquez pour choisir une photo (PNG, JPG, WebP)</span>
+                  </div>
+                }
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalCreation()" [disabled]="isSubmittingCreate()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerCreation()" [disabled]="isSubmittingCreate()">
+            @if (isSubmittingCreate()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Créer le produit</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Modification Produit -->
+  @if (isEditModalOpen() && editingProduit) {
+    <div class="modal-backdrop" (click)="fermerModalEdit()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Modifier le Produit</h3>
+            <p class="modal-subtitle">{{ editingProduit.nom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalEdit()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nom du produit *</label>
+            <input type="text" [(ngModel)]="editNom" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea [(ngModel)]="editDescription" rows="2" class="form-input"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Prix de vente (FCFA) *</label>
+            <input type="number" min="1" [(ngModel)]="editPrixVente" class="form-input" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Seuil minimum *</label>
+              <input type="number" min="1" [(ngModel)]="editSeuilMin" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Seuil maximum (optionnel)</label>
+              <input type="number" min="1" [(ngModel)]="editSeuilMax" class="form-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalEdit()" [disabled]="isSubmittingEdit()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerEdit()" [disabled]="isSubmittingEdit()">
+            @if (isSubmittingEdit()) {
+              <span>Mise à jour...</span>
+            } @else {
+              <span>Enregistrer les modifications</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Remplacement Photo -->
+  @if (isImageModalOpen() && imageTargetProduit) {
+    <div class="modal-backdrop" (click)="fermerModalImage()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Photo du Produit</h3>
+            <p class="modal-subtitle">{{ imageTargetProduit.nom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalImage()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="file-upload-zone">
+            <input type="file" (change)="onFileSelectedNew($event)" accept="image/*" id="new-img-input" class="hidden-file-input" />
+            <label for="new-img-input" class="file-upload-label">
+              @if (newImagePreview) {
+                <div class="preview-wrap">
+                  <img [src]="newImagePreview" alt="Aperçu" class="image-preview" />
+                  <span>Cliquer pour choisir un autre fichier</span>
+                </div>
+              } @else {
+                <div class="upload-placeholder">
+                  <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                  <span>Sélectionner une nouvelle image</span>
+                </div>
+              }
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalImage()" [disabled]="isSubmittingImage()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerUploadImage()" [disabled]="isSubmittingImage() || !selectedNewImageFile">
+            @if (isSubmittingImage()) {
+              <span>Téléversement...</span>
+            } @else {
+              <span>Enregistrer la photo</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Enregistrement Flux Stock Rapide -->
+  @if (isMouvementModalOpen() && mouvementProduit) {
+    <div class="modal-backdrop" (click)="fermerModalMouvement()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Ajustement de Stock</h3>
+            <p class="modal-subtitle">{{ mouvementProduit.nom }} (Dispo: {{ mouvementProduit.stock?.quantiteDisponible ?? 0 }})</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalMouvement()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Type de flux *</label>
+              <select [(ngModel)]="mouvementType" class="form-input">
+                <option value="ENTREE">ENTRÉE (Réception fournisseur / Achat)</option>
+                <option value="VENTE">VENTE (Sortie manuelle en boutique)</option>
+                <option value="PERTE">PERTE (Casse, péremption, avarie)</option>
+                <option value="AJUSTEMENT">AJUSTEMENT (Inventaire physique)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label">Quantité *</label>
+              <input type="number" min="1" [(ngModel)]="mouvementQuantite" class="form-input" />
+            </div>
+          </div>
+
+          @if (mouvementType === 'ENTREE') {
+            <div class="form-group">
+              <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+              <input type="number" min="0" [(ngModel)]="mouvementPrixUnitaire" class="form-input" />
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label">Motif ou justification</label>
+            <textarea [(ngModel)]="mouvementMotif" rows="2" class="form-input" placeholder="Ex: Livraison commande BL-4598"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalMouvement()" [disabled]="isSubmittingMouvement()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerMouvement()" [disabled]="isSubmittingMouvement()">
+            @if (isSubmittingMouvement()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Valider le flux ({{ mouvementType }})</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

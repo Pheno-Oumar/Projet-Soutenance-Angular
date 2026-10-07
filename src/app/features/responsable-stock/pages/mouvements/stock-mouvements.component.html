@@ -1,0 +1,215 @@
+<div class="mouvements-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Flux & Mouvements</span>
+      </div>
+      <h1 class="page-title">Historique des Flux de Stock</h1>
+      <p class="page-subtitle">Journal d'audit détaillé des entrées, ventes, pertes et ajustements d'inventaire</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerDonnees()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">
+        <mat-icon class="btn-icon icon-sm">add</mat-icon>
+        <span>Enregistrer un Flux</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filters Card -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par produit, motif ou opérateur..."
+        class="search-input"
+      />
+      @if (searchQuery) {
+        <button class="clear-search" (click)="searchQuery = ''"><mat-icon class="icon-xs">close</mat-icon></button>
+      }
+    </div>
+
+    <div class="select-filters">
+      <!-- Filtre Produit -->
+      <select [(ngModel)]="produitFilter" (change)="onProduitFilterChange()" class="filter-select">
+        <option value="">Tous les produits ({{ produits().length }})</option>
+        @for (prod of produits(); track prod.id) {
+          <option [value]="prod.id">{{ prod.nom }}</option>
+        }
+      </select>
+
+      <!-- Filtre Type -->
+      <select [(ngModel)]="typeFilter" class="filter-select">
+        <option value="TOUS">Tous les types de flux</option>
+        <option value="ENTREE">Entrées (Approvisionnement)</option>
+        <option value="VENTE">Ventes (Sorties clients)</option>
+        <option value="PERTE">Pertes (Casse / Péremption)</option>
+        <option value="AJUSTEMENT">Ajustements d'inventaire</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Table Section -->
+  <section class="table-container-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement de l'historique des flux...</p>
+      </div>
+    } @else if (filteredMouvements.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon icon-xl">swap_vert</mat-icon>
+        <h3>Aucun mouvement trouvé</h3>
+        <p>Aucun flux de stock ne correspond aux critères sélectionnés.</p>
+        <button class="btn btn-primary" (click)="ouvrirModalCreation()">Enregistrer un mouvement</button>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="luxury-table">
+          <thead>
+            <tr>
+              <th>Date & Heure</th>
+              <th>Type de flux</th>
+              <th>Article</th>
+              <th>Variation</th>
+              <th>Prix Unitaire</th>
+              <th>Motif / Réf.</th>
+              <th>Opérateur</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (mvt of filteredMouvements; track mvt.id) {
+              <tr>
+                <td class="text-nowrap date-cell">
+                  {{ mvt.dateMouvement | date:'dd/MM/yyyy HH:mm' }}
+                </td>
+                <td>
+                  <span class="badge-mvt" [class]="getTypeBadgeClass(mvt.type)">
+                    {{ mvt.type }}
+                  </span>
+                </td>
+                <td class="font-medium">
+                  {{ mvt.produitNom }}
+                </td>
+                <td class="font-bold font-mono text-nowrap" [class.text-success]="mvt.type === 'ENTREE'" [class.text-danger]="mvt.type === 'PERTE' || mvt.type === 'VENTE'">
+                  {{ mvt.type === 'ENTREE' ? '+' : '-' }}{{ mvt.quantite }}
+                </td>
+                <td>
+                  {{ mvt.prixUnitaire ? formatMontant(mvt.prixUnitaire) : '-' }}
+                </td>
+                <td class="motif-cell">
+                  {{ mvt.motif || 'Aucun motif renseigné' }}
+                </td>
+                <td>
+                  <span class="author-badge">
+                    <mat-icon class="icon-xs">person</mat-icon>
+                    <span>{{ mvt.auteurNom || 'Système' }}</span>
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+
+  <!-- MODAL : Enregistrer un Mouvement -->
+  @if (isCreateModalOpen()) {
+    <div class="modal-backdrop" (click)="fermerModalCreation()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Nouveau Mouvement de Stock</h3>
+            <p class="modal-subtitle">Enregistrement d'une entrée, sortie ou régularisation</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalCreation()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Produit concerné *</label>
+            <select [(ngModel)]="mvtProduitId" (change)="onSelectProduitModal($event)" class="form-input">
+              @for (p of produits(); track p.id) {
+                <option [value]="p.id">{{ p.nom }} (Stock actuel: {{ p.stock?.quantiteDisponible ?? 0 }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Type de mouvement *</label>
+              <select [(ngModel)]="mvtType" class="form-input">
+                <option value="ENTREE">ENTRÉE (Réception fournisseur / Achat)</option>
+                <option value="VENTE">VENTE (Sortie manuelle en boutique)</option>
+                <option value="PERTE">PERTE (Casse / Avarie / Vol)</option>
+                <option value="AJUSTEMENT">AJUSTEMENT (Correction après inventaire)</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="form-label">Quantité *</label>
+              <input type="number" min="1" [(ngModel)]="mvtQuantite" class="form-input" />
+            </div>
+          </div>
+
+          @if (mvtType === 'ENTREE') {
+            <div class="form-group">
+              <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+              <input type="number" min="0" [(ngModel)]="mvtPrixUnitaire" class="form-input" placeholder="Ex: 5000" />
+            </div>
+          }
+
+          <div class="form-group">
+            <label class="form-label">Motif ou Référence de la pièce justificative</label>
+            <textarea [(ngModel)]="mvtMotif" rows="3" class="form-input" placeholder="Ex: Bon de commande BL-2026-92 ou casse constatée en réserve..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalCreation()" [disabled]="isSubmitting()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerCreation()" [disabled]="isSubmitting()">
+            @if (isSubmitting()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Valider le Flux ({{ mvtType }})</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

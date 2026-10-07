@@ -1,0 +1,159 @@
+<div class="performance-page">
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Performance de l'Équipe</h1>
+      <p class="page-subtitle">Suivi du chiffre d'affaires généré et du volume de prestations par collaborateur</p>
+    </div>
+    <button class="btn btn-secondary" (click)="chargerPerformances()" [disabled]="isLoading()">
+      <mat-icon class="btn-icon" [class.animate-spin]="isLoading()">refresh</mat-icon>
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ALERTS -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- KPIS -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-primary-soft">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">CA Total Équipe</span>
+        <strong class="kpi-value">{{ formatDevise(totalCA) }}</strong>
+        <span class="kpi-subtext">Cumul sur la période active</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-accent-soft">
+        <mat-icon>content_cut</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Total Prestations</span>
+        <strong class="kpi-value">{{ totalPrestations }}</strong>
+        <span class="kpi-subtext">Actes capillaires réalisés</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap bg-primary-soft">
+        <mat-icon>bar_chart</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">CA Moyen / Coiffeur</span>
+        <strong class="kpi-value">{{ formatDevise(caMoyen) }}</strong>
+        <span class="kpi-subtext">Productivité moyenne</span>
+      </div>
+    </div>
+
+    <div class="kpi-card star-card">
+      <div class="kpi-icon-wrap bg-star">
+        <mat-icon>star</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Coiffeur Étoile</span>
+        <strong class="kpi-value highlight">{{ topCoiffeur ? (topCoiffeur?.prenom + ' ' + topCoiffeur?.nom) : 'N/A' }}</strong>
+        <span class="kpi-subtext">{{ topCoiffeur ? formatDevise(topCoiffeur?.chiffreAffaires || 0) : 'Aucun enregistrement' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART SECTION -->
+  <div class="chart-card">
+    <div class="chart-header">
+      <h2 class="section-title">Chiffre d'Affaires par Collaborateur</h2>
+      <span class="chart-badge">Vue comparative</span>
+    </div>
+    <div class="chart-container">
+      <canvas #chartCanvas></canvas>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD SECTION -->
+  <div class="ranking-card">
+    <div class="ranking-header">
+      <div>
+        <h2 class="section-title">Classement et Productivité</h2>
+        <p class="section-subtitle">Détails des prestations et contribution au chiffre d'affaires</p>
+      </div>
+
+      <div class="filter-pills">
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="critereTri === 'CA'"
+          (click)="trierPar('CA')"
+        >
+          Par Chiffre d'Affaires
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="critereTri === 'PRESTATIONS'"
+          (click)="trierPar('PRESTATIONS')"
+        >
+          Par Nombre de Prestations
+        </button>
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Calcul des indicateurs de performance...</span>
+      </div>
+    } @else if (listeTriee.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">groups</mat-icon>
+        <p>Aucune donnée de performance enregistrée pour les coiffeurs du salon.</p>
+      </div>
+    } @else {
+      <div class="ranking-list">
+        @for (item of listeTriee; track item.coiffeurId; let idx = $index) {
+          <div class="ranking-row" [class.rank-one]="idx === 0">
+            <div class="rank-badge" [class.rank-badge-gold]="idx === 0" [class.rank-badge-silver]="idx === 1" [class.rank-badge-bronze]="idx === 2">
+              #{{ idx + 1 }}
+            </div>
+
+            <div class="coiffeur-avatar">
+              {{ item.prenom.charAt(0) }}{{ item.nom.charAt(0) }}
+            </div>
+
+            <div class="coiffeur-info">
+              <strong class="coiffeur-name">{{ item.prenom }} {{ item.nom }}</strong>
+              <span class="coiffeur-email">{{ item.email }}</span>
+            </div>
+
+            <div class="stat-badge">
+              <span class="stat-badge-label">Prestations</span>
+              <span class="stat-badge-val">{{ item.nombrePrestations }}</span>
+            </div>
+
+            <div class="progress-col">
+              <div class="progress-labels">
+                <span>Part du CA salon</span>
+                <strong>{{ getPourcentageCA(item.chiffreAffaires) }}%</strong>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" [style.width.%]="getPourcentageCA(item.chiffreAffaires)"></div>
+              </div>
+            </div>
+
+            <div class="coiffeur-ca">
+              <span class="ca-label">Chiffre d'Affaires</span>
+              <strong class="ca-value">{{ formatDevise(item.chiffreAffaires) }}</strong>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

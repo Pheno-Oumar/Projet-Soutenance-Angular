@@ -1,0 +1,201 @@
+<div class="salon-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Fiche & Coordonnées du Salon</h1>
+      <p class="page-subtitle">Modifiez les informations publiques, l'adresse, la géolocalisation et le logo de l'établissement</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="sauvegarder()" [disabled]="isSaving()">
+        <mat-icon class="btn-icon">check</mat-icon>
+        {{ isSaving() ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <div class="page-grid">
+    <!-- LEFT COLUMN: Coordonnées & Textes -->
+    <div class="form-column">
+      <div class="settings-card">
+        <h2 class="card-title">Informations Générales</h2>
+        
+        <div class="form-group">
+          <label for="salonNom" class="form-label">Nom du salon *</label>
+          <input
+            id="salonNom"
+            type="text"
+            class="form-control"
+            [(ngModel)]="formData.nom"
+            placeholder="Ex: Maison de Beauté Kadi"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="salonDesc" class="form-label">Description commerciale</label>
+          <textarea
+            id="salonDesc"
+            class="form-control textarea-control"
+            [(ngModel)]="formData.description"
+            rows="3"
+            placeholder="Présentation des services et de l'ambiance du salon..."
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="salonTel" class="form-label">Téléphone</label>
+            <input
+              id="salonTel"
+              type="tel"
+              class="form-control"
+              [(ngModel)]="formData.telephone"
+              placeholder="+223 77 00 00 00"
+            />
+          </div>
+
+          <div class="form-group col-half">
+            <label for="salonEmail" class="form-label">Email de contact</label>
+            <input
+              id="salonEmail"
+              type="email"
+              class="form-control"
+              [(ngModel)]="formData.email"
+              placeholder="contact@salon.com"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="salonAdresse" class="form-label">Adresse physique complète</label>
+          <input
+            id="salonAdresse"
+            type="text"
+            class="form-control"
+            [(ngModel)]="formData.adresse"
+            placeholder="Ex: Kalaban-coura,Bamako"
+          />
+        </div>
+      </div>
+
+      <!-- GEOLOCATION INPUTS -->
+      <div class="settings-card">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Géolocalisation & Carte</h2>
+            <p class="card-desc">Déplacez le marqueur sur la carte ou saisissez les coordonnées GPS précises</p>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-half">
+            <label for="salonLat" class="form-label">Latitude</label>
+            <input
+              id="salonLat"
+              type="number"
+              step="0.000001"
+              class="form-control"
+              [(ngModel)]="formData.latitude"
+              (change)="onCoordChange()"
+            />
+          </div>
+          <div class="form-group col-half">
+            <label for="salonLng" class="form-label">Longitude</label>
+            <input
+              id="salonLng"
+              type="number"
+              step="0.000001"
+              class="form-control"
+              [(ngModel)]="formData.longitude"
+              (change)="onCoordChange()"
+            />
+          </div>
+        </div>
+
+        <!-- LEAFLET MAP -->
+        <div class="map-wrapper">
+          <div #mapContainer class="leaflet-map-element"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Logo & Status -->
+    <div class="sidebar-column">
+      <!-- LOGO CARD -->
+      <div class="settings-card">
+        <h2 class="card-title">Logo de l'Établissement</h2>
+        <p class="card-desc">Le logo s'affiche sur la plateforme client, le sidebar et les reçus.</p>
+
+        <div class="logo-preview-box">
+          @if (logoPreviewUrl) {
+            <img [src]="logoPreviewUrl" alt="Aperçu logo sélectionné" class="preview-img" />
+          } @else if (salon()?.logoUrl) {
+            <img [src]="salon()?.logoUrl" alt="Logo actuel du salon" class="preview-img" />
+          } @else {
+            <div class="empty-logo-box">
+              <span class="empty-logo-letter">{{ formData.nom?.charAt(0) || 'S' }}</span>
+              <span class="empty-logo-text">Aucun logo configuré</span>
+            </div>
+          }
+        </div>
+
+        <div class="file-upload-section">
+          <label class="btn-file-select" for="logoUpload">
+            <mat-icon class="btn-icon">cloud_upload</mat-icon>
+            Choisir une image
+          </label>
+          <input
+            id="logoUpload"
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            (change)="onLogoSelected($event)"
+            class="hidden-file-input"
+          />
+
+          @if (logoFile) {
+            <div class="selected-file-info">
+              <span>{{ logoFile.name }}</span>
+              <button
+                type="button"
+                class="btn-upload-submit"
+                (click)="televerserLogo()"
+                [disabled]="isUploadingLogo()"
+              >
+                {{ isUploadingLogo() ? 'Téléversement WebP...' : 'Mettre en ligne' }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- SALON STATS OVERVIEW -->
+      <div class="settings-card">
+        <h2 class="card-title">État de la Fiche</h2>
+        <ul class="stats-list">
+          <li class="stats-item">
+            <span>Statut</span>
+            <strong class="stat-badge" [class.active]="salon()?.statut">
+              {{ salon()?.statut ? 'Actif' : 'Désactivé' }}
+            </strong>
+          </li>
+          <li class="stats-item">
+            <span>Slug URL</span>
+            <code>{{ salon()?.slug || slugSalon }}</code>
+          </li>
+          <li class="stats-item">
+            <span>Date de création</span>
+            <span>{{ salon()?.dateCreation | date:'dd/MM/yyyy' }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

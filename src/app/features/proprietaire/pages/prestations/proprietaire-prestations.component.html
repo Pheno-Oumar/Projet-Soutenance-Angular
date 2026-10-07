@@ -1,0 +1,604 @@
+<div class="prestations-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Offre & Prestations du Salon</h1>
+      <p class="page-subtitle">Configurez le catalogue de soins, coiffures, tarifs et déclinaisons avec photographies haute définition</p>
+    </div>
+
+    <div class="header-actions">
+      <label class="toggle-inactifs-label">
+        <input type="checkbox" [(ngModel)]="inclureInactifs" (change)="chargerServices()" />
+        <span>Afficher inactifs</span>
+      </label>
+
+      <button type="button" class="btn-primary" (click)="openCreateServiceModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Nouveau Service
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- SERVICES LIST -->
+  <div class="services-container">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des services du salon...</span>
+      </div>
+    } @else if (services().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">content_cut</mat-icon>
+        <h3>Aucun service au catalogue</h3>
+        <p>Ajoutez votre première prestation pour permettre aux clients de réserver leurs créneaux.</p>
+        <button type="button" class="btn-primary" (click)="openCreateServiceModal()">Créer un service</button>
+      </div>
+    } @else {
+      <div class="services-grid">
+        @for (s of services(); track s.id) {
+          <div class="service-card" [class.card-inactive]="!s.statut">
+            <!-- SERVICE HEADER WITH IMAGE & DETAILS -->
+            <div class="service-main-row">
+              <div class="service-image-box">
+                @if (s.imageUrl) {
+                  <img [src]="s.imageUrl" [alt]="s.nom" class="service-img" />
+                } @else {
+                  <div class="service-img-placeholder">
+                    <mat-icon class="placeholder-icon">image</mat-icon>
+                  </div>
+                }
+                <button
+                  type="button"
+                  class="btn-change-image"
+                  (click)="openImageServiceModal(s)"
+                  title="Changer la photo (Cloudinary WebP)"
+                >
+                  <mat-icon>photo_camera</mat-icon>
+                </button>
+              </div>
+
+              <div class="service-info">
+                <div class="service-title-bar">
+                  <h2 class="service-title">{{ s.nom }}</h2>
+                  <div class="service-header-actions">
+                    <span class="badge" [class.badge-active]="s.statut" [class.badge-inactive]="!s.statut">
+                      {{ s.statut ? 'Actif' : 'Inactif' }}
+                    </span>
+                    <button type="button" class="btn-text-action btn-detail-action" (click)="openDetailServiceModal(s)" title="Voir le détail et les variantes">
+                      <mat-icon class="action-mat-icon">visibility</mat-icon>
+                      Détails
+                    </button>
+                    <button type="button" class="btn-text-action" (click)="openEditServiceModal(s)" title="Modifier nom/desc">
+                      Modifier
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-text-action"
+                      (click)="basculerStatutService(s)"
+                    >
+                      {{ s.statut ? 'Désactiver' : 'Activer' }}
+                    </button>
+                  </div>
+                </div>
+
+                @if (s.description) {
+                  <p class="service-desc">{{ s.description }}</p>
+                }
+              </div>
+            </div>
+
+            <!-- VARIANTES LIST -->
+            <div class="variantes-section">
+              <div class="variantes-header">
+                <span class="variantes-count">Variantes & Tarifs ({{ s.variantes?.length || 0 }})</span>
+                <button type="button" class="btn-add-var" (click)="openAddVarianteModal(s)">
+                  + Ajouter variante
+                </button>
+              </div>
+
+              <div class="variantes-list">
+                @for (v of s.variantes || []; track v.id) {
+                  <div class="variante-row" [class.var-inactive]="!v.statut">
+                    <div class="var-left">
+                      @if (v.imageUrl) {
+                        <img [src]="v.imageUrl" [alt]="v.nom" class="var-mini-img" />
+                      }
+                      <span class="var-name">{{ v.nom }}</span>
+                    </div>
+
+                    <div class="var-middle">
+                      <span class="var-duration">{{ v.dureeMinutes }} min</span>
+                      <strong class="var-price">{{ formatDevise(v.prix) }}</strong>
+                    </div>
+
+                    <div class="var-actions">
+                      <button type="button" class="var-btn" (click)="openImageVarianteModal(s, v)" title="Photo variante">
+                        Photo
+                      </button>
+                      <button type="button" class="var-btn" (click)="openEditVarianteModal(s, v)" title="Modifier">
+                        Éditer
+                      </button>
+                      <button type="button" class="var-btn" (click)="basculerStatutVariante(s, v)">
+                        {{ v.statut ? 'Désactiver' : 'Activer' }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- MODAL: CRÉER SERVICE -->
+  @if (showCreateServiceModal) {
+    <div class="modal-backdrop" (click)="showCreateServiceModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Créer un Nouveau Service</h2>
+          <button type="button" class="btn-close" (click)="showCreateServiceModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="creerService()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="newServNom" class="form-label">Nom du service *</label>
+              <input
+                id="newServNom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="newServiceData.nom"
+                name="nom"
+                placeholder="Ex: Tresses Africaines, Coloration..."
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="newServDesc" class="form-label">Description</label>
+              <textarea
+                id="newServDesc"
+                class="form-control"
+                [(ngModel)]="newServiceData.description"
+                name="description"
+                rows="2"
+                placeholder="Détails du soin ou de la prestation..."
+              ></textarea>
+            </div>
+
+
+
+            <div class="form-group">
+              <label class="form-label">Photographie du service (Optionnelle)</label>
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onNewServiceImageSelected($event)"
+                class="form-control"
+              />
+              @if (newServicePreviewUrl) {
+                <div class="modal-image-preview">
+                  <img [src]="newServicePreviewUrl" alt="Aperçu image sélectionnée" />
+                </div>
+              }
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showCreateServiceModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isCreatingService">
+              {{ isCreatingService ? 'Création en cours...' : 'Créer le service' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: MODIFIER SERVICE TEXTES -->
+  @if (showEditServiceModal) {
+    <div class="modal-backdrop" (click)="showEditServiceModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Modifier le Service</h2>
+          <button type="button" class="btn-close" (click)="showEditServiceModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="modifierService()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="editNom" class="form-label">Nom du service *</label>
+              <input
+                id="editNom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="editServiceData.nom"
+                name="nom"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editDesc" class="form-label">Description</label>
+              <textarea
+                id="editDesc"
+                class="form-control"
+                [(ngModel)]="editServiceData.description"
+                name="description"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showEditServiceModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingService">
+              {{ isUpdatingService ? 'Mise à jour...' : 'Sauvegarder' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: IMAGE SERVICE -->
+  @if (showImageServiceModal) {
+    <div class="modal-backdrop" (click)="showImageServiceModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Photo du Service : {{ selectedServiceForImage?.nom }}</h2>
+          <button type="button" class="btn-close" (click)="showImageServiceModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <div class="modal-body">
+          <p class="modal-desc">Téléversez une photo claire. Elle sera automatiquement convertie en WebP sur Cloudinary.</p>
+
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onServiceImageSelected($event)"
+            class="form-control"
+          />
+
+          @if (serviceImagePreviewUrl) {
+            <div class="modal-image-preview">
+              <img [src]="serviceImagePreviewUrl" alt="Aperçu photo service" />
+            </div>
+          }
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showImageServiceModal = false">Annuler</button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="uploadImageService()"
+            [disabled]="isUploadingServiceImage || !serviceImageFile"
+          >
+            {{ isUploadingServiceImage ? 'Téléversement WebP...' : 'Mettre en ligne' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: AJOUTER VARIANTE -->
+  @if (showAddVarianteModal) {
+    <div class="modal-backdrop" (click)="showAddVarianteModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Ajouter une Variante : {{ parentServiceForVariante?.nom }}</h2>
+          <button type="button" class="btn-close" (click)="showAddVarianteModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="ajouterVariante()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="addVarNom" class="form-label">Nom de la déclinaison *</label>
+              <input
+                id="addVarNom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="newVarianteData.nom"
+                name="nom"
+                placeholder="Ex: Longueur XL, Finition gel..."
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="addVarDuree" class="form-label">Durée (minutes) *</label>
+                <input
+                  id="addVarDuree"
+                  type="number"
+                  min="5"
+                  step="5"
+                  class="form-control"
+                  [(ngModel)]="newVarianteData.dureeMinutes"
+                  name="dureeMinutes"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="addVarPrix" class="form-label">Prix (FCFA) *</label>
+                <input
+                  id="addVarPrix"
+                  type="number"
+                  min="0"
+                  step="500"
+                  class="form-control"
+                  [(ngModel)]="newVarianteData.prix"
+                  name="prix"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Photo spécifique de la déclinaison (Optionnelle)</label>
+              <input
+                type="file"
+                accept="image/*"
+                (change)="onNewVarianteImageSelected($event)"
+                class="form-control"
+              />
+              @if (newVariantePreviewUrl) {
+                <div class="modal-image-preview">
+                  <img [src]="newVariantePreviewUrl" alt="Aperçu déclinaison" />
+                </div>
+              }
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showAddVarianteModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isAddingVariante">
+              {{ isAddingVariante ? 'Ajout en cours...' : 'Ajouter la variante' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: MODIFIER VARIANTE -->
+  @if (showEditVarianteModal) {
+    <div class="modal-backdrop" (click)="showEditVarianteModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Modifier la Variante</h2>
+          <button type="button" class="btn-close" (click)="showEditVarianteModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="modifierVariante()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="editVarNom" class="form-label">Nom de la déclinaison *</label>
+              <input
+                id="editVarNom"
+                type="text"
+                class="form-control"
+                [(ngModel)]="editVarianteData.nom"
+                name="nom"
+                required
+              />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="editVarDuree" class="form-label">Durée (minutes) *</label>
+                <input
+                  id="editVarDuree"
+                  type="number"
+                  min="5"
+                  step="5"
+                  class="form-control"
+                  [(ngModel)]="editVarianteData.dureeMinutes"
+                  name="dureeMinutes"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="editVarPrix" class="form-label">Prix (FCFA) *</label>
+                <input
+                  id="editVarPrix"
+                  type="number"
+                  min="0"
+                  step="500"
+                  class="form-control"
+                  [(ngModel)]="editVarianteData.prix"
+                  name="prix"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showEditVarianteModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingVariante">
+              {{ isUpdatingVariante ? 'Mise à jour...' : 'Sauvegarder' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: IMAGE VARIANTE -->
+  @if (showImageVarianteModal) {
+    <div class="modal-backdrop" (click)="showImageVarianteModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Photo de la Variante : {{ selectedVarianteForEdit?.nom }}</h2>
+          <button type="button" class="btn-close" (click)="showImageVarianteModal = false"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <div class="modal-body">
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onVarImageSelected($event)"
+            class="form-control"
+          />
+
+          @if (varImagePreviewUrl) {
+            <div class="modal-image-preview">
+              <img [src]="varImagePreviewUrl" alt="Aperçu photo variante" />
+            </div>
+          }
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showImageVarianteModal = false">Annuler</button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="uploadImageVariante()"
+            [disabled]="isUploadingVarImage || !varImageFile"
+          >
+            {{ isUploadingVarImage ? 'Téléversement...' : 'Mettre en ligne' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: DÉTAIL DU SERVICE & VARIANTES -->
+  @if (showDetailServiceModal && selectedServiceForDetail) {
+    <div class="modal-backdrop" (click)="closeDetailServiceModal()">
+      <div class="modal-dialog modal-dialog-lg" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="badge" [class.badge-active]="selectedServiceForDetail.statut" [class.badge-inactive]="!selectedServiceForDetail.statut">
+              {{ selectedServiceForDetail.statut ? 'Actif' : 'Inactif' }}
+            </span>
+            <h2 class="modal-title">{{ selectedServiceForDetail.nom }}</h2>
+          </div>
+          <button type="button" class="btn-close" (click)="closeDetailServiceModal()"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <div class="modal-body detail-modal-body">
+          @if (isLoadingDetail) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Actualisation des détails...</span>
+            </div>
+          }
+
+          <!-- SERVICE HERO -->
+          <div class="detail-hero-section">
+            <div class="detail-image-box">
+              @if (selectedServiceForDetail.imageUrl) {
+                <img [src]="selectedServiceForDetail.imageUrl" [alt]="selectedServiceForDetail.nom" class="detail-main-img" />
+              } @else {
+                <div class="service-img-placeholder">
+                  <mat-icon class="placeholder-icon">image</mat-icon>
+                </div>
+              }
+              <button
+                type="button"
+                class="btn-change-image"
+                (click)="openImageServiceModal(selectedServiceForDetail)"
+                title="Changer la photo principale"
+              >
+                <mat-icon>photo_camera</mat-icon>
+              </button>
+            </div>
+
+            <div class="detail-info-box">
+              <h3 class="detail-subtitle">Description</h3>
+              <p class="detail-description">{{ selectedServiceForDetail.description || 'Aucune description renseignée pour ce service.' }}</p>
+
+              <div class="detail-service-actions">
+                <button type="button" class="btn-secondary" (click)="openEditServiceModal(selectedServiceForDetail)">
+                  Modifier nom & description
+                </button>
+                <button type="button" class="btn-secondary" (click)="openImageServiceModal(selectedServiceForDetail)">
+                  Changer la photo
+                </button>
+                <button
+                  type="button"
+                  class="btn-text-action"
+                  (click)="basculerStatutService(selectedServiceForDetail)"
+                >
+                  {{ selectedServiceForDetail.statut ? 'Désactiver le service' : 'Activer le service' }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- VARIANTES DETAIL LIST -->
+          <div class="detail-variantes-section">
+            <div class="variantes-header">
+              <span class="variantes-count">Variantes disponibles ({{ selectedServiceForDetail.variantes?.length || 0 }})</span>
+              <button type="button" class="btn-add-var" (click)="openAddVarianteModal(selectedServiceForDetail)">
+                + Ajouter une variante
+              </button>
+            </div>
+
+            <div class="variantes-cards-grid">
+              @for (v of selectedServiceForDetail.variantes || []; track v.id) {
+                <div class="detail-var-card" [class.var-inactive]="!v.statut">
+                  <div class="detail-var-top">
+                    @if (v.imageUrl) {
+                      <img [src]="v.imageUrl" [alt]="v.nom" class="detail-var-img" />
+                    } @else {
+                      <div class="detail-var-img-placeholder">
+                        <mat-icon class="placeholder-icon">image</mat-icon>
+                      </div>
+                    }
+                    <div class="detail-var-meta">
+                      <div class="detail-var-header">
+                        <h4 class="detail-var-title">{{ v.nom }}</h4>
+                        <span class="badge" [class.badge-active]="v.statut" [class.badge-inactive]="!v.statut">
+                          {{ v.statut ? 'Active' : 'Inactive' }}
+                        </span>
+                      </div>
+                      <div class="detail-var-specs">
+                        <span class="var-spec-tag">
+                          <mat-icon class="spec-icon">schedule</mat-icon>
+                          {{ v.dureeMinutes }} minutes
+                        </span>
+                        <span class="detail-var-price">{{ formatDevise(v.prix) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="detail-var-actions">
+                    <button type="button" class="btn-secondary btn-sm" (click)="openImageVarianteModal(selectedServiceForDetail, v)">
+                      Photo
+                    </button>
+                    <button type="button" class="btn-secondary btn-sm" (click)="openEditVarianteModal(selectedServiceForDetail, v)">
+                      Modifier
+                    </button>
+                    <button type="button" class="btn-text-action btn-sm" (click)="basculerStatutVariante(selectedServiceForDetail, v)">
+                      {{ v.statut ? 'Désactiver' : 'Activer' }}
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeDetailServiceModal()">Fermer</button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

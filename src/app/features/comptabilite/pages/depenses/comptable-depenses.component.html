@@ -1,0 +1,228 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Registre des Dépenses & Achats</h1>
+      <p class="page-subtitle">Saisie et suivi des charges d'exploitation et sorties de caisse</p>
+    </div>
+    <button class="btn-create" (click)="ouvrirModalCreation()">
+      <mat-icon class="icon-sm">add</mat-icon> Enregistrer une dépense
+    </button>
+  </div>
+
+  <!-- Success Toast -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerDepenses()">Réessayer</button>
+  </div>
+
+  <!-- Filters & Total strip -->
+  <div class="filters-bar">
+    <div class="filter-controls">
+      <div class="filter-group">
+        <label for="catFilter">Catégorie :</label>
+        <select id="catFilter" [(ngModel)]="selectedCategorie" (change)="chargerDepenses()" class="filter-select">
+          <option value="">Toutes les catégories</option>
+          <option *ngFor="let cat of categoriesList" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="statutFilter">Statut :</label>
+        <select id="statutFilter" [(ngModel)]="selectedStatut" (change)="chargerDepenses()" class="filter-select">
+          <option value="">Tous les statuts</option>
+          <option value="true">Validée</option>
+          <option value="false">Annulée</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="total-badge">
+      <span class="total-lbl">Total actif affiché :</span>
+      <strong class="total-val">{{ totalDepensesFiltrees | number:'1.0-0' }} FCFA</strong>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des dépenses...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && depenses().length === 0" class="empty-state">
+    <mat-icon class="icon-xl">receipt_long</mat-icon>
+    <h3>Aucune dépense trouvée</h3>
+    <p>Aucune écriture de dépense ne correspond aux critères sélectionnés.</p>
+  </div>
+
+  <!-- Depenses Table -->
+  <div *ngIf="!isLoading() && depenses().length > 0" class="card-section">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Catégorie</th>
+            <th>Description / Motif</th>
+            <th>Comptable</th>
+            <th>Statut</th>
+            <th class="text-right">Montant</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of depenses()">
+            <td class="date-cell">{{ d.dateDepense | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <span class="category-badge">{{ d.categorie }}</span>
+            </td>
+            <td class="desc-cell">{{ d.description || 'Dépense courante' }}</td>
+            <td>{{ d.comptableNomComplet || 'Comptable' }}</td>
+            <td>
+              <span class="badge" [ngClass]="d.statut ? 'badge-active' : 'badge-cancelled'">
+                {{ d.statut ? 'Validée' : 'Annulée' }}
+              </span>
+            </td>
+            <td class="text-right font-bold val-negative">
+              - {{ d.montant | number:'1.0-0' }} FCFA
+            </td>
+            <td class="text-center">
+              <button class="btn-table-action" (click)="ouvrirDetail(d)" title="Voir le détail">
+                <mat-icon class="icon-xs">visibility</mat-icon> Détail
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Création Dépense -->
+  <div *ngIf="showCreateModal" class="modal-backdrop" (click)="fermerModalCreation()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Nouvelle Dépense Financière</h2>
+        <button class="btn-close" (click)="fermerModalCreation()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="modalError" class="modal-alert-error">
+        <mat-icon class="icon-sm">warning</mat-icon> {{ modalError }}
+      </div>
+
+      <form (ngSubmit)="creerDepense()">
+        <div class="form-group">
+          <label for="montant">Montant de la dépense (FCFA) *</label>
+          <input
+            type="number"
+            id="montant"
+            [(ngModel)]="newDepense.montant"
+            name="montant"
+            class="form-input text-large"
+            min="100"
+            step="500"
+            placeholder="Ex : 15000"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="categorie">Catégorie comptable *</label>
+          <select id="categorie" [(ngModel)]="newDepense.categorie" name="categorie" class="form-input" required>
+            <option *ngFor="let cat of categoriesList" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Motif / Description de la dépense *</label>
+          <textarea
+            id="description"
+            [(ngModel)]="newDepense.description"
+            name="description"
+            class="form-textarea"
+            rows="3"
+            placeholder="Ex : Achat de 10 flacons de shampoing lissant chez le grossiste"
+            required
+          ></textarea>
+        </div>
+
+        <div class="modal-notice">
+          <mat-icon class="icon-xs">info</mat-icon> Cette dépense sera automatiquement comptabilisée en sortie dans la session de caisse active.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="fermerModalCreation()">Annuler</button>
+          <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer la dépense' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Détail Dépense -->
+  <div *ngIf="showDetailModal" class="modal-backdrop" (click)="fermerDetailModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="modal-subtitle">Fiche Dépense</span>
+          <h2>Dépense #{{ selectedDepense?.id }}</h2>
+        </div>
+        <button class="btn-close" (click)="fermerDetailModal()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="detail-body" *ngIf="selectedDepense">
+        <div class="detail-amount-box">
+          <span class="lbl">Montant Décaissé</span>
+          <span class="amount-val">- {{ selectedDepense.montant | number:'1.0-0' }} FCFA</span>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="d-label">Catégorie</span>
+            <strong>{{ selectedDepense.categorie }}</strong>
+          </div>
+          <div class="detail-item">
+            <span class="d-label">Date & Heure</span>
+            <span>{{ selectedDepense.dateDepense | date:'dd/MM/yyyy à HH:mm' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="d-label">Enregistré par</span>
+            <span>{{ selectedDepense.comptableNomComplet || 'Comptable' }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="d-label">Statut</span>
+            <span class="badge" [ngClass]="selectedDepense.statut ? 'badge-active' : 'badge-cancelled'">
+              {{ selectedDepense.statut ? 'Validée' : 'Annulée' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="detail-desc-box">
+          <span class="d-label">Description / Justification</span>
+          <p>{{ selectedDepense.description || 'Aucune description' }}</p>
+        </div>
+      </div>
+
+      <div class="detail-footer" *ngIf="selectedDepense">
+        <button
+          *ngIf="selectedDepense.statut"
+          class="btn-danger"
+          (click)="annulerDepense(selectedDepense.id)"
+        >
+          <mat-icon class="icon-xs">delete</mat-icon> Annuler cette dépense
+        </button>
+        <button class="btn-cancel" (click)="fermerDetailModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

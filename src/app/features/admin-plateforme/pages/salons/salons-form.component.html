@@ -1,0 +1,203 @@
+<div class="form-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="breadcrumbs">
+          <a routerLink="/admin-plateforme">Administration</a>
+          <span>/</span>
+          <a routerLink="/admin-plateforme/salons">Salons</a>
+          <span>/</span>
+          <span>Nouveau</span>
+        </div>
+        <h1>Création d'un Nouveau Salon</h1>
+        <p>Enregistrez un nouvel établissement dans le réseau de la plateforme et affiliez-le à un propriétaire.</p>
+      </header>
+
+      <!-- Formulaire principal -->
+      <form [formGroup]="salonForm" (ngSubmit)="onSubmit()" class="salon-form card-3d">
+        <!-- Message d'erreur global -->
+        <div *ngIf="errorMessage()" class="alert-error">
+          <mat-icon class="icon-sm">warning</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+
+        <!-- Section 1 : Informations Obligatoires -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="step-num">1</span>
+            Informations Principales
+          </h2>
+          <p class="section-subtitle">Ces éléments sont indispensables pour initialiser le salon et son affiliation.</p>
+
+          <div class="fields-grid">
+            <!-- Nom du salon -->
+            <div class="form-group">
+              <label for="nom">Nom du salon <span class="required">*</span></label>
+              <input
+                id="nom"
+                type="text"
+                formControlName="nom"
+                placeholder="Ex: Salon Prestige Abidjan"
+                [class.invalid]="isFieldInvalid('nom')"
+              />
+              <span *ngIf="isFieldInvalid('nom')" class="field-error">
+                Le nom du salon est obligatoire (min 2 caractères).
+              </span>
+            </div>
+
+            <!-- Email du propriétaire -->
+            <div class="form-group">
+              <label for="emailProprietaire">Email du Propriétaire <span class="required">*</span></label>
+              <input
+                id="emailProprietaire"
+                type="email"
+                formControlName="emailProprietaire"
+                placeholder="Ex: proprietaire@domaine.com"
+                [class.invalid]="isFieldInvalid('emailProprietaire')"
+              />
+              <span *ngIf="isFieldInvalid('emailProprietaire')" class="field-error">
+                Un email de propriétaire valide est requis pour l'affiliation.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2 : Coordonnées & Contact (Optionnel) -->
+        <div class="form-section">
+          <h2 class="section-title">
+            <span class="step-num">2</span>
+            Contact & Identité Visuelle <span class="badge-optional">Optionnel</span>
+          </h2>
+          <p class="section-subtitle">Ces informations facilitent la prise de contact et la personnalisation de la fiche.</p>
+
+          <div class="fields-grid">
+            <!-- Téléphone -->
+            <div class="form-group">
+              <label for="telephone">Téléphone du salon</label>
+              <input
+                id="telephone"
+                type="tel"
+                formControlName="telephone"
+                placeholder="Ex: +225 07 00 00 00 00"
+              />
+            </div>
+
+            <!-- Email public du salon -->
+            <div class="form-group">
+              <label for="email">Email public du salon</label>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                placeholder="Ex: contact@mon-salon.com"
+              />
+            </div>
+
+            <!-- Adresse physique -->
+            <div class="form-group full-width">
+              <label for="adresse">Adresse physique</label>
+              <input
+                id="adresse"
+                type="text"
+                formControlName="adresse"
+                placeholder="Ex: Cocody Angré 8ème Tranche, Abidjan"
+              />
+            </div>
+
+            <!-- Description -->
+            <div class="form-group full-width">
+              <label for="description">Description de l'établissement</label>
+              <textarea
+                id="description"
+                rows="3"
+                formControlName="description"
+                placeholder="Présentez les spécialités, l'ambiance et les services distinctifs du salon..."
+              ></textarea>
+            </div>
+
+            <!-- URL du logo -->
+            <div class="form-group full-width">
+              <label for="logoUrl">URL du Logo ou Photo de Couverture</label>
+              <input
+                id="logoUrl"
+                type="url"
+                formControlName="logoUrl"
+                placeholder="https://exemple.com/images/mon-logo.jpg"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3 : Géolocalisation GPS (Optionnel) -->
+        <div class="form-section">
+          <div class="geo-header">
+            <div>
+              <h2 class="section-title">
+                <span class="step-num">3</span>
+                Géolocalisation GPS <span class="badge-optional">Optionnel</span>
+              </h2>
+              <p class="section-subtitle">
+                La latitude et la longitude ne sont pas obligatoires à la création. Vous pouvez les pointer dès maintenant sur la carte ou laisser le propriétaire le faire plus tard.
+              </p>
+            </div>
+            <div class="geo-actions">
+              <button type="button" (click)="geolocaliserNavigateur()" class="btn-geo-subtle" title="Utiliser ma position actuelle">
+                <mat-icon class="icon-xs">my_location</mat-icon>
+                <span>Me localiser</span>
+              </button>
+              <button
+                type="button"
+                *ngIf="hasCoordinates()"
+                (click)="reinitialiserCoordonnees()"
+                class="btn-geo-clear"
+                title="Supprimer les coordonnées"
+              >
+                <mat-icon class="icon-xs">close</mat-icon> Effacer le repère
+              </button>
+            </div>
+          </div>
+
+          <!-- Mini carte Leaflet interactive -->
+          <div class="map-picker-wrapper">
+            <div #pickerMap class="picker-map-element"></div>
+            <div class="map-picker-instruction">
+              <mat-icon class="icon-xs">lightbulb</mat-icon> Cliquez directement sur la carte pour placer ou déplacer le marqueur du salon.
+            </div>
+          </div>
+
+          <!-- Champs Latitude / Longitude -->
+          <div class="fields-grid geo-inputs-grid">
+            <div class="form-group">
+              <label for="latitude">Latitude</label>
+              <input
+                id="latitude"
+                type="number"
+                step="any"
+                formControlName="latitude"
+                placeholder="Ex: 5.359952"
+                (change)="onManualCoordsChange()"
+              />
+            </div>
+            <div class="form-group">
+              <label for="longitude">Longitude</label>
+              <input
+                id="longitude"
+                type="number"
+                step="any"
+                formControlName="longitude"
+                placeholder="Ex: -4.008256"
+                (change)="onManualCoordsChange()"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div class="form-actions">
+          <a routerLink="/admin-plateforme/salons" class="btn-cancel">Annuler</a>
+          <button type="submit" [disabled]="isSubmitting() || salonForm.invalid" class="btn-submit">
+            <span *ngIf="isSubmitting()" class="spinner-small"></span>
+            <span>{{ isSubmitting() ? 'Création en cours...' : 'Créer le Salon' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>

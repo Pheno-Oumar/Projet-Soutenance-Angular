@@ -1,0 +1,117 @@
+<div class="horaires-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Horaires d'Ouverture</h1>
+      <p class="page-subtitle">Définissez les créneaux d'ouverture, fermetures hebdomadaires et pauses repas pour chaque jour de la semaine</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="enregistrerTout()">
+        <mat-icon class="btn-icon">check</mat-icon>
+        Enregistrer toute la semaine
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- HORAIRES TABLE / CARDS -->
+  <div class="horaires-card">
+    <div class="table-container">
+      <table class="horaires-table">
+        <thead>
+          <tr>
+            <th>Jour</th>
+            <th>Statut</th>
+            <th>Heure Ouverture</th>
+            <th>Heure Fermeture</th>
+            <th>Début Pause</th>
+            <th>Fin Pause</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (h of horaires(); track h.jourSemaine) {
+            <tr [class.row-closed]="!h.actif">
+              <!-- Jour -->
+              <td class="day-cell">
+                <strong>{{ h.label }}</strong>
+              </td>
+
+              <!-- Toggle Actif -->
+              <td>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="h.actif" />
+                  <span class="slider"></span>
+                </label>
+                <span class="status-text" [class.text-active]="h.actif">
+                  {{ h.actif ? 'Ouvert' : 'Fermé' }}
+                </span>
+              </td>
+
+              <!-- Heure Ouverture -->
+              <td>
+                <input
+                  type="time"
+                  class="time-input"
+                  [(ngModel)]="h.heureOuverture"
+                  [disabled]="!h.actif"
+                />
+              </td>
+
+              <!-- Heure Fermeture -->
+              <td>
+                <input
+                  type="time"
+                  class="time-input"
+                  [(ngModel)]="h.heureFermeture"
+                  [disabled]="!h.actif"
+                />
+              </td>
+
+              <!-- Pause Début -->
+              <td>
+                <input
+                  type="time"
+                  class="time-input pause-input"
+                  [(ngModel)]="h.pauseDebut"
+                  [disabled]="!h.actif"
+                  placeholder="--:--"
+                />
+              </td>
+
+              <!-- Pause Fin -->
+              <td>
+                <input
+                  type="time"
+                  class="time-input pause-input"
+                  [(ngModel)]="h.pauseFin"
+                  [disabled]="!h.actif"
+                  placeholder="--:--"
+                />
+              </td>
+
+              <!-- Action -->
+              <td class="text-right">
+                <button
+                  type="button"
+                  class="btn-save-row"
+                  (click)="enregistrerJour(h)"
+                  [disabled]="h.isSaving"
+                >
+                  {{ h.isSaving ? '...' : 'Valider' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

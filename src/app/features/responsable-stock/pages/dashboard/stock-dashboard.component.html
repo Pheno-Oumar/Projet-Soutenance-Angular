@@ -1,0 +1,400 @@
+<div class="dashboard-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <span class="header-badge">Espace Responsable Stock</span>
+      <h1 class="header-title">Tableau de Bord & Inventaire</h1>
+      <p class="header-subtitle">Supervision en temps réel des stocks, alertes de rupture et commandes clients</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerDonnees()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <a [routerLink]="['produits']" class="btn btn-primary">
+        <mat-icon class="btn-icon icon-sm">inventory_2</mat-icon>
+        <span>Catalogue Produits</span>
+      </a>
+
+      <a [routerLink]="['mouvements']" class="btn btn-dark">
+        <mat-icon class="btn-icon icon-sm">add</mat-icon>
+        <span>Nouveau Mouvement</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Synchronisation de l'inventaire et des flux en cours...</p>
+    </div>
+  } @else {
+    <!-- KPI Cards Grid -->
+    <div class="kpi-grid">
+      <!-- 1. Produits Actifs -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper kpi-brown">
+          <mat-icon class="icon-md">inventory_2</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Produits Actifs</span>
+          <span class="kpi-value">{{ kpi()?.totalProduitsActifs || 0 }}</span>
+          <span class="kpi-sub">Articles disponibles au catalogue</span>
+        </div>
+      </div>
+
+      <!-- 2. Alertes Stock Bas -->
+      <div class="kpi-card" [class.highlight-warning]="(kpi()?.totalProduitsEnAlerte || 0) > 0">
+        <div class="kpi-icon-wrapper kpi-warning">
+          <mat-icon class="icon-md">warning</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">En Seuil Critique</span>
+          <span class="kpi-value">{{ kpi()?.totalProduitsEnAlerte || 0 }}</span>
+          <span class="kpi-sub text-warning">À réapprovisionner rapidement</span>
+        </div>
+      </div>
+
+      <!-- 3. Ruptures Totales -->
+      <div class="kpi-card" [class.highlight-danger]="(kpi()?.totalProduitsEnRupture || 0) > 0">
+        <div class="kpi-icon-wrapper kpi-danger">
+          <mat-icon class="icon-md">block</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Ruptures Totales</span>
+          <span class="kpi-value">{{ kpi()?.totalProduitsEnRupture || 0 }}</span>
+          <span class="kpi-sub text-danger">Stock nul / Vente bloquée</span>
+        </div>
+      </div>
+
+      <!-- 4. Valeur Globale Stock -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper kpi-sand">
+          <mat-icon class="icon-md">account_balance_wallet</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Valeur du Stock</span>
+          <span class="kpi-value valorisation">{{ formatMontant(kpi()?.valeurTotaleStock) }}</span>
+          <span class="kpi-sub">Estimation prix de vente boutique</span>
+        </div>
+      </div>
+
+      <!-- 5. Commandes en Attente -->
+      <div class="kpi-card" [class.highlight-primary]="(kpi()?.commandesEnAttente || 0) > 0">
+        <div class="kpi-icon-wrapper kpi-info">
+          <mat-icon class="icon-md">shopping_bag</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Commandes à Traiter</span>
+          <span class="kpi-value">{{ kpi()?.commandesEnAttente || 0 }}</span>
+          <span class="kpi-sub">Retraits salon en attente</span>
+        </div>
+      </div>
+
+      <!-- 6. Chiffre d'Affaires Ventes Boutique -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper kpi-success">
+          <mat-icon class="icon-md">payments</mat-icon>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-label">Ventes Boutique</span>
+          <span class="kpi-value">{{ formatMontant(kpi()?.chiffreAffairesVentes) }}</span>
+          <span class="kpi-sub">Recettes des commandes récupérées</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Layout (2 columns) -->
+    <div class="dashboard-grid">
+      <!-- Left Column : Alertes de rupture prioritaires -->
+      <section class="dashboard-section section-alertes">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-dot dot-warning"></div>
+            <h2 class="section-title">Alertes de Stock Prioritaires</h2>
+            <span class="badge-count">{{ alertes().length }}</span>
+          </div>
+          <a [routerLink]="['alertes']" class="link-more">Voir toutes les alertes →</a>
+        </div>
+
+        @if (alertes().length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon text-success icon-xl">check_circle</mat-icon>
+            <p class="empty-title">Tous les stocks sont optimaux</p>
+            <p class="empty-desc">Aucun produit n'a atteint son seuil de sécurité actuellement.</p>
+          </div>
+        } @else {
+          <div class="alertes-list">
+            @for (item of alertes().slice(0, 5); track item.produitId) {
+              <div class="alerte-item" [class.item-danger]="item.estEnRuptureTotale">
+                <div class="alerte-info">
+                  <div class="alerte-top">
+                    <span class="alerte-category">{{ item.categorieNom }}</span>
+                    @if (item.estEnRuptureTotale) {
+                      <span class="status-badge badge-rupture">Rupture Totale</span>
+                    } @else {
+                      <span class="status-badge badge-seuil">Seuil Critique</span>
+                    }
+                  </div>
+                  <h3 class="alerte-nom">{{ item.produitNom }}</h3>
+                  <div class="alerte-details">
+                    <span>Disponible: <strong>{{ item.quantiteDisponible }}</strong></span>
+                    <span class="separator">•</span>
+                    <span>Seuil mini: {{ item.seuilMinimum }}</span>
+                    <span class="separator">•</span>
+                    <span>Prix: {{ formatMontant(item.prixVente) }}</span>
+                  </div>
+                </div>
+
+                <div class="alerte-actions">
+                  <button class="btn btn-sm btn-reappro" (click)="ouvrirModalReappro(item)">
+                    <mat-icon class="icon-xs">add</mat-icon>
+                    <span>Réapprovisionner</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <!-- Right Column : Commandes en attente de validation -->
+      <section class="dashboard-section section-commandes">
+        <div class="section-header">
+          <div class="section-title-wrap">
+            <div class="section-dot dot-primary"></div>
+            <h2 class="section-title">Commandes en Attente de Traitement</h2>
+            <span class="badge-count">{{ commandesEnAttente().length }}</span>
+          </div>
+          <a [routerLink]="['commandes']" class="link-more">Toutes les commandes →</a>
+        </div>
+
+        @if (commandesEnAttente().length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon text-muted icon-xl">shopping_bag</mat-icon>
+            <p class="empty-title">Aucune commande en attente</p>
+            <p class="empty-desc">Toutes les commandes clients ont été traitées ou retirées.</p>
+          </div>
+        } @else {
+          <div class="commandes-list">
+            @for (cmd of commandesEnAttente(); track cmd.id) {
+              <div class="commande-card">
+                <div class="commande-card-top">
+                  <div class="cmd-id-date">
+                    <span class="cmd-number">{{ cmd.numeroCommande }}</span>
+                    <span class="cmd-date">{{ cmd.dateCommande | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                  <span class="cmd-montant">{{ formatMontant(cmd.montantTotal) }}</span>
+                </div>
+
+                <div class="cmd-client-info">
+                  <mat-icon class="icon-xs">person</mat-icon>
+                  <span>{{ cmd.clientNom }} ({{ cmd.clientEmail }})</span>
+                </div>
+
+                <div class="cmd-articles-summary">
+                  <span class="articles-count">{{ cmd.lignes.length }} article(s) :</span>
+                  <div class="articles-chips">
+                    @for (ligne of cmd.lignes.slice(0, 3); track ligne.id) {
+                      <span class="chip">{{ ligne.quantite }}x {{ ligne.produitNom }}</span>
+                    }
+                    @if (cmd.lignes.length > 3) {
+                      <span class="chip chip-more">+{{ cmd.lignes.length - 3 }} autre(s)</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="commande-actions">
+                  <button class="btn btn-sm btn-valider" (click)="validerCommande(cmd)" title="Valider et déduire le stock">
+                    <mat-icon class="icon-xs">check</mat-icon>
+                    <span>Valider commande</span>
+                  </button>
+                  <button class="btn btn-sm btn-rejeter" (click)="ouvrirModalRejet(cmd)" title="Rejeter la commande">
+                    <mat-icon class="icon-xs">close</mat-icon>
+                    <span>Rejeter</span>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </div>
+
+    <!-- Bottom Section : Derniers Mouvements de stock -->
+    <section class="dashboard-section section-mouvements">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <div class="section-dot dot-brown"></div>
+          <h2 class="section-title">Derniers Flux & Mouvements de Stock</h2>
+        </div>
+        <a [routerLink]="['mouvements']" class="link-more">Historique complet →</a>
+      </div>
+
+      @if (derniersMouvements().length === 0) {
+        <p class="empty-hint">Aucun mouvement de stock récent enregistré.</p>
+      } @else {
+        <div class="table-responsive">
+          <table class="luxury-table">
+            <thead>
+              <tr>
+                <th>Date & Heure</th>
+                <th>Type de flux</th>
+                <th>Produit</th>
+                <th>Quantité</th>
+                <th>Prix Unitaire</th>
+                <th>Motif / Justification</th>
+                <th>Opérateur</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (mvt of derniersMouvements(); track mvt.id) {
+                <tr>
+                  <td class="text-nowrap">{{ mvt.dateMouvement | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="badge-mvt" [class]="getTypeBadgeClass(mvt.type)">
+                      {{ mvt.type }}
+                    </span>
+                  </td>
+                  <td class="font-medium">{{ mvt.produitNom }}</td>
+                  <td class="font-semibold" [class.text-success]="mvt.type === 'ENTREE'" [class.text-danger]="mvt.type === 'PERTE' || mvt.type === 'VENTE'">
+                    {{ mvt.type === 'ENTREE' ? '+' : '-' }}{{ mvt.quantite }}
+                  </td>
+                  <td>{{ mvt.prixUnitaire ? formatMontant(mvt.prixUnitaire) : '-' }}</td>
+                  <td class="text-muted">{{ mvt.motif || 'Aucun motif renseigné' }}</td>
+                  <td>
+                    <span class="author-tag">{{ mvt.auteurNom || 'Système' }}</span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+
+  <!-- MODAL : Réapprovisionnement Rapide -->
+  @if (isRestockModalOpen() && selectedAlerte) {
+    <div class="modal-backdrop" (click)="fermerModalReappro()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Réapprovisionnement Express</h3>
+            <p class="modal-subtitle">{{ selectedAlerte.produitNom }} ({{ selectedAlerte.categorieNom }})</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalReappro()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="stock-current-summary">
+            <div class="summary-box">
+              <span class="summary-label">Stock actuel</span>
+              <span class="summary-value" [class.text-danger]="selectedAlerte.quantiteDisponible === 0">
+                {{ selectedAlerte.quantiteDisponible }}
+              </span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Seuil minimum</span>
+              <span class="summary-value">{{ selectedAlerte.seuilMinimum }}</span>
+            </div>
+            <div class="summary-box">
+              <span class="summary-label">Prix de vente</span>
+              <span class="summary-value">{{ formatMontant(selectedAlerte.prixVente) }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Quantité reçue à entrer en stock *</label>
+            <input type="number" min="1" [(ngModel)]="restockQuantite" class="form-input" placeholder="Ex: 20" />
+            <small class="form-hint">Cette quantité sera ajoutée au stock disponible.</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+            <input type="number" min="0" [(ngModel)]="restockPrixUnitaire" class="form-input" placeholder="Ex: 5000" />
+            <small class="form-hint">Optionnel : pour la valorisation du coût d'achat.</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Motif ou référence fournisseur</label>
+            <textarea [(ngModel)]="restockMotif" rows="2" class="form-input" placeholder="Ex: Facture BL-2026-44"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalReappro()" [disabled]="isSubmittingRestock()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerReappro()" [disabled]="isSubmittingRestock()">
+            @if (isSubmittingRestock()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Enregistrer l'Entrée (+{{ restockQuantite }})</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Rejet de Commande -->
+  @if (isRejectModalOpen() && selectedCommandeToReject) {
+    <div class="modal-backdrop" (click)="fermerModalRejet()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Rejeter la commande</h3>
+            <p class="modal-subtitle">N° {{ selectedCommandeToReject.numeroCommande }} - Client: {{ selectedCommandeToReject.clientNom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalRejet()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Motif du rejet (obligatoire) *</label>
+            <textarea [(ngModel)]="motifRejet" rows="3" class="form-input" placeholder="Ex: Rupture définitive de stock sur le produit demandé"></textarea>
+            <small class="form-hint">Le motif sera visible par le client et conservé dans l'audit.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalRejet()" [disabled]="isSubmittingReject()">
+            Annuler
+          </button>
+          <button class="btn btn-danger" (click)="confirmerRejet()" [disabled]="isSubmittingReject()">
+            @if (isSubmittingReject()) {
+              <span>Traitement...</span>
+            } @else {
+              <span>Confirmer le rejet</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

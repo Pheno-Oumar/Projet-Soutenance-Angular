@@ -1,0 +1,229 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Rapports Financiers & Clôtures</h1>
+      <p class="page-subtitle">Génération en direct des bilans d'activité et export officiel (PDF, CSV, JSON)</p>
+    </div>
+    <div class="export-actions" *ngIf="activeTab === 'generator'">
+      <div class="format-picker">
+        <label for="formatSelect">Format :</label>
+        <select id="formatSelect" [(ngModel)]="selectedFormat" class="format-select">
+          <option value="PDF">PDF Officiel</option>
+          <option value="CSV">Tableur CSV</option>
+          <option value="JSON">Données JSON</option>
+        </select>
+      </div>
+      <button class="btn-export" (click)="exporterRapport()" [disabled]="isExporting()">
+        <mat-icon class="icon-sm">save_alt</mat-icon> {{ isExporting() ? 'Génération...' : 'Exporter le rapport' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Toast -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-bar">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'generator'"
+      (click)="activeTab = 'generator'"
+    >
+      Générateur de Rapport
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'exports'"
+      (click)="activeTab = 'exports'"
+    >
+      Mes Exports Récents ({{ exportsList().length }})
+    </button>
+  </div>
+
+  <!-- TAB 1: GENERATEUR -->
+  <div *ngIf="activeTab === 'generator'" class="tab-content">
+    <!-- Filters Card -->
+    <div class="filter-card">
+      <form (ngSubmit)="consulterRapport()" class="filter-form">
+        <div class="form-group">
+          <label for="typeRapport">Type de rapport</label>
+          <select id="typeRapport" [(ngModel)]="filterDto.typeRapport" name="typeRapport" class="form-select">
+            <option value="ENTREES_SORTIES">Bilan Complet (Entrées & Sorties)</option>
+            <option value="TOUTES_ENTREES">Toutes les Entrées (Paiements)</option>
+            <option value="TOUTES_DEPENSES">Toutes les Dépenses</option>
+            <option value="DEPENSES_CATEGORIE">Dépenses par Catégorie</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="filterDto.typeRapport === 'DEPENSES_CATEGORIE'">
+          <label for="cat">Catégorie ciblée</label>
+          <select id="cat" [(ngModel)]="filterDto.categorieDepense" name="cat" class="form-select">
+            <option *ngFor="let c of categoriesList" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="dateDebut">Date de début</label>
+          <input type="date" id="dateDebut" [(ngModel)]="filterDto.dateDebut" name="dateDebut" class="form-input" />
+        </div>
+
+        <div class="form-group">
+          <label for="dateFin">Date de fin</label>
+          <input type="date" id="dateFin" [(ngModel)]="filterDto.dateFin" name="dateFin" class="form-input" />
+        </div>
+
+        <button type="submit" class="btn-refresh" [disabled]="isLoading()">
+          <mat-icon class="icon-xs">search</mat-icon> {{ isLoading() ? 'Calcul...' : 'Actualiser le bilan' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading()" class="loading-state">
+      <div class="spinner"></div>
+      <p>Calcul et agrégation des flux financiers...</p>
+    </div>
+
+    <!-- Report View -->
+    <div *ngIf="!isLoading() && rapport()" class="report-view">
+      <!-- Balance Strip -->
+      <div class="balance-strip">
+        <div class="balance-item">
+          <span class="lbl">Total Entrées</span>
+          <span class="val val-positive">+ {{ (rapport()?.totalEntrees || 0) | number:'1.0-0' }} FCFA</span>
+          <span class="sub">{{ rapport()?.nombreEntrees || 0 }} transaction(s)</span>
+        </div>
+        <div class="balance-item">
+          <span class="lbl">Total Dépenses</span>
+          <span class="val val-negative">- {{ (rapport()?.totalSorties || 0) | number:'1.0-0' }} FCFA</span>
+          <span class="sub">{{ rapport()?.nombreSorties || 0 }} dépense(s)</span>
+        </div>
+        <div class="balance-item net-item">
+          <span class="lbl">Solde Net de la Période</span>
+          <span class="val" [ngClass]="(rapport()?.soldeNet || 0) >= 0 ? 'val-positive' : 'val-negative'">
+            {{ (rapport()?.soldeNet || 0) | number:'1.0-0' }} FCFA
+          </span>
+          <span class="sub">Résultat net d'exploitation</span>
+        </div>
+      </div>
+
+      <!-- Tables Accordion or Split -->
+      <!-- Entrées Table -->
+      <div class="card-section" *ngIf="rapport()?.entrees && (rapport()?.entrees?.length || 0) > 0">
+        <h3 class="section-title">Détail des Entrées (Paiements encaissés)</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>N° Reçu</th>
+                <th>Client</th>
+                <th>Mode Règlement</th>
+                <th class="text-right">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of rapport()?.entrees">
+                <td>{{ e.datePaiement | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td><strong>{{ e.numeroPaiement || e.numeroFacture || '-' }}</strong></td>
+                <td>{{ e.clientNom || 'Client Anonyme' }}</td>
+                <td>{{ e.modePaiement }}</td>
+                <td class="text-right font-bold val-positive">+ {{ e.montant | number:'1.0-0' }} FCFA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sorties Table -->
+      <div class="card-section" *ngIf="rapport()?.sorties && (rapport()?.sorties?.length || 0) > 0">
+        <h3 class="section-title">Détail des Sorties (Dépenses validées)</h3>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Catégorie</th>
+                <th>Description</th>
+                <th>Comptable</th>
+                <th class="text-right">Montant</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of rapport()?.sorties">
+                <td>{{ s.dateDepense | date:'dd/MM/yyyy HH:mm' }}</td>
+                <td><span class="category-badge">{{ s.categorie }}</span></td>
+                <td>{{ s.description || 'Dépense courante' }}</td>
+                <td>{{ s.comptableNom || 'Comptable' }}</td>
+                <td class="text-right font-bold val-negative">- {{ s.montant | number:'1.0-0' }} FCFA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: EXPORTS HISTORY -->
+  <div *ngIf="activeTab === 'exports'" class="tab-content">
+    <div class="card-section">
+      <div class="section-header">
+        <h2 class="section-title">Historique de vos Exports Officiels</h2>
+        <span class="text-sub">Les liens de téléchargement Cloudinary sont sécurisés et valables 24 heures</span>
+      </div>
+
+      <div *ngIf="exportsList().length === 0" class="empty-sub">
+        <p>Aucun fichier exporté récemment.</p>
+      </div>
+
+      <div *ngIf="exportsList().length > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID Export</th>
+              <th>Format</th>
+              <th>Date de Demande</th>
+              <th>Expiration</th>
+              <th>Statut</th>
+              <th class="text-center">Téléchargement</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let exp of exportsList()">
+              <td class="font-bold">#{{ exp.exportId }}</td>
+              <td>
+                <span class="format-badge" [ngClass]="'fmt-' + exp.format.toLowerCase()">
+                  {{ exp.format }}
+                </span>
+              </td>
+              <td>{{ exp.dateDemande | date:'dd/MM/yyyy à HH:mm' }}</td>
+              <td class="text-sub">{{ exp.dateExpiration | date:'dd/MM/yyyy à HH:mm' }}</td>
+              <td><span class="badge-active">{{ exp.statut }}</span></td>
+              <td class="text-center">
+                <button
+                  type="button"
+                  (click)="telechargerExport(exp)"
+                  class="btn-download"
+                  [disabled]="downloadingId() === exp.exportId"
+                >
+                  <span *ngIf="downloadingId() === exp.exportId">⏳ Téléchargement...</span>
+                  <span *ngIf="downloadingId() !== exp.exportId">
+                    <mat-icon class="icon-xs">download</mat-icon> Télécharger
+                  </span>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

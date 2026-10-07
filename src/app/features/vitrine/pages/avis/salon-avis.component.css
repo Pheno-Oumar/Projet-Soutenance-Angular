@@ -1,0 +1,246 @@
+.avis-page {
+  min-height: calc(100vh - 80px);
+  background: #FAF8F5;
+  color: #1A1A1A;
+}
+
+.avis-header {
+  background: radial-gradient(circle at 50% 10%, #F5F0E8 0%, #FAF8F5 100%);
+  color: #1A1A1A;
+  padding: 40px 24px 44px 24px;
+  border-bottom: 1px solid rgba(200, 182, 166, 0.25);
+}
+
+.header-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.breadcrumb-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #7A726D;
+  margin-bottom: 16px;
+}
+
+.breadcrumb-nav a {
+  color: #4A3B32;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.breadcrumb-nav a:hover {
+  color: #1A1A1A;
+}
+
+.sub-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #4A3B32;
+  text-transform: uppercase;
+}
+
+.page-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #1A1A1A;
+  margin: 6px 0 10px 0;
+}
+
+.page-desc {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #66605B;
+  margin: 0;
+  max-width: 720px;
+}
+
+.avis-content {
+  padding: 50px 24px 80px 24px;
+}
+
+.content-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* ========================================================= */
+/* SYNTHÈSE DES NOTES                                        */
+/* ========================================================= */
+.rating-overview-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 182, 166, 0.35);
+  border-radius: 20px;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 36px;
+  align-items: center;
+  margin-bottom: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.rating-score-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-right: 1px solid rgba(200, 182, 166, 0.25);
+  padding-right: 36px;
+}
+
+.score-num {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #4A3B32;
+  line-height: 1;
+}
+
+.stars-row {
+  display: flex;
+  gap: 2px;
+  color: #C8B6A6;
+  margin: 10px 0 6px 0;
+}
+
+.star-icon {
+  font-size: 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.score-count {
+  font-size: 0.8rem;
+  color: #6B7280;
+}
+
+.rating-pitch-box h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 6px 0;
+}
+
+.rating-pitch-box p {
+  font-size: 0.88rem;
+  color: #6B7280;
+  margin: 0 0 18px 0;
+  line-height: 1.5;
+}
+
+.btn-leave-review {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #C8B6A6;
+  color: #1A1A1A;
+  border: none;
+  border-radius: 24px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-leave-review:hover {
+  background: #B5A89F;
+  transform: translateY(-1px);
+}
+
+/* ========================================================= */
+/* LISTE DES AVIS                                            */
+/* ========================================================= */
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 22px 24px;
+  border: 1px solid rgba(200, 182, 166, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.review-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.reviewer-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #2A2421;
+  color: #C8B6A6;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reviewer-name {
+  display: block;
+  font-size: 0.95rem;
+  color: #1A1A1A;
+}
+
+.review-date {
+  font-size: 0.78rem;
+  color: #9CA3AF;
+}
+
+.review-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star-icon-small {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #D1D5DB;
+}
+
+.star-icon-small.star-filled {
+  color: #C8B6A6;
+}
+
+.review-comment {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #4B5563;
+  margin: 0;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .rating-overview-card {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .rating-score-box {
+    border-right: none;
+    border-bottom: 1px solid rgba(200, 182, 166, 0.25);
+    padding-right: 0;
+    padding-bottom: 20px;
+  }
+}

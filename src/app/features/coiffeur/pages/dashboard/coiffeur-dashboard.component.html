@@ -1,0 +1,202 @@
+<div class="dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de votre espace coiffeur...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <span><mat-icon class="icon-xs">warning</mat-icon> {{ errorMessage() }}</span>
+    <button class="btn-retry" (click)="chargerDashboard()">Réessayer</button>
+  </div>
+
+  <div *ngIf="!isLoading() && dashboard()" class="dashboard-content">
+    <!-- Hero Profile Banner -->
+    <div class="hero-banner">
+      <div class="hero-profile">
+        <div class="avatar-wrap">
+          <img
+            *ngIf="dashboard()?.photoProfilUrl; else defaultAvatar"
+            [src]="dashboard()?.photoProfilUrl"
+            [alt]="dashboard()?.nomAffichage"
+            class="avatar-img"
+          />
+          <ng-template #defaultAvatar>
+            <div class="avatar-fallback">
+              {{ (dashboard()?.nomAffichage || currentUser()?.prenom || 'C').charAt(0).toUpperCase() }}
+            </div>
+          </ng-template>
+        </div>
+        <div class="profile-meta">
+          <span class="role-badge">Coiffeur Professionnel</span>
+          <h1 class="profile-name">{{ dashboard()?.nomAffichage || (currentUser()?.prenom + ' ' + currentUser()?.nom) }}</h1>
+          <p class="profile-bio" *ngIf="dashboard()?.biographie">{{ dashboard()?.biographie }}</p>
+          <div class="profile-tags">
+            <span class="tag" *ngIf="dashboard()?.anneeExperience">
+              <mat-icon class="icon-xs">workspace_premium</mat-icon> {{ dashboard()?.anneeExperience }} ans d'expérience
+            </span>
+            <span class="tag rating-tag" *ngIf="(dashboard()?.totalAvis || 0) > 0">
+              <mat-icon class="icon-xs">star</mat-icon> {{ dashboard()?.noteMoyenne }} / 5 ({{ dashboard()?.totalAvis }} avis)
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <a [routerLink]="['profil-capillaire']" class="btn-primary">
+          <mat-icon class="icon-xs btn-icon">science</mat-icon> Fiches Capillaires Clients
+        </a>
+        <a [routerLink]="['profil-professionnel']" class="btn-outline">
+          <mat-icon class="icon-xs btn-icon">settings</mat-icon> Modifier mon profil
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Metrics Cards -->
+    <div class="kpi-grid">
+      <div class="kpi-card card-highlight">
+        <mat-icon class="kpi-icon">calendar_today</mat-icon>
+        <div class="kpi-body">
+          <span class="kpi-label">Rendez-vous Aujourd'hui</span>
+          <span class="kpi-value">{{ dashboard()?.rdvAujourdhuiTotal || 0 }}</span>
+          <span class="kpi-sub">
+            {{ dashboard()?.rdvAujourdhuiTermines || 0 }} terminés • {{ dashboard()?.rdvAujourdhuiEnAttente || 0 }} en attente
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <mat-icon class="kpi-icon">content_cut</mat-icon>
+        <div class="kpi-body">
+          <span class="kpi-label">Prestations ce mois-ci</span>
+          <span class="kpi-value">{{ dashboard()?.prestationsMoisTerminees || 0 }}</span>
+          <span class="kpi-sub">Prestations honorées</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <mat-icon class="kpi-icon">star</mat-icon>
+        <div class="kpi-body">
+          <span class="kpi-label">Satisfaction Clients</span>
+          <span class="kpi-value">{{ (dashboard()?.noteMoyenne || 0) > 0 ? dashboard()?.noteMoyenne : 'N/A' }}</span>
+          <span class="kpi-sub">{{ dashboard()?.totalAvis || 0 }} avis reçus</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <mat-icon class="kpi-icon">beach_access</mat-icon>
+        <div class="kpi-body">
+          <span class="kpi-label">Prochains Congés</span>
+          <span class="kpi-value">{{ (dashboard()?.prochainesIndisponibilites?.length || 0) }}</span>
+          <span class="kpi-sub">Période(s) déclarée(s)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Split: Planning & Absences -->
+    <div class="workspace-grid">
+      <!-- Planning Section -->
+      <div class="card-section planning-section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Mon Planning</h2>
+            <p class="section-subtitle">Consultez vos rendez-vous et vos prestations assignées</p>
+          </div>
+          <div class="date-picker-wrap">
+            <label for="rdvDate" class="date-label">Date :</label>
+            <input
+              type="date"
+              id="rdvDate"
+              class="date-input"
+              [(ngModel)]="selectedDate"
+              (change)="onDateChange()"
+            />
+          </div>
+        </div>
+
+        <div *ngIf="isLoadingPlanning()" class="sub-loading">
+          <div class="mini-spinner"></div>
+          <span>Mise à jour du planning...</span>
+        </div>
+
+        <div *ngIf="!isLoadingPlanning() && planningDate().length === 0" class="empty-state">
+          <mat-icon class="empty-icon">coffee</mat-icon>
+          <h3>Aucun rendez-vous</h3>
+          <p>Vous n'avez aucun rendez-vous planifié pour cette journée.</p>
+        </div>
+
+        <div *ngIf="!isLoadingPlanning() && planningDate().length > 0" class="timeline-list">
+          <div *ngFor="let rdv of planningDate()" class="timeline-item">
+            <div class="time-col">
+              <span class="time-start">{{ rdv.dateHeureDebut | date:'HH:mm' }}</span>
+              <span class="time-end">{{ rdv.dateHeureFin | date:'HH:mm' }}</span>
+            </div>
+            <div class="timeline-content">
+              <div class="rdv-header">
+                <span class="client-name">
+                  <mat-icon class="icon-xs">person</mat-icon> {{ rdv.prenomClient }} {{ rdv.nomClient }}
+                </span>
+                <span class="badge" [ngClass]="getStatutBadgeClass(rdv.statut)">{{ rdv.statut }}</span>
+              </div>
+              <div class="rdv-details" *ngIf="rdv.telephoneClient">
+                <span class="tel-info">
+                  <mat-icon class="icon-xs">phone</mat-icon> {{ rdv.telephoneClient }}
+                </span>
+              </div>
+              <!-- Prestations list inside RDV -->
+              <div class="prestations-tags" *ngIf="rdv.prestations && rdv.prestations.length > 0">
+                <span class="prestation-pill" *ngFor="let p of rdv.prestations">
+                  {{ p.serviceNom }}{{ p.varianteNom ? ' (' + p.varianteNom + ')' : '' }} ({{ p.dureeMinutes || 30 }} min)
+                </span>
+              </div>
+              <!-- Action client profil -->
+              <div class="rdv-actions" *ngIf="rdv.clientCompteId">
+                <a [routerLink]="['profil-capillaire']" class="btn-text-action">
+                  Consulter profil capillaire client →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Prochaines Indisponibilités & Raccourcis -->
+      <div class="side-column">
+        <!-- Upcoming Leaves / Absences Card -->
+        <div class="card-section">
+          <div class="section-header">
+            <h3 class="section-title">Mes Absences & Congés</h3>
+            <a [routerLink]="['indisponibilites']" class="link-small">Gérer</a>
+          </div>
+
+          <div *ngIf="dashboard()?.prochainesIndisponibilites?.length === 0" class="empty-sub">
+            <p>Aucun congé ou absence à venir.</p>
+            <a [routerLink]="['indisponibilites']" class="btn-sm-action">+ Poser une absence</a>
+          </div>
+
+          <div *ngIf="(dashboard()?.prochainesIndisponibilites?.length || 0) > 0" class="leaves-list">
+            <div *ngFor="let ind of dashboard()?.prochainesIndisponibilites" class="leave-card">
+              <div class="leave-badge">{{ ind.motif || 'ABSENCE' }}</div>
+              <div class="leave-dates">
+                <span>Du {{ ind.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+                <span>Au {{ ind.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <p class="leave-comment" *ngIf="ind.commentaire">{{ ind.commentaire }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Practical Actions -->
+        <div class="card-section quick-guide-card">
+          <h3 class="section-title">Conseil Praticien</h3>
+          <p class="guide-text">
+            Pour consulter le profil capillaire d'un client au fauteuil, demandez-lui son <strong>code PIN à 6 chiffres</strong> présent dans son espace personnel.
+          </p>
+          <a [routerLink]="['profil-capillaire']" class="btn-guide">
+            Accéder à l'annuaire client
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

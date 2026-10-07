@@ -1,0 +1,149 @@
+<!-- Backdrop semi-transparent avec flou -->
+<div
+  class="drawer-backdrop"
+  [class.is-visible]="isOpen()"
+  (click)="close()"
+  aria-hidden="true"
+></div>
+
+<!-- Panneau coulissant depuis la droite -->
+<aside
+  class="booking-drawer-panel"
+  [class.is-open]="isOpen()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Tiroir de réservation"
+>
+  <!-- En-tête du tiroir -->
+  <header class="drawer-header">
+    <div class="header-title-box">
+      <div class="header-icon-wrap">
+        <mat-icon class="icon-sm">calendar_month</mat-icon>
+      </div>
+      <div>
+        <h2 class="drawer-title">Mon Rendez-vous</h2>
+        <span class="drawer-subtitle" *ngIf="count() > 0">
+          {{ count() }} prestation{{ count() > 1 ? 's' : '' }} sélectionnée{{ count() > 1 ? 's' : '' }}
+        </span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="close()"
+      aria-label="Fermer le panneau"
+      title="Fermer"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <!-- Contenu du tiroir : Liste ou État vide -->
+  <div class="drawer-body">
+    <!-- ÉTAT VIDE -->
+    <div class="drawer-empty-state" *ngIf="count() === 0">
+      <div class="empty-icon-circle">
+        <mat-icon class="icon-xl">spa</mat-icon>
+      </div>
+      <h3>Votre sélection est vide</h3>
+      <p>
+        Parcourez notre carte de soins et choisissez vos prestations capillaires sur-mesure chez
+        <strong>{{ salonNom }}</strong>.
+      </p>
+      <button type="button" class="btn-discover-services" (click)="goToServices()">
+        <mat-icon class="icon-sm">auto_awesome</mat-icon>
+        <span>Découvrir la carte des soins</span>
+      </button>
+    </div>
+
+    <!-- LISTE DES VARIANTES SÉLECTIONNÉES -->
+    <div class="drawer-items-list" *ngIf="count() > 0">
+      <div class="items-header-bar">
+        <span class="list-label">Prestations choisies</span>
+        <button type="button" class="btn-clear-link" (click)="clearAll()">
+          Tout retirer
+        </button>
+      </div>
+
+      <div
+        class="variante-card"
+        *ngFor="let item of selectedVariantes()"
+      >
+        <div class="variante-thumb">
+          <img
+            *ngIf="item.imageUrl"
+            [src]="item.imageUrl"
+            [alt]="item.varianteNom"
+            class="thumb-img"
+          />
+          <div *ngIf="!item.imageUrl" class="thumb-fallback">
+            <mat-icon>content_cut</mat-icon>
+          </div>
+        </div>
+
+        <div class="variante-info">
+          <span class="service-parent-name" *ngIf="item.serviceNom">{{ item.serviceNom }}</span>
+          <h4 class="variante-title">{{ item.varianteNom }}</h4>
+
+          <div class="variante-meta-row">
+            <span class="meta-duration">
+              <mat-icon class="icon-xs">schedule</mat-icon>
+              {{ item.dureeMinutes }} min
+            </span>
+            <span class="meta-price">{{ item.prix | number:'1.0-0' }} FCFA</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-remove-item"
+          (click)="removeVariante(item.id)"
+          aria-label="Supprimer cette prestation"
+          title="Supprimer"
+        >
+          <mat-icon class="icon-sm">delete_outline</mat-icon>
+        </button>
+      </div>
+
+      <!-- Bouton d'ajout d'autre soin -->
+      <button type="button" class="btn-add-more" (click)="goToServices()">
+        <mat-icon class="icon-sm">add_circle_outline</mat-icon>
+        <span>Ajouter un autre soin ou rituel</span>
+      </button>
+
+      <!-- Petit rappel de réassurance -->
+      <div class="booking-reassurance-chip">
+        <mat-icon class="icon-xs">verified_user</mat-icon>
+        <span>Paiement sur place après la réalisation de votre soin. Annulation sans frais jusqu'à 24h avant.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pied du tiroir avec récapitulatif & CTA -->
+  <footer class="drawer-footer" *ngIf="count() > 0">
+    <div class="summary-breakdown">
+      <div class="summary-line">
+        <span class="summary-label">
+          <mat-icon class="icon-xs">timelapse</mat-icon>
+          Temps total estimé
+        </span>
+        <span class="summary-value duration-val">{{ formatDuree(totalDureeMinutes()) }}</span>
+      </div>
+
+      <div class="summary-line total-line">
+        <span class="total-label">Montant total</span>
+        <span class="total-value">{{ totalPrix() | number:'1.0-0' }} FCFA</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="btn-proceed-booking"
+      (click)="proceedToBooking()"
+    >
+      <span>Choisir le jour & créneau</span>
+      <mat-icon class="icon-sm">arrow_forward</mat-icon>
+    </button>
+  </footer>
+</aside>

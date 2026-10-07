@@ -1,0 +1,242 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Session de Caisse en Cours</h1>
+      <p class="page-subtitle">Suivi en direct des encaissements, décaissements et opérations du tiroir-caisse</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['../historique']" class="btn-outline">
+        <mat-icon class="icon-xs">history</mat-icon> Historique des sessions
+      </a>
+      <button
+        *ngIf="session()"
+        class="btn-close-caisse"
+        (click)="ouvrirModalCloture()"
+      >
+        <mat-icon class="icon-xs">lock</mat-icon> Clôturer la caisse
+      </button>
+      <button
+        *ngIf="!session() && !isLoading()"
+        class="btn-open-caisse"
+        (click)="ouvrirModalOuverture()"
+      >
+        <mat-icon class="icon-xs">lock_open</mat-icon> Ouvrir la session de caisse
+      </button>
+    </div>
+  </div>
+
+  <!-- Success Toast -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerSession()">Réessayer</button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Vérification de la session de caisse...</p>
+  </div>
+
+  <!-- Case 1: NO ACTIVE SESSION -->
+  <div *ngIf="!isLoading() && !session()" class="no-session-card">
+    <div class="no-session-icon">
+      <mat-icon class="icon-xl">lock</mat-icon>
+    </div>
+    <h2>Aucune session de caisse ouverte</h2>
+    <p>
+      Le tiroir-caisse du salon est actuellement fermé. Pour enregistrer des encaissements en espèces
+      ou régler des dépenses, vous devez déclarer le fond de caisse initial et ouvrir une nouvelle session.
+    </p>
+    <button class="btn-primary-large" (click)="ouvrirModalOuverture()">
+      Ouvrir la session de caisse maintenant
+    </button>
+  </div>
+
+  <!-- Case 2: ACTIVE SESSION PRESENT -->
+  <div *ngIf="!isLoading() && session()" class="session-active-content">
+    <!-- Summary Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <span class="m-label">Fond d'Ouverture</span>
+        <span class="m-value">{{ (session()?.soldeOuverture || 0) | number:'1.0-0' }} FCFA</span>
+        <span class="m-sub">Saisi à l'ouverture</span>
+      </div>
+
+      <div class="metric-card metric-income">
+        <span class="m-label">Total Entrées (Paiements)</span>
+        <span class="m-value">+ {{ (session()?.totalEntrees || 0) | number:'1.0-0' }} FCFA</span>
+        <span class="m-sub">Encaissements effectués</span>
+      </div>
+
+      <div class="metric-card metric-expense">
+        <span class="m-label">Total Sorties (Dépenses)</span>
+        <span class="m-value">- {{ (session()?.totalSorties || 0) | number:'1.0-0' }} FCFA</span>
+        <span class="m-sub">Décaissements réglés</span>
+      </div>
+
+      <div class="metric-card metric-total">
+        <span class="m-label">Solde Théorique Actuel</span>
+        <span class="m-value">{{ (session()?.soldeTheorique || 0) | number:'1.0-0' }} FCFA</span>
+        <span class="m-sub">Doit être présent en caisse</span>
+      </div>
+    </div>
+
+    <!-- Session Details Bar -->
+    <div class="session-info-bar">
+      <span><mat-icon class="icon-xs">key</mat-icon> Session #{{ session()?.id }}</span>
+      <span><mat-icon class="icon-xs">person</mat-icon> Ouverte par : <strong>{{ session()?.comptablePrenom }} {{ session()?.comptableNom }}</strong></span>
+      <span><mat-icon class="icon-xs">schedule</mat-icon> Date d'ouverture : <strong>{{ session()?.dateOuverture | date:'dd/MM/yyyy HH:mm' }}</strong></span>
+      <span class="badge-open">
+        <mat-icon class="icon-xs" style="color: #22c55e;">check_circle</mat-icon> ACTIVE
+      </span>
+    </div>
+
+    <!-- Operations Journal Table -->
+    <div class="card-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Journal des Écritures de Caisse</h2>
+          <p class="section-subtitle">Chaque mouvement (encaissement de prestation ou sortie de dépense) est horodaté</p>
+        </div>
+        <span class="operations-count">{{ operations().length }} opération(s)</span>
+      </div>
+
+      <div *ngIf="operations().length === 0" class="empty-sub">
+        <p>Aucune écriture enregistrée sur cette session pour le moment.</p>
+      </div>
+
+      <div *ngIf="operations().length > 0" class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Heure</th>
+              <th>Type</th>
+              <th>Motif / Description</th>
+              <th>Auteur</th>
+              <th class="text-right">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let op of operations()">
+              <td class="date-cell">{{ op.dateOperation | date:'HH:mm:ss' }}</td>
+              <td>
+                <span class="badge" [ngClass]="op.type === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
+                  {{ op.type === 'ENTREE' ? '↓ ENTRÉE' : '↑ SORTIE' }}
+                </span>
+              </td>
+              <td>{{ op.motif || 'Opération de caisse' }}</td>
+              <td>{{ op.auteurNom || 'Système' }}</td>
+              <td class="text-right font-bold" [ngClass]="op.type === 'ENTREE' ? 'val-positive' : 'val-negative'">
+                {{ op.type === 'ENTREE' ? '+' : '-' }} {{ op.montant | number:'1.0-0' }} FCFA
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ouverture -->
+  <div *ngIf="showOpenModal" class="modal-backdrop" (click)="fermerModalOuverture()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Ouverture de la Session de Caisse</h2>
+        <button class="btn-close" (click)="fermerModalOuverture()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="openError" class="modal-alert-error">
+        <mat-icon class="icon-sm">warning</mat-icon> {{ openError }}
+      </div>
+
+      <form (ngSubmit)="confirmerOuverture()">
+        <p class="modal-instruction">
+          Indiquez le montant du fond de caisse physique présent dans le tiroir au démarrage de la journée :
+        </p>
+
+        <div class="form-group">
+          <label for="openSolde">Fond de caisse initial (FCFA) *</label>
+          <input
+            type="number"
+            id="openSolde"
+            [(ngModel)]="openSolde"
+            name="openSolde"
+            class="form-input text-large"
+            min="0"
+            step="500"
+            required
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="fermerModalOuverture()">Annuler</button>
+          <button type="submit" class="btn-submit" [disabled]="isOpenSubmitting">
+            {{ isOpenSubmitting ? 'Ouverture...' : 'Confirmer l’ouverture de caisse' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Clôture -->
+  <div *ngIf="showCloseModal" class="modal-backdrop" (click)="fermerModalCloture()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Clôture de la Caisse Quotidienne</h2>
+        <button class="btn-close" (click)="fermerModalCloture()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="closeError" class="modal-alert-error">
+        <mat-icon class="icon-sm">warning</mat-icon> {{ closeError }}
+      </div>
+
+      <form (ngSubmit)="confirmerCloture()">
+        <div class="cloture-theorique-box">
+          <span class="th-lbl">Solde Théorique attendu :</span>
+          <strong class="th-val">{{ (session()?.soldeTheorique || 0) | number:'1.0-0' }} FCFA</strong>
+        </div>
+
+        <div class="form-group">
+          <label for="closeSolde">Montant physique réel compté (FCFA) *</label>
+          <input
+            type="number"
+            id="closeSolde"
+            [(ngModel)]="closeSolde"
+            name="closeSolde"
+            class="form-input text-large"
+            min="0"
+            step="500"
+            required
+          />
+        </div>
+
+        <!-- Ecart indicator -->
+        <div class="ecart-indicator" [ngClass]="ecartCloture === 0 ? 'ecart-zero' : (ecartCloture > 0 ? 'ecart-excedent' : 'ecart-deficit')">
+          <span class="ecart-lbl">Écart constaté :</span>
+          <strong class="ecart-val">
+            {{ ecartCloture > 0 ? '+' : '' }}{{ ecartCloture | number:'1.0-0' }} FCFA
+            <span *ngIf="ecartCloture === 0">(Caisse équilibrée)</span>
+            <span *ngIf="ecartCloture > 0">(Excédent de caisse)</span>
+            <span *ngIf="ecartCloture < 0">(Déficit / Manquant)</span>
+          </strong>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="fermerModalCloture()">Annuler</button>
+          <button type="submit" class="btn-danger" [disabled]="isCloseSubmitting">
+            {{ isCloseSubmitting ? 'Clôture en cours...' : 'Valider la clôture définitive' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

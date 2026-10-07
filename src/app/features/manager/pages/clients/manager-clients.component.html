@@ -1,0 +1,198 @@
+<div class="clients-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Fichier Clients & Historique de Soins</h1>
+      <p class="page-subtitle">Consultation des fiches clients, profils capillaires et suivi des prestations réalisées</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="search-input-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          type="text"
+          placeholder="Rechercher par nom, email, tél..."
+          [(ngModel)]="searchTerm"
+          class="search-input"
+        />
+      </div>
+
+      <div class="count-badge">
+        {{ filteredClients.length }} client{{ filteredClients.length > 1 ? 's' : '' }}
+      </div>
+    </div>
+  </header>
+
+
+  <!-- CLIENTS LIST -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement des clients du salon...</span>
+    </div>
+  } @else if (filteredClients.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">people_outline</mat-icon>
+      <h3>Aucun client trouvé</h3>
+      <p>Aucun dossier client ne correspond à votre recherche.</p>
+    </div>
+  } @else {
+    <div class="clients-grid">
+      @for (c of filteredClients; track c.clientId) {
+        <div class="client-card">
+          <div class="client-avatar">
+            {{ c.prenom[0] }}{{ c.nom[0] }}
+          </div>
+
+          <div class="client-info">
+            <h3 class="client-name">{{ c.prenom }} {{ c.nom }}</h3>
+            <span class="client-email">{{ c.email }}</span>
+            @if (c.telephone) {
+              <span class="client-tel">{{ c.telephone }}</span>
+            }
+
+            <div class="client-stats">
+              <span class="stat-badge">Client #{{ c.clientId }}</span>
+              @if (c.dateInscription) {
+                <span class="last-rdv">Inscrit le : {{ c.dateInscription | date:'dd/MM/yyyy' }}</span>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer-action">
+            <button type="button" class="btn-dossier" (click)="ouvrirFicheClient(c)">
+              <span>Consulter Dossier</span>
+              <mat-icon class="inline-arrow">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL: FICHE CLIENT SÉCURISÉE (SANS FACTURATION) -->
+  @if (showClientDetailModal) {
+    <div class="modal-backdrop" (click)="fermerFicheClient()">
+      <div class="modal-dialog modal-dialog-lg" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div class="client-modal-title-wrap">
+            <div class="modal-avatar">
+              {{ selectedClientDetail?.prenom?.[0] }}{{ selectedClientDetail?.nom?.[0] }}
+            </div>
+            <div>
+              <h2 class="modal-title">{{ selectedClientDetail?.prenom }} {{ selectedClientDetail?.nom }}</h2>
+              <span class="client-id-tag">Dossier Manager #{{ selectedClientDetail?.clientId }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="fermerFicheClient()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <div class="modal-body">
+          @if (isLoadingDetail) {
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Chargement du dossier client...</span>
+            </div>
+          } @else if (selectedClientDetail) {
+            <!-- CONFIDENTIALITY NOTE -->
+            <div class="privacy-notice">
+              <mat-icon class="shield-icon">security</mat-icon>
+              <span>Vue Manager restreinte : Les données de facturation et paiements sont confidentielles et réservées au Propriétaire.</span>
+            </div>
+
+            <!-- SECTION COORDONNÉES -->
+            <div class="dossier-section">
+              <h3 class="section-title">Coordonnées & Informations Personnelles</h3>
+              <div class="details-grid">
+                <div class="detail-box">
+                  <span class="detail-lbl">Adresse Email</span>
+                  <span class="detail-val">{{ selectedClientDetail.email }}</span>
+                </div>
+                <div class="detail-box">
+                  <span class="detail-lbl">Téléphone</span>
+                  <span class="detail-val">{{ selectedClientDetail.telephone || 'Non renseigné' }}</span>
+                </div>
+                <div class="detail-box">
+                  <span class="detail-lbl">Date de naissance</span>
+                  <span class="detail-val">{{ selectedClientDetail.dateNaissance ? (selectedClientDetail.dateNaissance | date:'dd MMMM yyyy') : 'Non renseignée' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION PROFIL CAPILLAIRE -->
+            <div class="dossier-section">
+              <h3 class="section-title">Fiche Technique Capillaire</h3>
+              @if (selectedClientDetail.profilCapillaire) {
+                <div class="capillaire-grid">
+                  <div class="cap-box">
+                    <span class="cap-lbl">Type de Cheveux</span>
+                    <span class="cap-val">{{ selectedClientDetail.profilCapillaire.typeCheveux || 'Non spécifié' }}</span>
+                  </div>
+                  <div class="cap-box">
+                    <span class="cap-lbl">Texture</span>
+                    <span class="cap-val">{{ selectedClientDetail.profilCapillaire.texture || 'Non spécifiée' }}</span>
+                  </div>
+                  <div class="cap-box">
+                    <span class="cap-lbl">Cuir Chevelu</span>
+                    <span class="cap-val">{{ selectedClientDetail.profilCapillaire.cuirChevelu || 'Non spécifié' }}</span>
+                  </div>
+                  <div class="cap-box">
+                    <span class="cap-lbl">Longueur</span>
+                    <span class="cap-val">{{ selectedClientDetail.profilCapillaire.longueur || 'Non spécifiée' }}</span>
+                  </div>
+                  <div class="cap-box">
+                    <span class="cap-lbl">Densité</span>
+                    <span class="cap-val">{{ selectedClientDetail.profilCapillaire.densite || 'Non spécifiée' }}</span>
+                  </div>
+                  <div class="cap-box">
+                    <span class="cap-lbl">Allergies / Précautions</span>
+                    <span class="cap-val alert-text">{{ selectedClientDetail.profilCapillaire.allergiesProduits || 'Aucune allergie connue' }}</span>
+                  </div>
+                </div>
+
+                @if (selectedClientDetail.profilCapillaire.observations || selectedClientDetail.profilCapillaire.sensibilites) {
+                  <div class="remarque-box">
+                    <strong>Observations & Sensibilités :</strong>
+                    <p>{{ selectedClientDetail.profilCapillaire.sensibilites || selectedClientDetail.profilCapillaire.observations }}</p>
+                  </div>
+                }
+              } @else {
+                <div class="empty-capillaire">
+                  <p>Aucun diagnostic capillaire enregistré pour ce client.</p>
+                </div>
+              }
+            </div>
+
+            <!-- SECTION HISTORIQUE RENDEZ-VOUS & PRESTATIONS -->
+            <div class="dossier-section">
+              <h3 class="section-title">Historique des Rendez-vous ({{ selectedClientDetail.rendezVous?.length || 0 }})</h3>
+              @if (!selectedClientDetail.rendezVous || selectedClientDetail.rendezVous.length === 0) {
+                <p class="no-history">Aucun historique de rendez-vous disponible.</p>
+              } @else {
+                <div class="history-list">
+                  @for (rdv of selectedClientDetail.rendezVous; track rdv.id) {
+                    <div class="history-row">
+                      <div class="h-date">
+                        <strong>{{ rdv.dateHeure | date:'dd/MM/yyyy' }}</strong>
+                        <span>{{ rdv.dateHeure | date:'HH:mm' }}</span>
+                      </div>
+                      <div class="h-details">
+                        <span class="h-statut badge" [class]="'badge-' + rdv.statut.toLowerCase()">{{ rdv.statut }}</span>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerFicheClient()">Fermer le dossier</button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

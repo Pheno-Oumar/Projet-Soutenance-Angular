@@ -1,0 +1,236 @@
+<div class="page-container">
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Fichier & Recherche Clients</h1>
+      <p class="page-subtitle">Recherche instantanée et enregistrement express au comptoir d'accueil</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="ouvrirModalCreation()">
+        <mat-icon class="icon-sm">person_add</mat-icon> Nouveau Client (Rapide)
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Barre de recherche -->
+  <div class="search-card">
+    <form (ngSubmit)="lancerRecherche()" class="search-form">
+      <div class="search-input-wrapper">
+        <mat-icon class="search-icon icon-sm">search</mat-icon>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher par nom, prénom, email ou téléphone (ex: 77 123 45 67)..."
+          [(ngModel)]="searchQuery"
+          name="searchQuery"
+          autofocus
+        />
+        <button
+          *ngIf="searchQuery"
+          type="button"
+          class="btn-clear"
+          (click)="reinitialiserRecherche()"
+          title="Effacer la recherche"
+        >
+          <mat-icon class="icon-xs">close</mat-icon>
+        </button>
+      </div>
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        {{ isLoading() ? 'Recherche...' : 'Rechercher' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Recherche en cours dans la base clients...</p>
+  </div>
+
+  <!-- État initial : Pas encore cherché -->
+  <div *ngIf="!isLoading() && !hasSearched()" class="search-placeholder">
+    <div class="placeholder-icon"><mat-icon class="icon-xl">badge</mat-icon></div>
+    <h3>Recherche au comptoir</h3>
+    <p>Saisissez le nom, le numéro de téléphone ou l'adresse email d'un client pour retrouver sa fiche ou lancer une prestation.</p>
+    <button class="btn-secondary mt-3" (click)="ouvrirModalCreation()">
+      Enregistrer un nouveau client dès maintenant
+    </button>
+  </div>
+
+  <!-- Résultats trouvés -->
+  <div *ngIf="!isLoading() && hasSearched()">
+    <div class="results-header">
+      <h2 class="results-title">
+        Résultats de recherche
+        <span class="badge-count">{{ clients().length }}</span>
+      </h2>
+    </div>
+
+    <!-- Aucun résultat -->
+    <div *ngIf="clients().length === 0" class="empty-state">
+      <div class="empty-icon"><mat-icon class="icon-xl">person_search</mat-icon></div>
+      <h3>Aucun client trouvé</h3>
+      <p>Aucun client ne correspond au critère « <strong>{{ searchQuery }}</strong> ».</p>
+      <button class="btn-primary mt-3" (click)="ouvrirModalCreation()">
+        Créer la fiche de ce client
+      </button>
+    </div>
+
+    <!-- Liste des clients trouvés -->
+    <div *ngIf="clients().length > 0" class="clients-grid">
+      <div *ngFor="let client of clients()" class="client-card">
+        <div class="client-card-header">
+          <div class="client-avatar">
+            {{ client.prenom.charAt(0) }}{{ client.nom.charAt(0) }}
+          </div>
+          <div class="client-title-info">
+            <h3 class="client-name">{{ client.prenom }} {{ client.nom }}</h3>
+            <span class="client-id">Fiche Client</span>
+          </div>
+        </div>
+
+        <div class="client-card-body">
+          <div class="info-row">
+            <span class="info-label"><mat-icon class="icon-xs">call</mat-icon> Téléphone</span>
+            <a [href]="'tel:' + client.telephone" class="info-val phone-link">
+              {{ client.telephone }}
+            </a>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label"><mat-icon class="icon-xs">mail</mat-icon> Email</span>
+            <span class="info-val text-truncate" [title]="client.email">
+              {{ client.email }}
+            </span>
+          </div>
+
+          <div class="info-row" *ngIf="client.dateNaissance">
+            <span class="info-label"><mat-icon class="icon-xs">cake</mat-icon> Date Naissance</span>
+            <span class="info-val">{{ client.dateNaissance | date:'dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+
+        <div class="client-card-actions">
+          <button
+            class="btn-card-action btn-planning"
+            (click)="planifierRdv(client)"
+            title="Prendre rendez-vous dans le planning"
+          >
+            <mat-icon class="icon-xs">event</mat-icon> Planifier RDV
+          </button>
+          <button
+            class="btn-card-action btn-walkin"
+            (click)="creerPrestationImmediat(client)"
+            title="Démarrer immédiatement une prestation sans rendez-vous"
+          >
+            <mat-icon class="icon-xs">chair</mat-icon> Prestation Walk-in
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Création Rapide Client -->
+  <div *ngIf="isCreateModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Nouveau Client Express</h2>
+        <button class="modal-close" (click)="fermerModalCreation()">×</button>
+      </div>
+
+      <form (ngSubmit)="creerClient()">
+        <div class="modal-body">
+          <p class="modal-intro">
+            Enregistrez rapidement les coordonnées du client pour son accueil en salon.
+          </p>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="prenom">Prénom *</label>
+              <input
+                id="prenom"
+                type="text"
+                class="form-input"
+                [(ngModel)]="newClient.prenom"
+                name="prenom"
+                placeholder="Ex: Aminata"
+                required
+              />
+            </div>
+            <div class="form-group flex-1">
+              <label for="nom">Nom *</label>
+              <input
+                id="nom"
+                type="text"
+                class="form-input"
+                [(ngModel)]="newClient.nom"
+                name="nom"
+                placeholder="Ex: Diallo"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="telephone">Numéro de téléphone *</label>
+            <input
+              id="telephone"
+              type="tel"
+              class="form-input"
+              [(ngModel)]="newClient.telephone"
+              name="telephone"
+              placeholder="Ex: +221 77 123 45 67"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Adresse Email *</label>
+            <input
+              id="email"
+              type="email"
+              class="form-input"
+              [(ngModel)]="newClient.email"
+              name="email"
+              placeholder="Ex: aminata.diallo@example.com"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="dateNaissance">Date de naissance (optionnelle)</label>
+            <input
+              id="dateNaissance"
+              type="date"
+              class="form-input"
+              [(ngModel)]="newClient.dateNaissance"
+              name="dateNaissance"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="fermerModalCreation()">
+            Annuler
+          </button>
+          <button
+            type="submit"
+            class="btn-primary"
+            [disabled]="isSubmitting()"
+          >
+            {{ isSubmitting() ? 'Création...' : 'Créer et Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

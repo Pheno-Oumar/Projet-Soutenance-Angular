@@ -1,0 +1,149 @@
+<div class="compte-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="header-titles">
+          <div class="breadcrumbs">
+            <a routerLink="/admin-plateforme">Administration</a>
+            <span>/</span>
+            <span>Mon Compte</span>
+          </div>
+          <h1>Paramètres du Compte Administrateur</h1>
+          <p>Gérez vos informations personnelles et la sécurité de votre accès à la plateforme.</p>
+        </div>
+      </header>
+
+
+      <!-- Erreur -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span>{{ errorMessage() }}</span>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des informations du compte...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && profil()" class="settings-grid">
+        <!-- Carte 1 : Profil Personnel -->
+        <div class="card-3d profile-card">
+          <div class="card-header">
+            <div class="header-icon primary">
+              <mat-icon>person</mat-icon>
+            </div>
+            <div>
+              <h2>Informations Personnelles</h2>
+              <p>Mettez à jour vos coordonnées administratives</p>
+            </div>
+          </div>
+
+          <form [formGroup]="profilForm" (ngSubmit)="sauvegarderProfil()" class="form-body">
+            <!-- Email (Lecture seule) -->
+            <div class="form-group">
+              <label>Adresse Email</label>
+              <input type="email" [value]="profil()?.email" disabled class="input-readonly" />
+              <span class="field-hint">L'identifiant email de l'administrateur système est fixe.</span>
+            </div>
+
+            <div class="fields-row">
+              <!-- Prénom -->
+              <div class="form-group">
+                <label for="prenom">Prénom <span class="required">*</span></label>
+                <input id="prenom" type="text" formControlName="prenom" />
+              </div>
+
+              <!-- Nom -->
+              <div class="form-group">
+                <label for="nom">Nom de famille <span class="required">*</span></label>
+                <input id="nom" type="text" formControlName="nom" />
+              </div>
+            </div>
+
+            <div class="fields-row">
+              <!-- Téléphone -->
+              <div class="form-group">
+                <label for="telephone">Téléphone <span class="required">*</span></label>
+                <input id="telephone" type="tel" formControlName="telephone" />
+              </div>
+
+              <!-- Date de Naissance -->
+              <div class="form-group">
+                <label for="dateNaissance">Date de Naissance <span class="required">*</span></label>
+                <input id="dateNaissance" type="date" formControlName="dateNaissance" />
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="submit"
+                [disabled]="isSavingProfil() || profilForm.invalid || profilForm.pristine"
+                class="btn-primary"
+              >
+                <span>{{ isSavingProfil() ? 'Enregistrement...' : 'Mettre à jour le profil' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Carte 2 : Sécurité & Mot de Passe -->
+        <div class="card-3d security-card">
+          <div class="card-header">
+            <div class="header-icon gold">
+              <mat-icon>lock</mat-icon>
+            </div>
+            <div>
+              <h2>Sécurité de Connexion</h2>
+              <p>Modifiez votre mot de passe pour protéger votre accès</p>
+            </div>
+          </div>
+
+          <form [formGroup]="passwordForm" (ngSubmit)="changerMotDePasse()" class="form-body">
+            <!-- Ancien mot de passe -->
+            <div class="form-group">
+              <label for="ancienMotDePasse">Mot de passe actuel <span class="required">*</span></label>
+              <input
+                id="ancienMotDePasse"
+                type="password"
+                formControlName="ancienMotDePasse"
+                placeholder="••••••••"
+              />
+            </div>
+
+            <!-- Nouveau mot de passe -->
+            <div class="form-group">
+              <label for="nouveauMotDePasse">Nouveau mot de passe <span class="required">*</span></label>
+              <input
+                id="nouveauMotDePasse"
+                type="password"
+                formControlName="nouveauMotDePasse"
+                placeholder="Au moins 8 caractères"
+              />
+            </div>
+
+            <!-- Confirmation -->
+            <div class="form-group">
+              <label for="confirmation">Confirmez le nouveau mot de passe <span class="required">*</span></label>
+              <input
+                id="confirmation"
+                type="password"
+                formControlName="confirmation"
+                placeholder="Répétez le mot de passe"
+              />
+              <span *ngIf="isPasswordMismatch()" class="field-error">
+                Les deux mots de passe ne correspondent pas.
+              </span>
+            </div>
+
+            <div class="form-actions">
+              <button
+                type="submit"
+                [disabled]="isChangingMdp() || passwordForm.invalid || isPasswordMismatch()"
+                class="btn-primary btn-gold"
+              >
+                <span>{{ isChangingMdp() ? 'Modification...' : 'Modifier le mot de passe' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>

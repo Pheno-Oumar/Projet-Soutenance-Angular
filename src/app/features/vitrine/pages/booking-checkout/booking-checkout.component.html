@@ -1,0 +1,393 @@
+<div class="checkout-page">
+  <!-- EN-TÊTE DU TUNNEL DE RÉSERVATION -->
+  <header class="checkout-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <a [routerLink]="['/' + slugSalon + '/services']">Prestations</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span class="active-crumb">Réservation en Ligne</span>
+      </nav>
+
+      <span class="sub-badge">RÉSERVATION 24H/24 · CONFIRMATION INSTANTANÉE</span>
+      <h1 class="page-title">Finalisation de Votre Rendez-vous</h1>
+      <p class="page-desc">
+        Sélectionnez votre jour, votre créneau horaire favori et confirmez votre réservation en toute sérénité.
+      </p>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main class="checkout-content">
+    <div class="content-container">
+      <!-- ========================================================
+           ÉCRAN DE SUCCÈS APRÈS CONFIRMATION
+      ======================================================== -->
+      <div *ngIf="bookingConfirmed()" class="success-screen" appRevealOnScroll>
+        <div class="success-card" appTilt3d [maxTilt]="4">
+          <div class="success-icon-box">
+            <mat-icon class="success-icon">check_circle</mat-icon>
+          </div>
+
+          <span class="success-sub">Réservation confirmée avec succès</span>
+          <h2 class="success-title">Nous avons hâte de vous accueillir !</h2>
+          <p class="success-desc">
+            Votre rendez-vous a été enregistré dans le planning officiel de <strong>{{ salonNom }}</strong>.
+          </p>
+
+          <div class="ref-badge-wrap">
+            <span class="ref-label">Numéro de confirmation :</span>
+            <strong class="ref-code">{{ bookingReference() }}</strong>
+          </div>
+
+          <div class="recap-box">
+            <div class="recap-row">
+              <span class="recap-key">Date & Heure :</span>
+              <strong class="recap-val">{{ selectedDate() }}</strong>
+            </div>
+            <div class="recap-row">
+              <span class="recap-key">Lieu :</span>
+              <span class="recap-val">{{ salonAdresse }}</span>
+            </div>
+            <div class="recap-row">
+              <span class="recap-key">Règlement :</span>
+              <span class="recap-val highlight-free">Sur place au salon</span>
+            </div>
+          </div>
+
+          <div class="success-actions">
+            <a
+              [href]="getGoogleCalendarUrl()"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn-cal-export"
+            >
+              <mat-icon class="icon-xs">event</mat-icon>
+              <span>Ajouter à Google Calendar</span>
+            </a>
+
+            <button
+              type="button"
+              class="btn-back-home"
+              (click)="nouvelleReservation()"
+            >
+              <span>Retour à l'accueil</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================
+           ÉCRAN PANIER DE RDV VIDE
+      ======================================================== -->
+      <div *ngIf="!bookingConfirmed() && !bookingStore.hasItems()" class="empty-booking-card" appRevealOnScroll>
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">calendar_month</mat-icon>
+        </div>
+        <h3>Votre sélection de prestations est vide</h3>
+        <p>Veuillez choisir au moins une coupe, un soin ou un rituel capillaire pour réserver un créneau.</p>
+        <a [routerLink]="['/' + slugSalon + '/services']" class="btn-discover">
+          <mat-icon class="icon-xs">content_cut</mat-icon>
+          <span>Découvrir le menu des prestations</span>
+        </a>
+      </div>
+
+      <!-- ========================================================
+           TUNNEL ACTIF (3 ÉTAPES + RÉCAPITULATIF)
+      ======================================================== -->
+      <div *ngIf="!bookingConfirmed() && bookingStore.hasItems()" class="checkout-grid">
+        <!-- COLONNE GAUCHE : LES 3 ÉTAPES -->
+        <div class="steps-column">
+          <!-- ÉTAPE 1 : RÉCAPITULATIF DES SOINS -->
+          <section class="step-card" appRevealOnScroll>
+            <div class="step-header">
+              <span class="step-number">1</span>
+              <div>
+                <h2>Vos Prestations Sélectionnées</h2>
+                <p>Consultez ou ajustez vos rituels capillaires.</p>
+              </div>
+            </div>
+
+            <div class="selected-variantes-list">
+              <div
+                *ngFor="let v of bookingStore.selectedVariantes()"
+                class="variante-item-row"
+              >
+                <div class="variante-info">
+                  <strong class="variante-title">{{ v.varianteNom }}</strong>
+                  <span class="variante-meta">
+                    <mat-icon class="icon-xs">schedule</mat-icon> {{ v.dureeMinutes }} min · {{ v.serviceNom }}
+                  </span>
+                </div>
+
+                <div class="variante-right">
+                  <span class="variante-price">{{ v.prix | number:'1.0-0' }} FCFA</span>
+                  <button
+                    type="button"
+                    class="btn-remove-var"
+                    (click)="bookingStore.removeVariante(v.id); chargerDisponibilites()"
+                    title="Retirer cette prestation"
+                  >
+                    <mat-icon class="icon-xs">close</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="add-more-row">
+              <a [routerLink]="['/' + slugSalon + '/services']" class="btn-add-more">
+                <mat-icon class="icon-xs">add</mat-icon>
+                <span>Ajouter une autre prestation</span>
+              </a>
+            </div>
+          </section>
+
+          <!-- ÉTAPE 2 : DATE & CRÉNEAU HORAIRE -->
+          <section class="step-card" appRevealOnScroll>
+            <div class="step-header">
+              <span class="step-number">2</span>
+              <div>
+                <h2>Choix de la Date & du Créneau</h2>
+                <p>Sélectionnez le jour souhaité pour afficher les créneaux disponibles.</p>
+              </div>
+            </div>
+
+            <!-- Boutons rapides de sélection de jour -->
+            <div class="date-presets-row">
+              <button
+                type="button"
+                class="btn-preset"
+                (click)="setDatePreset(0)"
+              >
+                Aujourd'hui
+              </button>
+              <button
+                type="button"
+                class="btn-preset"
+                (click)="setDatePreset(1)"
+              >
+                Demain
+              </button>
+              <button
+                type="button"
+                class="btn-preset"
+                (click)="setDatePreset(2)"
+              >
+                Après-demain
+              </button>
+
+              <div class="custom-date-picker">
+                <input
+                  type="date"
+                  class="date-input"
+                  [min]="todayStr"
+                  [ngModel]="selectedDate()"
+                  (ngModelChange)="selectedDate.set($event); chargerDisponibilites()"
+                />
+              </div>
+            </div>
+
+            <!-- Grille des créneaux -->
+            <div class="slots-container">
+              <div *ngIf="loadingSlots()" class="slots-loading">
+                <div class="spinner-walnut-small"></div>
+                <span>Calcul des créneaux libres en temps réel...</span>
+              </div>
+
+              <div *ngIf="!loadingSlots() && creneaux().length === 0" class="slots-empty">
+                <mat-icon class="empty-icon-sm">event_busy</mat-icon>
+                <p>Aucun créneau libre pour cette date. Veuillez choisir un autre jour.</p>
+              </div>
+
+              <div *ngIf="!loadingSlots() && creneaux().length > 0" class="slots-groups">
+                <!-- Matin -->
+                <div *ngIf="creneauxMatin().length > 0" class="slot-group">
+                  <span class="group-label">
+                    <mat-icon class="icon-xs">wb_sunny</mat-icon>
+                    <span>Matinée (Avant 13h)</span>
+                  </span>
+                  <div class="slots-grid">
+                    <button
+                      *ngFor="let slot of creneauxMatin()"
+                      type="button"
+                      class="slot-btn"
+                      [class.is-selected]="bookingStore.selectedSlot()?.heureDebut === slot.heureDebut"
+                      (click)="selectSlot(slot)"
+                    >
+                      <span class="slot-time">{{ slot.heureDebut }}</span>
+                      <span class="slot-stylist" *ngIf="slot.coiffeurNom">{{ slot.coiffeurNom }}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Après-midi -->
+                <div *ngIf="creneauxApresMidi().length > 0" class="slot-group">
+                  <span class="group-label">
+                    <mat-icon class="icon-xs">nights_stay</mat-icon>
+                    <span>Après-midi & Soirée</span>
+                  </span>
+                  <div class="slots-grid">
+                    <button
+                      *ngFor="let slot of creneauxApresMidi()"
+                      type="button"
+                      class="slot-btn"
+                      [class.is-selected]="bookingStore.selectedSlot()?.heureDebut === slot.heureDebut"
+                      (click)="selectSlot(slot)"
+                    >
+                      <span class="slot-time">{{ slot.heureDebut }}</span>
+                      <span class="slot-stylist" *ngIf="slot.coiffeurNom">{{ slot.coiffeurNom }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ÉTAPE 3 : COORDONNÉES & CONTACT DU CLIENT -->
+          <section class="step-card" appRevealOnScroll>
+            <div class="step-header">
+              <span class="step-number">3</span>
+              <div>
+                <h2>Vos Coordonnées de Contact</h2>
+                <p>Nécessaires pour l'envoi de la confirmation et des rappels SMS.</p>
+              </div>
+            </div>
+
+            <!-- Si utilisateur connecté -->
+            <div *ngIf="authService.isAuthenticated()" class="user-authenticated-box">
+              <mat-icon class="icon-sm">verified_user</mat-icon>
+              <div>
+                <strong>Réservation au nom de {{ nomClient }}</strong>
+                <span>Email : {{ emailClient }} · Téléphone : {{ telephoneClient }}</span>
+              </div>
+            </div>
+
+            <!-- Si invité (non connecté) -->
+            <div *ngIf="!authService.isAuthenticated()" class="guest-form-grid">
+              <div class="form-field">
+                <label>Nom & Prénom *</label>
+                <input
+                  type="text"
+                  class="text-input"
+                  placeholder="Ex : Mariam Touré"
+                  [(ngModel)]="nomClient"
+                />
+              </div>
+
+              <div class="form-field">
+                <label>Numéro de Téléphone *</label>
+                <input
+                  type="tel"
+                  class="text-input"
+                  placeholder="Ex : +223 70 00 00 00"
+                  [(ngModel)]="telephoneClient"
+                />
+              </div>
+
+              <div class="form-field full-width">
+                <label>Adresse Email (pour recevoir le récapitulatif)</label>
+                <input
+                  type="email"
+                  class="text-input"
+                  placeholder="mariam.toure@gmail.com"
+                  [(ngModel)]="emailClient"
+                />
+              </div>
+
+              <div class="account-prompt full-width">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="creerCompte" />
+                  <span>Créer mon compte salon en 1 clic pour suivre mes RDV et mes points de fidélité</span>
+                </label>
+
+                <div *ngIf="creerCompte" class="password-field-wrap">
+                  <label>Définissez un mot de passe :</label>
+                  <input
+                    type="password"
+                    class="text-input"
+                    placeholder="••••••••"
+                    [(ngModel)]="motDePasse"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- COLONNE DROITE : RÉCAPITULATIF COLLANT -->
+        <aside class="summary-column">
+          <div class="sticky-summary-card" appTilt3d [maxTilt]="3">
+            <h2 class="summary-title">Récapitulatif de Réservation</h2>
+
+            <div class="salon-summary-badge">
+              <mat-icon class="icon-xs">store</mat-icon>
+              <div>
+                <strong>{{ salonNom }}</strong>
+                <span>{{ salonAdresse }}</span>
+              </div>
+            </div>
+
+            <hr class="sum-divider" />
+
+            <div class="summary-slot-highlight" *ngIf="bookingStore.selectedSlot() as slot">
+              <mat-icon class="icon-sm">event_available</mat-icon>
+              <div>
+                <strong>{{ selectedDate() }} à {{ slot.heureDebut }}</strong>
+                <span *ngIf="slot.coiffeurNom">Avec {{ slot.coiffeurNom }}</span>
+              </div>
+            </div>
+
+            <div class="summary-slot-missing" *ngIf="!bookingStore.selectedSlot()">
+              <mat-icon class="icon-sm">schedule</mat-icon>
+              <span>Veuillez choisir un créneau horaire à l'étape 2</span>
+            </div>
+
+            <div class="summary-metrics">
+              <div class="metric-row">
+                <span>Prestations choisies :</span>
+                <strong>{{ bookingStore.count() }} soin{{ bookingStore.count() > 1 ? 's' : '' }}</strong>
+              </div>
+              <div class="metric-row">
+                <span>Durée estimée :</span>
+                <strong>{{ bookingStore.totalDureeMinutes() }} min</strong>
+              </div>
+              <div class="metric-row total-row">
+                <span>Total à régler sur place :</span>
+                <strong class="total-price">{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              class="btn-confirm-final"
+              [disabled]="!bookingStore.selectedSlot() || submitting()"
+              (click)="validerReservation()"
+            >
+              <div *ngIf="submitting()" class="spinner-inline"></div>
+              <mat-icon *ngIf="!submitting()" class="icon-sm">check_circle</mat-icon>
+              <span>{{ submitting() ? 'Confirmation en cours...' : 'Confirmer mon rendez-vous' }}</span>
+            </button>
+
+            <!-- 3 Badges de Réassurance -->
+            <div class="reassurance-list">
+              <div class="reassurance-row">
+                <mat-icon class="r-check">verified</mat-icon>
+                <span>Paiement sur place lors de votre venue</span>
+              </div>
+              <div class="reassurance-row">
+                <mat-icon class="r-check">event_repeat</mat-icon>
+                <span>Annulation flexible jusqu'à 2h avant</span>
+              </div>
+              <div class="reassurance-row">
+                <mat-icon class="r-check">notifications_active</mat-icon>
+                <span>Rappel automatique par SMS / Email</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>

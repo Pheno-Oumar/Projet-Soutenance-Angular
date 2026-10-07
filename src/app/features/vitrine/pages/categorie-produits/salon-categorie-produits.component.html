@@ -1,0 +1,181 @@
+<div class="categorie-produits-page">
+  <!-- EN-TÊTE DE LA CATÉGORIE -->
+  <header class="cat-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <a [routerLink]="['/' + slugSalon + '/boutique']">Boutique</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>{{ categorie()?.nom || 'Collection' }}</span>
+      </nav>
+
+      <span class="sub-badge">Collection Soins Professionnels</span>
+      <h1 class="page-title">{{ categorie()?.nom || 'Tous nos Soins' }}</h1>
+      <p class="page-desc">
+        {{ categorie()?.description || 'Découvrez notre sélection de soins haut de gamme disponibles immédiatement en retrait Click & Collect au comptoir du salon.' }}
+      </p>
+
+      <!-- Barre d'outils : Recherche & Tri -->
+      <div class="toolbar-row">
+        <div class="search-bar-wrap">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Rechercher dans cette collection..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+          <button
+            *ngIf="searchQuery()"
+            (click)="searchQuery.set('')"
+            class="clear-btn"
+            aria-label="Effacer la recherche"
+          >
+            <mat-icon class="icon-xs">close</mat-icon>
+          </button>
+        </div>
+
+        <div class="sort-wrap">
+          <label for="sortSelect" class="sort-label">Trier par :</label>
+          <select
+            id="sortSelect"
+            class="sort-select"
+            [ngModel]="sortOrder()"
+            (ngModelChange)="sortOrder.set($event)"
+          >
+            <option value="PERTINENCE">Pertinence</option>
+            <option value="PRIX_ASC">Prix : Croissant</option>
+            <option value="PRIX_DESC">Prix : Décroissant</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- LISTE DES PRODUITS -->
+  <main class="cat-content">
+    <div class="content-container">
+      <!-- État de chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des produits de la collection...</p>
+      </div>
+
+      <!-- Aucun résultat -->
+      <div *ngIf="!isLoading() && filteredProduits().length === 0" class="empty-state">
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">inventory_2</mat-icon>
+        </div>
+        <h3>Aucun produit trouvé</h3>
+        <p>Aucun article ne correspond à votre recherche dans cette collection.</p>
+        <button
+          type="button"
+          (click)="searchQuery.set('')"
+          class="btn-reset"
+        >
+          Réinitialiser la recherche
+        </button>
+      </div>
+
+      <!-- Grille des produits -->
+      <div *ngIf="!isLoading() && filteredProduits().length > 0" class="produits-grid">
+        <article
+          *ngFor="let p of filteredProduits(); let idx = index"
+          class="produit-card"
+          appTilt3d
+          [maxTilt]="6"
+          appRevealOnScroll
+          [revealDelay]="idx * 40"
+        >
+          <div class="produit-img-box">
+            <img
+              *ngIf="p.imageUrl"
+              [src]="p.imageUrl | safeMedia"
+              [alt]="p.nom"
+              class="produit-img"
+              loading="lazy"
+            />
+            <div *ngIf="!p.imageUrl" class="produit-placeholder">
+              <mat-icon class="placeholder-icon">inventory_2</mat-icon>
+            </div>
+
+            <!-- Badge Stock -->
+            <span
+              class="stock-pill"
+              [class.in-stock]="p.stock && p.stock.quantiteDisponible > 0"
+              [class.out-of-stock]="!p.stock || p.stock.quantiteDisponible <= 0"
+            >
+              <mat-icon class="icon-xs">
+                {{ p.stock && p.stock.quantiteDisponible > 0 ? 'storefront' : 'schedule' }}
+              </mat-icon>
+              <span>
+                {{ p.stock && p.stock.quantiteDisponible > 0 ? 'En stock au salon (' + p.stock.quantiteDisponible + ' dispo)' : 'Sur commande au salon' }}
+              </span>
+            </span>
+          </div>
+
+          <div class="produit-body">
+            <span class="produit-cat">{{ p.categorieNom || 'Soin Capillaire' }}</span>
+            <h2 class="produit-title">
+              <a [routerLink]="['/' + slugSalon + '/produits', p.id]">{{ p.nom }}</a>
+            </h2>
+            <p class="produit-desc">
+              {{ p.description || 'Formule professionnelle certifiée pour un entretien optimal de votre chevelure à domicile.' }}
+            </p>
+
+            <div class="produit-footer-row">
+              <div class="price-col">
+                <span class="price-val">{{ p.prixVente | number:'1.0-0' }} FCFA</span>
+                <span class="pickup-free">Retrait offert</span>
+              </div>
+
+              <div class="card-actions-col">
+                <button
+                  type="button"
+                  class="btn-add-cart"
+                  (click)="onAjouterAuPanier($event, p)"
+                  aria-label="Ajouter au panier Click & Collect"
+                >
+                  <mat-icon class="icon-xs">add_shopping_cart</mat-icon>
+                  <span>Ajouter</span>
+                </button>
+              </div>
+            </div>
+
+            <a [routerLink]="['/' + slugSalon + '/produits', p.id]" class="detail-link">
+              <span>Voir la fiche détaillée</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRE FLOTTANTE PANIER EN COURS -->
+  <aside class="cart-floating-bar" *ngIf="cartStore.hasItems()" appRevealOnScroll>
+    <div class="floating-bar-inner">
+      <div class="floating-left">
+        <div class="floating-badge">
+          <mat-icon class="icon-xs">shopping_bag</mat-icon>
+          <span>{{ cartStore.nombreArticles() }} article{{ cartStore.nombreArticles() > 1 ? 's' : '' }}</span>
+        </div>
+        <span class="floating-total">
+          Total Panier : <strong>{{ cartStore.montantTotal() | number:'1.0-0' }} FCFA</strong>
+        </span>
+      </div>
+
+      <div class="floating-actions">
+        <button type="button" class="btn-floating-view" (click)="openCartDrawer()">
+          Voir le panier
+        </button>
+        <a [routerLink]="['/' + slugSalon + '/panier']" class="btn-floating-confirm">
+          <span>Finaliser ma commande</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </div>
+  </aside>
+</div>

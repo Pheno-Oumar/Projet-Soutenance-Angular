@@ -1,0 +1,179 @@
+<app-public-navbar />
+<div class="kadys-page-container">
+  <!-- Top Global Stories Reel Bar -->
+  <div class="stories-bar-section">
+    <app-story-reel-bar
+      [stories]="stories()"
+      (selectSalonStory)="openStoryViewer($event)"
+    ></app-story-reel-bar>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="chargement()" class="feed-loader">
+    <div class="glow-spinner"></div>
+    <p>Chargement du flux Kady's...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!chargement() && feed().length === 0" class="empty-feed">
+    <div class="empty-box">
+      <mat-icon class="icon-camera">auto_awesome</mat-icon>
+      <h2>Aucune réalisation pour le moment</h2>
+      <p>Les coiffeurs des salons publieront prochainement leurs plus belles créations ici.</p>
+      <a routerLink="/explore" class="btn-explore-salons">Explorer les salons</a>
+    </div>
+  </div>
+
+  <!-- TikTok / Reels Vertical Snap Container -->
+  <div *ngIf="!chargement() && feed().length > 0" class="reels-feed-scroll">
+    <div
+      *ngFor="let item of feed()"
+      class="reel-card"
+      [attr.id]="'look-' + item.id"
+      (click)="handleVideoDoubleTap(item)"
+    >
+      <!-- Media Player Container -->
+      <div class="reel-media-wrapper">
+        <!-- Fine barre de progression vidéo (TikTok / Reels) -->
+        <div class="reel-progress-track" *ngIf="item.urlVideo && isMediaVideo(item.urlVideo)">
+          <div
+            class="reel-progress-fill"
+            [style.width.%]="videoProgressMap[item.id] || 0"
+          ></div>
+        </div>
+
+        <video
+          *ngIf="item.urlVideo && isMediaVideo(item.urlVideo)"
+          #videoElement
+          [appHlsVideo]="item.urlVideo"
+          [attr.data-id]="item.id"
+          class="reel-video"
+          playsinline
+          loop
+          [muted]="isMuted()"
+          (timeupdate)="onVideoTimeUpdate($event, item.id)"
+          (click)="togglePlayPause(videoElement)"
+        ></video>
+        <img
+          *ngIf="(item.urlVideo && !isMediaVideo(item.urlVideo)) || (!item.urlVideo && (item.imageUrl || item.urlMedia))"
+          [src]="(item.imageUrl || item.urlMedia || item.urlVideo) | safeMedia"
+          [alt]="item.description || item.salonNom"
+          class="reel-video reel-image-fallback"
+          referrerpolicy="no-referrer"
+        />
+
+        <!-- 3D Heart Pop on Double Tap -->
+        <div *ngIf="activeHeartId === item.id" class="heart-pop-3d">
+          <mat-icon>favorite</mat-icon>
+        </div>
+
+        <!-- Sound Toggle Button Overlay (Top Right) -->
+        <button
+          *ngIf="item.urlVideo"
+          class="btn-sound-toggle"
+          (click)="$event.stopPropagation(); toggleSound()"
+          [title]="isMuted() ? 'Activer le son' : 'Couper le son'"
+          aria-label="Activer/Couper le son"
+        >
+          <mat-icon>{{ isMuted() ? 'volume_off' : 'volume_up' }}</mat-icon>
+        </button>
+      </div>
+
+      <!-- Right Interaction Action Sidebar -->
+      <div class="reel-actions-sidebar" (click)="$event.stopPropagation()">
+        <!-- Salon Avatar / Profile Link -->
+        <a
+          [routerLink]="['/' + item.salonSlug + '/vitrine']"
+          class="action-item salon-avatar-btn"
+          [title]="'Visiter la vitrine de ' + item.salonNom"
+        >
+          <div class="avatar-ring">
+            <img
+              *ngIf="item.salonLogoUrl"
+              [src]="item.salonLogoUrl | safeMedia"
+              [alt]="item.salonNom"
+              referrerpolicy="no-referrer"
+            />
+            <span *ngIf="!item.salonLogoUrl">{{ item.salonNom.charAt(0) }}</span>
+          </div>
+          <span class="badge-plus">+</span>
+        </a>
+
+        <!-- Like Button -->
+        <button
+          class="action-item"
+          [class.is-liked]="item.isLikedByCurrentUser"
+          (click)="toggleLike(item)"
+          aria-label="Aimer ce look"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="icon-heart">{{ item.isLikedByCurrentUser ? 'favorite' : 'favorite_border' }}</mat-icon>
+          </div>
+          <span class="action-count">{{ item.totalLikes }}</span>
+        </button>
+
+        <!-- Comment Button -->
+        <button
+          class="action-item"
+          (click)="openComments(item)"
+          aria-label="Ouvrir les commentaires"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="icon-bubble">chat_bubble_outline</mat-icon>
+          </div>
+          <span class="action-count">{{ item.totalCommentaires }}</span>
+        </button>
+
+        <!-- Share Button -->
+        <button
+          class="action-item"
+          (click)="partagerRealisation(item)"
+          aria-label="Partager ce look"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="icon-share">share</mat-icon>
+          </div>
+          <span class="action-label">Partager</span>
+        </button>
+      </div>
+
+      <!-- Bottom Information Overlay & "Réserver ce look" CTA -->
+      <div class="reel-bottom-overlay" (click)="$event.stopPropagation()">
+        <div class="salon-author-tag">
+          <a [routerLink]="['/' + item.salonSlug + '/vitrine']" class="salon-name-link">
+            @{{ item.salonNom }}
+          </a>
+          <span *ngIf="item.coiffeurNomComplet" class="hairdresser-pill">
+            <mat-icon class="icon-xs">content_cut</mat-icon> {{ item.coiffeurNomComplet }}
+          </span>
+        </div>
+
+        <h3 class="reel-title">{{ item.titre }}</h3>
+        <p *ngIf="item.description" class="reel-description">{{ item.description }}</p>
+
+        <!-- Floating CTA Button "Réserver ce look" -->
+        <div class="cta-row">
+          <button (click)="reserverCeLook(item)" class="btn-reserver-look">
+            <mat-icon class="icon-xs sparkle">calendar_month</mat-icon>
+            <span class="text">Réserver ce look</span>
+            <mat-icon class="icon-xs arrow">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Story Viewer Modal -->
+  <app-story-viewer-modal
+    *ngIf="selectedSalonStory"
+    [salonStory]="selectedSalonStory"
+    (close)="closeStoryViewer()"
+  ></app-story-viewer-modal>
+
+  <!-- Comment Drawer Modal -->
+  <app-comment-drawer
+    *ngIf="selectedRealisationComments"
+    [realisation]="selectedRealisationComments"
+    (close)="closeComments()"
+  ></app-comment-drawer>
+</div>

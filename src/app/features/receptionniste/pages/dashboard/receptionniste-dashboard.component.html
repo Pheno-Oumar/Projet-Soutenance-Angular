@@ -1,0 +1,352 @@
+<div class="page-container">
+  <!-- En-tête de la page -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Accueil & Réception du Salon</h1>
+      <p class="page-subtitle">Supervision du flux clients, planning des créneaux, prestations et encaissement en caisse</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="file-attente" class="btn-primary">
+        <mat-icon class="icon-sm">chair</mat-icon> Salon & File d'attente
+      </a>
+      <a routerLink="caisse" class="btn-secondary">
+        <mat-icon class="icon-sm">payments</mat-icon> Caisse & Facturation
+      </a>
+      <a routerLink="planning" class="btn-secondary">
+        <mat-icon class="icon-sm">calendar_month</mat-icon> Planning Complet
+      </a>
+    </div>
+  </div>
+
+  <!-- Messages d'information -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- État de chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des activités de la journée...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && dashboard()" class="dashboard-content">
+    <!-- Bandeau Statut Caisse -->
+    <div class="caisse-banner" [ngClass]="dashboard()!.caisse.caisseOuverte ? 'caisse-ouverte' : 'caisse-fermee'">
+      <div class="caisse-info">
+        <div class="caisse-icon">
+          <mat-icon class="icon-lg">{{ dashboard()!.caisse.caisseOuverte ? 'savings' : 'lock' }}</mat-icon>
+        </div>
+        <div>
+          <h3 class="caisse-title">
+            Session de Caisse : 
+            <span class="caisse-badge" [ngClass]="dashboard()!.caisse.caisseOuverte ? 'badge-open' : 'badge-closed'">
+              {{ dashboard()!.caisse.caisseOuverte ? 'ACTIVE (OUVERTE)' : 'FERMÉE' }}
+            </span>
+          </h3>
+          <p class="caisse-desc" *ngIf="dashboard()!.caisse.caisseOuverte">
+            Ouverte le {{ dashboard()!.caisse.dateOuvertureSession | date:'dd/MM/yyyy à HH:mm' }} • Fond initial : 
+            <strong>{{ dashboard()!.caisse.soldeOuverture | number }} FCFA</strong> • 
+            Total encaissé aujourd'hui : <strong class="text-accent">{{ dashboard()!.caisse.totalEncaisseJour | number }} FCFA</strong>
+            ({{ dashboard()!.caisse.nombreOperationsJour }} opérations)
+          </p>
+          <p class="caisse-desc" *ngIf="!dashboard()!.caisse.caisseOuverte">
+            Aucune session de caisse n'est ouverte pour la journée. Les encaissements nécessitent une session active.
+          </p>
+        </div>
+      </div>
+      <div class="caisse-action">
+        <button *ngIf="!dashboard()!.caisse.caisseOuverte" (click)="ouvrirModalCaisse()" class="btn-caisse-action">
+          Ouvrir la caisse du jour
+        </button>
+        <a *ngIf="dashboard()!.caisse.caisseOuverte" routerLink="caisse" class="btn-caisse-link">
+          Gérer la caisse & clôture →
+        </a>
+      </div>
+    </div>
+
+    <!-- Grille de KPI Statut Journée -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon"><mat-icon class="icon-md">calendar_today</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-value">{{ dashboard()!.stats.totalRendezVousJour }}</span>
+          <span class="kpi-label">Rendez-vous du jour</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon"><mat-icon class="icon-md">schedule</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-value">{{ dashboard()!.stats.rdvEnAttente }}</span>
+          <span class="kpi-label">RDV à venir</span>
+        </div>
+      </div>
+
+      <div class="kpi-card highlight">
+        <div class="kpi-icon pulse-icon"><mat-icon class="icon-md">content_cut</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-value text-accent">{{ dashboard()!.stats.prestationsEnCours }}</span>
+          <span class="kpi-label">En cours en cabine</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon"><mat-icon class="icon-md">check_circle</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-value">{{ dashboard()!.stats.prestationsTerminees }}</span>
+          <span class="kpi-label">Prestations terminées</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" [ngClass]="{'kpi-warning': dashboard()!.stats.clientsEnRetardCount > 0}">
+        <div class="kpi-icon"><mat-icon class="icon-md">warning</mat-icon></div>
+        <div class="kpi-data">
+          <span class="kpi-value" [ngClass]="{'text-danger': dashboard()!.stats.clientsEnRetardCount > 0}">
+            {{ dashboard()!.stats.clientsEnRetardCount }}
+          </span>
+          <span class="kpi-label">Clients en retard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Principale (2 Colonnes) -->
+    <div class="main-grid">
+      <!-- Colonne Gauche : Prochains Rendez-vous & Prestations en cours -->
+      <div class="left-section">
+        <!-- Prochains Rendez-vous -->
+        <div class="card-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Prochains Rendez-vous programmés</h2>
+              <p class="panel-subtitle">Créneaux du jour en attente d'arrivée du client</p>
+            </div>
+            <a routerLink="planning" class="panel-link">Voir tout le planning →</a>
+          </div>
+
+          <div *ngIf="dashboard()!.prochainsRendezVous.length === 0" class="empty-state">
+            <p>Aucun rendez-vous restant programmé pour aujourd'hui.</p>
+          </div>
+
+          <div class="rdv-list" *ngIf="dashboard()!.prochainsRendezVous.length > 0">
+            <div *ngFor="let r of dashboard()!.prochainsRendezVous" class="rdv-item">
+              <div class="rdv-time-box">
+                <span class="rdv-time">{{ r.dateHeureDebut | date:'HH:mm' }}</span>
+                <span class="rdv-end-time">fin: {{ r.dateHeureFin | date:'HH:mm' }}</span>
+              </div>
+              <div class="rdv-content">
+                <div class="rdv-client-row">
+                  <span class="client-name">
+                    <mat-icon class="icon-xs">person</mat-icon> {{ r.prenomClient }} {{ r.nomClient }}
+                  </span>
+                  <span class="badge" [ngClass]="getStatutBadgeClass(r.statut)">{{ r.statut }}</span>
+                </div>
+                <div class="rdv-subinfo">
+                  <span class="tel-info" *ngIf="r.telephoneClient">
+                    <mat-icon class="icon-xs">call</mat-icon> {{ r.telephoneClient }}
+                  </span>
+                  <span class="coiffeur-info">
+                    <mat-icon class="icon-xs">content_cut</mat-icon> {{ r.coiffeurPrenom }} {{ r.coiffeurNom }}
+                  </span>
+                </div>
+                <div class="prestations-pills" *ngIf="r.prestations && r.prestations.length > 0">
+                  <span *ngFor="let p of r.prestations" class="pill">
+                    {{ p.varianteNom }} ({{ p.duree }} min)
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Prestations en cours dans le salon -->
+        <div class="card-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Prestations en cours au salon</h2>
+              <p class="panel-subtitle">Clients actuellement installés aux fauteuils de coiffure</p>
+            </div>
+            <a routerLink="caisse" class="panel-link">Gérer les prestations →</a>
+          </div>
+
+          <div *ngIf="dashboard()!.prestationsEnCours.length === 0" class="empty-state">
+            <p>Aucune prestation n'est actuellement en cours dans le salon.</p>
+          </div>
+
+          <div class="prestations-list" *ngIf="dashboard()!.prestationsEnCours.length > 0">
+            <div *ngFor="let p of dashboard()!.prestationsEnCours" class="prestation-item">
+              <div class="prestation-badge-col">
+                <span class="pulse-dot"></span>
+                <span class="prestation-time">{{ (p.dateHeureDebut || p.datePrestation) | date:'HH:mm' }}</span>
+              </div>
+              <div class="prestation-body">
+                <div class="prestation-top">
+                  <span class="prestation-client">
+                    <mat-icon class="icon-xs">person</mat-icon> {{ (p.prenomClient && p.nomClient ? (p.prenomClient + ' ' + p.nomClient) : (p.clientNom || 'Client Salon')) }}
+                  </span>
+                  <span class="prestation-prix">{{ p.montantTotal | number }} FCFA</span>
+                </div>
+                <div class="prestation-sub">
+                  <span>Coiffeur : <strong>{{ p.coiffeurPrenom ? (p.coiffeurPrenom + ' ' + (p.coiffeurNom || '')) : (p.lignes && p.lignes[0]?.coiffeurNom ? p.lignes[0].coiffeurNom : 'Coiffeur assigné') }}</strong></span>
+                  <span class="badge badge-info">{{ p.statut }}</span>
+                </div>
+                <div class="prestation-actions-row">
+                  <button
+                    type="button"
+                    class="btn-dashboard-action btn-finish"
+                    [disabled]="isActionEnCours()"
+                    (click)="terminerPrestationRapide(p.id)"
+                    title="Terminer la coiffure pour ouvrir l'encaissement"
+                  >
+                    <mat-icon class="icon-xs">check</mat-icon> Terminer
+                  </button>
+                  <a
+                    routerLink="caisse"
+                    class="btn-dashboard-action btn-caisse"
+                    title="Aller à la caisse pour encaisser"
+                  >
+                    <mat-icon class="icon-xs">payments</mat-icon> Caisse & Reçu
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne Droite : Alertes Retards & Raccourcis Métiers -->
+      <div class="right-section">
+        <!-- Alertes Retards Actuels -->
+        <div class="card-panel warning-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Alertes Retards</h2>
+              <p class="panel-subtitle">Rendez-vous ayant dépassé l'heure prévue</p>
+            </div>
+            <a routerLink="retards" class="panel-link">Gérer tous les retards →</a>
+          </div>
+
+          <div *ngIf="dashboard()!.retardsActuels.length === 0" class="empty-state success-empty">
+            <p><mat-icon class="icon-xs">check_circle</mat-icon> Aucun retard à signaler pour le moment.</p>
+          </div>
+
+          <div class="retards-list" *ngIf="dashboard()!.retardsActuels.length > 0">
+            <div *ngFor="let ret of dashboard()!.retardsActuels" class="retard-item">
+              <div class="retard-delay-badge">
+                +{{ ret.minutesRetard }} min
+              </div>
+              <div class="retard-details">
+                <span class="retard-client">
+                  <mat-icon class="icon-xs">person</mat-icon> {{ ret.clientNom }}
+                </span>
+                <span class="retard-time">Prévu à {{ ret.heurePrevue }} • {{ ret.coiffeurNom }}</span>
+                <span class="retard-tel" *ngIf="ret.clientTelephone">
+                  <mat-icon class="icon-xs">call</mat-icon> {{ ret.clientTelephone }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Raccourcis Rapides Réception -->
+        <div class="card-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Raccourcis Opérationnels</h2>
+          </div>
+          <div class="shortcuts-grid">
+            <a routerLink="file-attente" class="shortcut-btn highlight-shortcut">
+              <span class="shortcut-icon"><mat-icon class="icon-md">chair</mat-icon></span>
+              <div>
+                <strong>File d'Attente & Salon</strong>
+                <p>Vue en direct : lounge, fauteuils & comptoir</p>
+              </div>
+            </a>
+            <a routerLink="clients" class="shortcut-btn">
+              <span class="shortcut-icon"><mat-icon class="icon-md">person_search</mat-icon></span>
+              <div>
+                <strong>Rechercher un Client</strong>
+                <p>Trouver ou créer une fiche client</p>
+              </div>
+            </a>
+            <a routerLink="planning" class="shortcut-btn">
+              <span class="shortcut-icon"><mat-icon class="icon-md">event_available</mat-icon></span>
+              <div>
+                <strong>Calculer Disponibilités</strong>
+                <p>Trouver un créneau libre pour un client</p>
+              </div>
+            </a>
+            <a routerLink="caisse" class="shortcut-btn">
+              <span class="shortcut-icon"><mat-icon class="icon-md">payments</mat-icon></span>
+              <div>
+                <strong>Encaissement & Caisse</strong>
+                <p>Encaisser une prestation terminée</p>
+              </div>
+            </a>
+            <a routerLink="compte" class="shortcut-btn">
+              <span class="shortcut-icon"><mat-icon class="icon-md">settings</mat-icon></span>
+              <div>
+                <strong>Mon Profil & Sécurité</strong>
+                <p>Modifier mes informations d'accès</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ouverture de Caisse -->
+  <div *ngIf="isOuvertureCaisseModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Ouverture de Session de Caisse</h2>
+        <button class="modal-close" (click)="fermerModalCaisse()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-instruction">
+          Indiquez le fond de caisse physique initial compté dans le tiroir au démarrage de la journée.
+        </p>
+
+        <div class="form-group">
+          <label for="soldeOuverture">Fond de Caisse Initial (FCFA) *</label>
+          <input
+            type="number"
+            id="soldeOuverture"
+            [(ngModel)]="soldeOuvertureInput"
+            class="form-input"
+            min="0"
+            step="1000"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="notesOuverture">Remarques ou observations d'ouverture</label>
+          <textarea
+            id="notesOuverture"
+            [(ngModel)]="notesOuvertureInput"
+            class="form-input"
+            rows="3"
+            placeholder="Ex : Fond de caisse vérifié avec 2 billets de 10 000, 5 billets de 5 000..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalCaisse()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isSubmittingCaisse() || soldeOuvertureInput < 0"
+          (click)="validerOuvertureCaisse()"
+        >
+          {{ isSubmittingCaisse() ? 'Ouverture en cours...' : 'Confirmer l’ouverture de la caisse' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

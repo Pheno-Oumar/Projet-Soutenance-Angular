@@ -1,0 +1,106 @@
+<!-- Backdrop avec flou intense -->
+<div
+  class="auth-gate-backdrop"
+  [class.is-visible]="isOpen()"
+  (click)="close()"
+  aria-hidden="true"
+></div>
+
+<!-- Modal Dialog centrée -->
+<div
+  class="auth-gate-wrapper"
+  [class.is-open]="isOpen()"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="auth-gate-title"
+>
+  <div class="auth-gate-card">
+    <!-- Bouton Fermer -->
+    <button
+      type="button"
+      class="btn-close-modal"
+      (click)="close()"
+      aria-label="Fermer la fenêtre"
+      title="Fermer"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <!-- Header avec Logo du Salon -->
+    <div class="card-brand-header">
+      <div class="brand-avatar-box">
+        <img
+          *ngIf="salon()?.logoUrl"
+          [src]="salon()!.logoUrl | safeMedia"
+          [alt]="salon()?.nom || 'Salon'"
+          class="brand-logo-img"
+        />
+        <div *ngIf="!salon()?.logoUrl" class="brand-logo-fallback">
+          <mat-icon>spa</mat-icon>
+        </div>
+      </div>
+      <span class="brand-salon-name">{{ salon()?.nom || 'Maison de Beauté' }}</span>
+    </div>
+
+    <!-- Contenu texte & titre -->
+    <div class="card-text-body">
+      <h3 id="auth-gate-title" class="auth-gate-title">
+        {{ options().title || 'Votre sélection est prête !' }}
+      </h3>
+      <p class="auth-gate-message">
+        {{ options().message || 'Pour valider votre rendez-vous et recevoir votre confirmation instantanée, connectez-vous ou rejoignez-nous en quelques secondes.' }}
+      </p>
+    </div>
+
+    <!-- Piliers de réassurance -->
+    <div class="reassurance-pills">
+      <div class="pill-item">
+        <div class="pill-icon">
+          <mat-icon class="icon-xs">lock</mat-icon>
+        </div>
+        <span>Vos choix sont conservés sans ressaisie</span>
+      </div>
+      <div class="pill-item">
+        <div class="pill-icon">
+          <mat-icon class="icon-xs">notifications_active</mat-icon>
+        </div>
+        <span>Rappels de RDV par SMS & WhatsApp</span>
+      </div>
+      <div class="pill-item">
+        <div class="pill-icon">
+          <mat-icon class="icon-xs">receipt_long</mat-icon>
+        </div>
+        <span>Factures & historique disponibles 24h/24</span>
+      </div>
+    </div>
+
+    <!-- Actions CTA -->
+    <div class="auth-gate-actions">
+      <button
+        type="button"
+        class="btn-cta-login"
+        (click)="goToLogin()"
+      >
+        <mat-icon class="icon-sm">login</mat-icon>
+        <span>Me connecter à mon compte</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn-cta-register"
+        (click)="goToRegister()"
+      >
+        <mat-icon class="icon-sm">person_add</mat-icon>
+        <span>Créer un compte en 30 secondes</span>
+      </button>
+
+      <button
+        type="button"
+        class="btn-cancel-link"
+        (click)="close()"
+      >
+        Continuer à explorer sans me connecter
+      </button>
+    </div>
+  </div>
+</div>

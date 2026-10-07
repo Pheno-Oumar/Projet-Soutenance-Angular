@@ -1,0 +1,78 @@
+<div class="salon-shell-container">
+  <!-- Navbar Salon Spécifique -->
+  <app-salon-navbar
+    [salon]="salon()"
+    [slugSalon]="slugSalon"
+    [panierCount]="cartStore.nombreArticles()"
+    [montantTotal]="cartStore.montantTotal()"
+    [bookingCount]="bookingStore.count()"
+    [ouvertureStatus]="contextStore.ouvertureStatus()"
+    (openPanier)="cartStore.openDrawer()"
+    (openBooking)="bookingStore.openDrawer()"
+  />
+
+  <!-- Indicateur de chargement global si le salon s'initialise -->
+  <div *ngIf="isLoading()" class="shell-loading-bar">
+    <div class="shell-loading-progress"></div>
+  </div>
+
+  <!-- Corps de la Page (Router Outlet) -->
+  <main class="salon-shell-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Pied de Page Spécifique au Salon -->
+  <app-salon-footer
+    [salon]="salon()"
+    [slugSalon]="slugSalon"
+    [horaires]="horaires()"
+  />
+
+  <!-- Barre d'Action Rapide Collante Mobile (Sticky Mobile Dock) -->
+  <aside class="mobile-sticky-dock" aria-label="Actions rapides salon">
+    <button
+      type="button"
+      class="dock-btn dock-btn-booking"
+      (click)="bookingStore.openDrawer()"
+      [attr.aria-label]="'Panier rendez-vous, ' + bookingStore.count() + ' prestations sélectionnées'"
+    >
+      <mat-icon class="dock-icon">calendar_month</mat-icon>
+      <span class="dock-label">Rendez-vous</span>
+      <span *ngIf="bookingStore.count() > 0" class="dock-badge">{{ bookingStore.count() }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="dock-btn dock-btn-cart"
+      (click)="cartStore.openDrawer()"
+      [attr.aria-label]="'Panier boutique, ' + cartStore.nombreArticles() + ' articles'"
+    >
+      <mat-icon class="dock-icon">shopping_bag</mat-icon>
+      <span class="dock-label">Panier</span>
+      <span *ngIf="cartStore.hasItems()" class="dock-badge">{{ cartStore.nombreArticles() }}</span>
+    </button>
+
+    <a
+      *ngIf="salon()?.telephone"
+      [href]="'tel:' + salon()!.telephone"
+      class="dock-btn dock-btn-call"
+      aria-label="Appeler directement le salon"
+    >
+      <mat-icon class="dock-icon">call</mat-icon>
+      <span class="dock-label">Appeler</span>
+    </a>
+  </aside>
+
+  <!-- Tiroir Universel de Réservation -->
+  <app-booking-drawer />
+
+  <!-- Tiroir Universel de Panier Click & Collect -->
+  <app-cart-drawer />
+
+  <!-- Modal Universelle d'Auth Gate pour les Invités -->
+  <app-auth-gate-modal />
+
+  <!-- Assistant Virtuel Concierge IA (Gemini 3.8 Flash) -->
+  <app-assistant-widget />
+</div>
+

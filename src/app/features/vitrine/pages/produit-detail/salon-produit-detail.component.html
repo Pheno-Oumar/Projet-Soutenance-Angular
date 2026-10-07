@@ -1,0 +1,363 @@
+<div class="product-detail-page">
+  <!-- EN-TÊTE & BREADCRUMB -->
+  <header class="detail-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <a [routerLink]="['/' + slugSalon + '/boutique']">Boutique</a>
+        <mat-icon class="icon-xs" *ngIf="produit()?.categorieId">chevron_right</mat-icon>
+        <a
+          *ngIf="produit()?.categorieId"
+          [routerLink]="['/' + slugSalon + '/boutique', produit()!.categorieId]"
+        >
+          {{ produit()?.categorieNom }}
+        </a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span class="active-crumb">{{ produit()?.nom || 'Fiche Produit' }}</span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- CONTENU PRINCIPAL -->
+  <main class="detail-content">
+    <div class="content-container">
+      <!-- État de chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des détails du soin...</p>
+      </div>
+
+      <!-- État introuvable -->
+      <div *ngIf="!isLoading() && !produit()" class="empty-state">
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">inventory_2</mat-icon>
+        </div>
+        <h3>Produit introuvable</h3>
+        <p>Ce produit n'est plus référencé dans notre catalogue ou est actuellement indisponible.</p>
+        <a [routerLink]="['/' + slugSalon + '/boutique']" class="btn-back">
+          <mat-icon class="icon-xs">arrow_back</mat-icon>
+          <span>Retourner à la boutique</span>
+        </a>
+      </div>
+
+      <!-- FICHE PRODUIT ACTIVE -->
+      <div *ngIf="!isLoading() && produit() as p" class="product-showcase">
+        <div class="product-layout">
+          <!-- COLONNE GAUCHE : GALERIE / VISUEL HAUTE FIDÉLITÉ AVEC ZOOM -->
+          <div class="gallery-col">
+            <div
+              class="image-lens-wrap"
+              (mousemove)="handleMouseMove($event)"
+              (mouseenter)="isZoomed.set(true)"
+              (mouseleave)="isZoomed.set(false)"
+            >
+              <img
+                *ngIf="p.imageUrl"
+                [src]="p.imageUrl | safeMedia"
+                [alt]="p.nom"
+                class="lens-img"
+                [class.zoomed]="isZoomed()"
+                [style.transform-origin]="zoomTransformOrigin()"
+              />
+              <div *ngIf="!p.imageUrl" class="img-placeholder">
+                <mat-icon class="placeholder-icon">shopping_bag</mat-icon>
+                <span>Visuel professionnel</span>
+              </div>
+
+              <!-- Badge zoom hint -->
+              <span class="zoom-badge" *ngIf="p.imageUrl">
+                <mat-icon class="icon-xs">zoom_in</mat-icon>
+                <span>Survoler pour zoomer</span>
+              </span>
+            </div>
+
+            <!-- 3 Piliers de réassurance sous l'image -->
+            <div class="reassurance-ribbon">
+              <div class="reassurance-pill">
+                <mat-icon class="r-icon">verified</mat-icon>
+                <div>
+                  <strong>100% Officiel</strong>
+                  <span>Formulation d'origine certifiée</span>
+                </div>
+              </div>
+              <div class="reassurance-pill">
+                <mat-icon class="r-icon">storefront</mat-icon>
+                <div>
+                  <strong>Retrait au comptoir</strong>
+                  <span>Disponible immédiatement</span>
+                </div>
+              </div>
+              <div class="reassurance-pill">
+                <mat-icon class="r-icon">spa</mat-icon>
+                <div>
+                  <strong>Conseil Coiffeur</strong>
+                  <span>Astuces lors du retrait</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLONNE DROITE : INFORMATIONS, STOCK, PRIX, ACHAT & ONGLETS -->
+          <div class="info-col">
+            <div class="meta-top">
+              <span class="cat-badge">{{ p.categorieNom || 'Soin Professionnel' }}</span>
+              <span class="salon-source-badge">
+                <mat-icon class="icon-xs">store</mat-icon>
+                <span>{{ salonNom }}</span>
+              </span>
+            </div>
+
+            <h1 class="product-title">{{ p.nom }}</h1>
+
+            <!-- PRIX ET STATUT DE STOCK -->
+            <div class="price-and-stock-row">
+              <div class="price-block">
+                <span class="price-amount">{{ p.prixVente | number:'1.0-0' }} FCFA</span>
+                <span class="tax-info">Prix TTC garanti · Retrait Click & Collect offert</span>
+              </div>
+
+              <span
+                class="stock-badge"
+                [class.in-stock]="enStock()"
+                [class.out-of-stock]="!enStock()"
+              >
+                <mat-icon class="icon-xs">
+                  {{ enStock() ? 'check_circle' : 'schedule' }}
+                </mat-icon>
+                <span>
+                  {{ enStock() ? 'En stock au salon (' + p.stock?.quantiteDisponible + ' dispo)' : 'Sur commande au comptoir' }}
+                </span>
+              </span>
+            </div>
+
+            <hr class="divider" />
+
+            <!-- ACTION D'ACHAT CLICK & COLLECT -->
+            <div class="action-card">
+              <div class="action-title-row">
+                <span class="action-subtitle">Sélectionnez la quantité :</span>
+                <span class="max-badge" *ngIf="enStock()">Max : {{ quantiteMax() }}</span>
+              </div>
+
+              <div class="purchase-row">
+                <div class="qty-stepper">
+                  <button
+                    type="button"
+                    class="btn-step"
+                    (click)="decrementQuantite()"
+                    [disabled]="quantite() <= 1"
+                    aria-label="Diminuer la quantité"
+                  >
+                    <mat-icon class="icon-xs">remove</mat-icon>
+                  </button>
+                  <span class="qty-number">{{ quantite() }}</span>
+                  <button
+                    type="button"
+                    class="btn-step"
+                    (click)="incrementQuantite()"
+                    [disabled]="quantite() >= quantiteMax()"
+                    aria-label="Augmenter la quantité"
+                  >
+                    <mat-icon class="icon-xs">add</mat-icon>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn-add-cart-cta"
+                  (click)="ajouterAuPanier($event)"
+                  [disabled]="!enStock()"
+                >
+                  <mat-icon class="cart-cta-icon">shopping_bag</mat-icon>
+                  <div class="cta-text-group">
+                    <span class="cta-main-text">Ajouter au Panier</span>
+                    <span class="cta-sub-text">Retrait immédiat au salon</span>
+                  </div>
+                </button>
+              </div>
+
+              <div class="security-note">
+                <mat-icon class="icon-xs">shield</mat-icon>
+                <span>Paiement sécurisé ou règlement sur place lors du retrait de votre commande.</span>
+              </div>
+            </div>
+
+            <!-- ONGLETS D'INFORMATIONS TECHNIQUES & EXPERTISE -->
+            <div class="product-tabs-container">
+              <nav class="tabs-header">
+                <button
+                  type="button"
+                  class="tab-btn"
+                  [class.active]="activeTab() === 'description'"
+                  (click)="activeTab.set('description')"
+                >
+                  <mat-icon class="icon-xs">description</mat-icon>
+                  <span>Description & Bénéfices</span>
+                </button>
+                <button
+                  type="button"
+                  class="tab-btn"
+                  [class.active]="activeTab() === 'application'"
+                  (click)="activeTab.set('application')"
+                >
+                  <mat-icon class="icon-xs">tips_and_updates</mat-icon>
+                  <span>Conseils Coiffeur</span>
+                </button>
+                <button
+                  type="button"
+                  class="tab-btn"
+                  [class.active]="activeTab() === 'ingredients'"
+                  (click)="activeTab.set('ingredients')"
+                >
+                  <mat-icon class="icon-xs">science</mat-icon>
+                  <span>Formulation & Origine</span>
+                </button>
+              </nav>
+
+              <div class="tab-body" [ngSwitch]="activeTab()">
+                <!-- TAB DESCRIPTION -->
+                <div *ngSwitchCase="'description'" class="tab-pane">
+                  <p class="tab-text">
+                    {{ p.description || 'Ce soin d’exception a été sélectionné avec rigueur par les coiffeurs de notre maison pour préserver la santé, l’élasticité et la brillance naturelle de votre chevelure entre deux visites au salon.' }}
+                  </p>
+                  <ul class="benefit-list">
+                    <li>
+                      <mat-icon class="check-icon">done</mat-icon>
+                      <span>Restaure la barrière lipidique et protège contre les agressions thermiques.</span>
+                    </li>
+                    <li>
+                      <mat-icon class="check-icon">done</mat-icon>
+                      <span>Apporte souplesse, toucher soyeux et brillance miroir dès la première application.</span>
+                    </li>
+                    <li>
+                      <mat-icon class="check-icon">done</mat-icon>
+                      <span>Formulation haute concentration réservée aux professionnels agréés.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- TAB APPLICATION -->
+                <div *ngSwitchCase="'application'" class="tab-pane">
+                  <div class="pro-tip-box">
+                    <mat-icon class="tip-icon">auto_awesome</mat-icon>
+                    <div>
+                      <strong>Rituel recommandé par nos maîtres coiffeurs :</strong>
+                      <p>
+                        Appliquez une noisette de produit sur cheveux essorés, en insistant sur les mi-longueurs et pointes. Évitez les racines pour conserver le volume naturel. Laissez agir 3 à 5 minutes pour les masques avant de rincer abondamment à l'eau tiède.
+                      </p>
+                    </div>
+                  </div>
+                  <p class="tab-text">
+                    Pour un résultat salon optimal, combinez ce soin avec votre shampoing traitant habituel. N'hésitez pas à demander conseil à votre styliste lors du retrait au salon.
+                  </p>
+                </div>
+
+                <!-- TAB FORMULATION -->
+                <div *ngSwitchCase="'ingredients'" class="tab-pane">
+                  <p class="tab-text">
+                    Formule professionnelle garantie sans parabènes ni sulfates agressifs. Enrichie en complexes botaniques nobles et agents hydratants haute affinité kératine.
+                  </p>
+                  <div class="spec-table">
+                    <div class="spec-row">
+                      <span class="spec-label">Texture</span>
+                      <span class="spec-value">Crème soyeuse ultra-pénétrante</span>
+                    </div>
+                    <div class="spec-row">
+                      <span class="spec-label">Origine</span>
+                      <span class="spec-value">Réseau officiel certifié salon</span>
+                    </div>
+                    <div class="spec-row">
+                      <span class="spec-label">Conditionnement</span>
+                      <span class="spec-value">Format professionnel scellé</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION PRODUITS RECOMMANDÉS (CROSS-SELL) -->
+        <section class="cross-sell-section" *ngIf="produitsSimilaires().length > 0" appRevealOnScroll>
+          <div class="section-title-wrap">
+            <span class="sub-badge">Complétez votre rituel beauté</span>
+            <h2 class="section-title">Recommandations de nos experts</h2>
+            <p class="section-desc">
+              Découvrez d'autres soins choisis par nos artisans coiffeurs pour parfaire votre routine capillaire.
+            </p>
+          </div>
+
+          <div class="cross-sell-grid">
+            <article
+              *ngFor="let sim of produitsSimilaires(); let idx = index"
+              class="sim-card"
+              appTilt3d
+              [maxTilt]="5"
+              appRevealOnScroll
+              [revealDelay]="idx * 50"
+            >
+              <div class="sim-img-box">
+                <img
+                  *ngIf="sim.imageUrl"
+                  [src]="sim.imageUrl | safeMedia"
+                  [alt]="sim.nom"
+                  class="sim-img"
+                  loading="lazy"
+                />
+                <div *ngIf="!sim.imageUrl" class="sim-placeholder">
+                  <mat-icon class="sim-p-icon">shopping_bag</mat-icon>
+                </div>
+              </div>
+
+              <div class="sim-body">
+                <span class="sim-cat">{{ sim.categorieNom || 'Soin Capillaire' }}</span>
+                <h3 class="sim-title">
+                  <a [routerLink]="['/' + slugSalon + '/produits', sim.id]">{{ sim.nom }}</a>
+                </h3>
+
+                <div class="sim-bottom">
+                  <span class="sim-price">{{ sim.prixVente | number:'1.0-0' }} FCFA</span>
+                  <button
+                    type="button"
+                    class="btn-sim-add"
+                    (click)="ajouterProduitSimilaire($event, sim)"
+                    aria-label="Ajouter au panier"
+                  >
+                    <mat-icon class="icon-xs">add_shopping_cart</mat-icon>
+                    <span>Ajouter</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- BARRE FLOTTANTE PANIER EN COURS -->
+  <aside class="cart-floating-bar" *ngIf="cartStore.hasItems()" appRevealOnScroll>
+    <div class="floating-bar-inner">
+      <div class="floating-left">
+        <div class="floating-badge">
+          <mat-icon class="icon-xs">shopping_bag</mat-icon>
+          <span>{{ cartStore.nombreArticles() }} article{{ cartStore.nombreArticles() > 1 ? 's' : '' }}</span>
+        </div>
+        <span class="floating-total">
+          Total Panier : <strong>{{ cartStore.montantTotal() | number:'1.0-0' }} FCFA</strong>
+        </span>
+      </div>
+
+      <div class="floating-actions">
+        <button type="button" class="btn-floating-view" (click)="openCartDrawer()">
+          Voir le panier
+        </button>
+        <a [routerLink]="['/' + slugSalon + '/panier']" class="btn-floating-confirm">
+          <span>Finaliser ma commande</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </div>
+  </aside>
+</div>

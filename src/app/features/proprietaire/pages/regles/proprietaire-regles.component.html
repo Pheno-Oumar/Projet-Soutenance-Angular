@@ -1,0 +1,114 @@
+<div class="regles-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Règles Métier du Salon</h1>
+      <p class="page-subtitle">Définissez la politique interne du salon (retards, annulations, hygiène, paiements) affichée aux clients</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Nouvelle règle
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- REGLES LIST -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement des règles...</span>
+    </div>
+  } @else if (regles().length === 0) {
+    <div class="empty-state-card">
+      <mat-icon class="empty-icon">gavel</mat-icon>
+      <h3>Aucune règle définie</h3>
+      <p>Créez des règles claires pour informer vos clients de votre politique de service et de ponctualité.</p>
+      <button type="button" class="btn-primary" (click)="openCreateModal()">Créer une première règle</button>
+    </div>
+  } @else {
+    <div class="regles-grid">
+      @for (r of regles(); track r.id) {
+        <div class="regle-card">
+          <div class="regle-card-header">
+            <h3 class="regle-title">{{ r.titre }}</h3>
+            <div class="regle-actions">
+              <button type="button" class="icon-btn edit-btn" (click)="openEditModal(r)" title="Modifier">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button type="button" class="icon-btn delete-btn" (click)="supprimerRegle(r)" title="Supprimer">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <p class="regle-desc">{{ r.description }}</p>
+
+          <footer class="regle-card-footer">
+            <span class="regle-date">Créée le {{ r.dateCreation | date:'dd/MM/yyyy' }}</span>
+            @if (r.dateModification) {
+              <span class="regle-mod">Modifiée le {{ r.dateModification | date:'dd/MM/yyyy' }}</span>
+            }
+          </footer>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL AJOUT / MODIFICATION -->
+  @if (showModal) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">{{ isEditMode ? 'Modifier la Règle' : 'Nouvelle Règle Interne' }}</h2>
+          <button type="button" class="btn-close" (click)="closeModal()"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="soumettre()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="regleTitre" class="form-label">Titre de la règle *</label>
+              <input
+                id="regleTitre"
+                type="text"
+                class="form-control"
+                [(ngModel)]="formData.titre"
+                name="titre"
+                placeholder="Ex: Politique d'annulation (24h à l'avance)"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="regleDesc" class="form-label">Description détaillée *</label>
+              <textarea
+                id="regleDesc"
+                class="form-control"
+                [(ngModel)]="formData.description"
+                name="description"
+                rows="4"
+                placeholder="Expliquez clairement les conditions applicables aux rendez-vous et prestations..."
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Enregistrement...' : (isEditMode ? 'Sauvegarder' : 'Publier la règle') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</div>

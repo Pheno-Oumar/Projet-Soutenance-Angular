@@ -1,0 +1,196 @@
+<div class="rapports-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Rapports & Synthèse Financière</h1>
+      <p class="page-subtitle">Suivi précis des recettes, dépenses opérationnelles, bénéfices nets et export comptable</p>
+    </div>
+
+    <!-- EXPORT ACTIONS -->
+    <div class="header-actions">
+      <button
+        type="button"
+        class="btn-export btn-pdf"
+        (click)="exporter('PDF')"
+        [disabled]="isExporting()"
+      >
+        <mat-icon class="btn-icon">picture_as_pdf</mat-icon>
+        Exporter PDF
+      </button>
+
+      <button
+        type="button"
+        class="btn-export btn-csv"
+        (click)="exporter('CSV')"
+        [disabled]="isExporting()"
+      >
+        Exporter CSV
+      </button>
+    </div>
+  </header>
+
+  <!-- FINANCIAL KPI CARDS -->
+  <section class="kpi-grid">
+    <div class="kpi-card card-revenue">
+      <span class="kpi-label">Revenus du mois</span>
+      <strong class="kpi-value text-green">{{ formatDevise(kpiFinanciers()?.revenusMoisEnCours) }}</strong>
+      <span class="kpi-sub">Aujourd'hui : {{ formatDevise(kpiFinanciers()?.revenusAujourdhui) }}</span>
+    </div>
+
+    <div class="kpi-card card-expense">
+      <span class="kpi-label">Dépenses du mois</span>
+      <strong class="kpi-value text-red">{{ formatDevise(kpiFinanciers()?.depensesMoisEnCours) }}</strong>
+      <span class="kpi-sub">Aujourd'hui : {{ formatDevise(kpiFinanciers()?.depensesAujourdhui) }}</span>
+    </div>
+
+    <div class="kpi-card card-net">
+      <span class="kpi-label">Bénéfice Net du mois</span>
+      <strong class="kpi-value text-primary">{{ formatDevise(kpiFinanciers()?.beneficeNetMoisEnCours) }}</strong>
+      <span class="kpi-sub">Marge dégagée</span>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Chiffre d’Affaires Total</span>
+      <strong class="kpi-value">{{ formatDevise(kpiFinanciers()?.chiffreAffairesTotal) }}</strong>
+      <span class="kpi-sub">Depuis l'ouverture du salon</span>
+    </div>
+  </section>
+
+  <!-- FILTER & GENERATE BAR -->
+  <div class="filter-panel">
+    <h2 class="filter-title">Personnaliser le Rapport</h2>
+    <div class="filter-controls">
+      <div class="filter-group">
+        <label for="typeRapport" class="filter-label">Type de rapport</label>
+        <select id="typeRapport" class="filter-input" [(ngModel)]="filtre.typeRapport">
+          <option value="ENTREES_SORTIES">Entrées & Sorties (Complet)</option>
+          <option value="TOUTES_ENTREES">Uniquement les Entrées (Recettes)</option>
+          <option value="TOUTES_DEPENSES">Uniquement les Dépenses</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="dateDebut" class="filter-label">Du</label>
+        <input id="dateDebut" type="date" class="filter-input" [(ngModel)]="filtre.dateDebut" />
+      </div>
+
+      <div class="filter-group">
+        <label for="dateFin" class="filter-label">Au</label>
+        <input id="dateFin" type="date" class="filter-input" [(ngModel)]="filtre.dateFin" />
+      </div>
+
+      <div class="filter-group-submit">
+        <button type="button" class="btn-primary" (click)="genererRapport()" [disabled]="isLoadingRapport()">
+          <mat-icon class="btn-icon">analytics</mat-icon>
+          {{ isLoadingRapport() ? 'Calcul...' : 'Générer le rapport' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- RAPPORT RESULTS -->
+  @if (rapport()) {
+    <div class="report-results">
+      <!-- SUMMARY STRIP -->
+      <div class="report-summary-strip">
+        <div class="summary-item">
+          <span>Total Entrées ({{ rapport()?.nombreEntrees || 0 }})</span>
+          <strong class="text-green">+{{ formatDevise(rapport()?.totalEntrees) }}</strong>
+        </div>
+
+        <div class="summary-item">
+          <span>Total Sorties ({{ rapport()?.nombreSorties || 0 }})</span>
+          <strong class="text-red">-{{ formatDevise(rapport()?.totalSorties) }}</strong>
+        </div>
+
+        <div class="summary-item highlight-item">
+          <span>Solde Net sur la période</span>
+          <strong class="text-primary">{{ formatDevise(rapport()?.soldeNet) }}</strong>
+        </div>
+      </div>
+
+      <!-- TABLES OF FLOWS -->
+      <div class="flows-grid">
+        <!-- ENTRÉES -->
+        @if (filtre.typeRapport !== 'TOUTES_DEPENSES') {
+          <div class="flow-card">
+            <h3 class="flow-card-title text-green">
+              <span>Entrées & Encaissements</span>
+              <span class="count-tag">{{ rapport()?.entrees?.length || 0 }}</span>
+            </h3>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Mode</th>
+                    <th class="text-right">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (e of rapport()?.entrees || []; track e.paiementId) {
+                    <tr>
+                      <td>{{ e.datePaiement | date:'dd/MM/yyyy' }}</td>
+                      <td>{{ e.clientNom || 'Client direct' }}</td>
+                      <td><span class="mode-badge">{{ e.modePaiement }}</span></td>
+                      <td class="text-right text-green font-bold">+{{ formatDevise(e.montant) }}</td>
+                    </tr>
+                  }
+                  @if (!rapport()?.entrees || rapport()?.entrees?.length === 0) {
+                    <tr><td colspan="4" class="text-center text-muted">Aucune recette sur cette période</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
+        <!-- SORTIES -->
+        @if (filtre.typeRapport !== 'TOUTES_ENTREES') {
+          <div class="flow-card">
+            <h3 class="flow-card-title text-red">
+              <span>Sorties & Dépenses</span>
+              <span class="count-tag">{{ rapport()?.sorties?.length || 0 }}</span>
+            </h3>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Catégorie</th>
+                    <th>Motif</th>
+                    <th class="text-right">Montant</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (s of rapport()?.sorties || []; track s.depenseId) {
+                    <tr>
+                      <td>{{ s.dateDepense | date:'dd/MM/yyyy' }}</td>
+                      <td><span class="mode-badge">{{ s.categorie }}</span></td>
+                      <td>{{ s.description || 'Frais salon' }}</td>
+                      <td class="text-right text-red font-bold">-{{ formatDevise(s.montant) }}</td>
+                    </tr>
+                  }
+                  @if (!rapport()?.sorties || rapport()?.sorties?.length === 0) {
+                    <tr><td colspan="4" class="text-center text-muted">Aucune dépense sur cette période</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

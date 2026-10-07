@@ -1,0 +1,197 @@
+<div class="detail-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="breadcrumbs">
+          <a routerLink="/admin-plateforme">Administration</a>
+          <span>/</span>
+          <a routerLink="/admin-plateforme/salons">Salons</a>
+          <span>/</span>
+          <span>{{ salon()?.nom || 'Détails' }}</span>
+        </div>
+        <div class="header-main-row">
+          <div class="salon-hero">
+            <div class="salon-avatar">
+              <img
+                *ngIf="salon()?.logoUrl"
+                [src]="salon()!.logoUrl | safeMedia"
+                [alt]="salon()!.nom"
+                referrerpolicy="no-referrer"
+              />
+              <span *ngIf="!salon()?.logoUrl">{{ salon()?.nom?.charAt(0)?.toUpperCase() || 'S' }}</span>
+            </div>
+            <div class="salon-identity">
+              <div class="title-with-badge">
+                <h1>{{ salon()?.nom }}</h1>
+                <span class="badge-status" [class.active]="salon()?.statut" [class.inactive]="!salon()?.statut">
+                  {{ salon()?.statut ? 'Actif' : 'Inactif' }}
+                </span>
+              </div>
+              <p class="salon-meta">
+                <span>Slug: <strong>@{{ salon()?.slug }}</strong></span>
+                <span *ngIf="salon()?.dateCreation">• Créé le {{ salon()?.dateCreation | date:'dd/MM/yyyy' }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <button
+              *ngIf="salon()?.statut"
+              (click)="desactiverSalon()"
+              [disabled]="isTogglingStatus()"
+              class="btn-status deactivate"
+            >
+              <mat-icon class="icon-xs">block</mat-icon>
+              <span>{{ isTogglingStatus() ? 'Désactivation...' : 'Désactiver le salon' }}</span>
+            </button>
+
+            <button
+              *ngIf="!salon()?.statut"
+              (click)="reactiverSalon()"
+              [disabled]="isTogglingStatus()"
+              class="btn-status activate"
+            >
+              <mat-icon class="icon-xs">check_circle</mat-icon>
+              <span>{{ isTogglingStatus() ? 'Réactivation...' : 'Réactiver le salon' }}</span>
+            </button>
+
+            <a routerLink="/admin-plateforme/salons" class="btn-back">
+              <span>← Retour aux salons</span>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <!-- Erreur ou Alerte -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span>{{ errorMessage() }}</span>
+        <button (click)="chargerSalon()" class="btn-retry">Réessayer</button>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des détails du salon...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && salon()" class="content-body">
+        <!-- Grille des Métriques Clés Enrichies (Sub-step 4.1 backend verified) -->
+        <section class="metrics-grid">
+          <!-- Clients -->
+          <div class="metric-card card-3d">
+            <div class="metric-icon gold">
+              <mat-icon class="icon-md">groups</mat-icon>
+            </div>
+            <div class="metric-info">
+              <span class="m-title">Clients Enregistrés</span>
+              <span class="m-number">{{ salon()?.nombreClients ?? 0 }}</span>
+              <span class="m-sub">Clients affiliés au salon</span>
+            </div>
+          </div>
+
+          <!-- Employés -->
+          <div class="metric-card card-3d">
+            <div class="metric-icon primary">
+              <mat-icon class="icon-md">badge</mat-icon>
+            </div>
+            <div class="metric-info">
+              <span class="m-title">Équipe & Employés</span>
+              <span class="m-number">{{ salon()?.nombreEmployes ?? 0 }}</span>
+              <span class="m-sub">Coiffeurs et managers actifs</span>
+            </div>
+          </div>
+
+          <!-- Chiffre d'Affaires -->
+          <div class="metric-card card-3d highlight">
+            <div class="metric-icon gold-solid">
+              <mat-icon class="icon-md">payments</mat-icon>
+            </div>
+            <div class="metric-info">
+              <span class="m-title">Chiffre d'Affaires</span>
+              <span class="m-number ca-text">{{ formatDevise(salon()?.chiffreAffaires ?? 0) }}</span>
+              <span class="m-sub">Volume total encaissé</span>
+            </div>
+          </div>
+
+          <!-- Commandes / Ventes -->
+          <div class="metric-card card-3d">
+            <div class="metric-icon primary">
+              <mat-icon class="icon-md">shopping_bag</mat-icon>
+            </div>
+            <div class="metric-info">
+              <span class="m-title">Ventes & Commandes</span>
+              <span class="m-number">{{ salon()?.nombreCommandes ?? 0 }}</span>
+              <span class="m-sub">Commandes de produits / services</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Grille Détails & Carte Leaflet -->
+        <section class="details-grid">
+          <!-- Carte d'informations -->
+          <div class="info-card card-3d">
+            <h2 class="card-section-title">Coordonnées & Informations</h2>
+
+            <div class="info-list">
+              <div class="info-item">
+                <span class="info-label">Description</span>
+                <p class="info-value" *ngIf="salon()?.description">{{ salon()?.description }}</p>
+                <p class="info-value empty" *ngIf="!salon()?.description">Aucune description saisie.</p>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Adresse physique</span>
+                <p class="info-value" *ngIf="salon()?.adresse">
+                  <mat-icon class="icon-xs">location_on</mat-icon> {{ salon()?.adresse }}
+                </p>
+                <p class="info-value empty" *ngIf="!salon()?.adresse">Non renseignée.</p>
+              </div>
+
+              <div class="info-item-row">
+                <div class="info-item">
+                  <span class="info-label">Téléphone</span>
+                  <p class="info-value" *ngIf="salon()?.telephone">
+                    <mat-icon class="icon-xs">phone</mat-icon> {{ salon()?.telephone }}
+                  </p>
+                  <p class="info-value empty" *ngIf="!salon()?.telephone">Non renseigné.</p>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Email de contact</span>
+                  <p class="info-value" *ngIf="salon()?.email">
+                    <mat-icon class="icon-xs">mail</mat-icon> {{ salon()?.email }}
+                  </p>
+                  <p class="info-value empty" *ngIf="!salon()?.email">Non renseigné.</p>
+                </div>
+              </div>
+
+              <div class="info-item">
+                <span class="info-label">Coordonnées GPS</span>
+                <p class="info-value" *ngIf="hasGps()">
+                  Latitude: <strong>{{ salon()?.latitude }}</strong> | Longitude: <strong>{{ salon()?.longitude }}</strong>
+                </p>
+                <p class="info-value empty" *ngIf="!hasGps()">
+                  Coordonnées GPS non configurées (le propriétaire peut les renseigner plus tard).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Carte Leaflet du Salon -->
+          <div class="map-card card-3d">
+            <h2 class="card-section-title">Localisation Géographique</h2>
+
+            <div *ngIf="hasGps()" class="salon-map-wrapper">
+              <div #salonMap class="salon-map-element"></div>
+            </div>
+
+            <div *ngIf="!hasGps()" class="no-map-placeholder">
+              <div class="no-map-icon">
+                <mat-icon class="icon-xl">map</mat-icon>
+              </div>
+              <h3>Position non géolocalisée</h3>
+              <p>Ce salon ne possède pas encore de coordonnées GPS (latitude et longitude).</p>
+              <span class="badge-subtle">Configuration optionnelle disponible pour le propriétaire</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>

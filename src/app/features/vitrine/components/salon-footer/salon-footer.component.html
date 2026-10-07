@@ -1,0 +1,162 @@
+<footer class="salon-footer" id="section-contact">
+  <div class="footer-container">
+    <!-- Col 1 : Identité & Présentation du Salon -->
+    <div class="footer-col brand-col">
+      <div class="footer-logo-title">
+        <div class="footer-logo-box">
+          <img
+            *ngIf="salon?.logoUrl"
+            [src]="salon!.logoUrl | safeMedia"
+            [alt]="salon?.nom || 'Salon'"
+            class="footer-logo-img"
+            referrerpolicy="no-referrer"
+          />
+          <span *ngIf="!salon?.logoUrl" class="footer-logo-initial">
+            {{ salon?.nom ? salon?.nom?.charAt(0) : 'S' }}
+          </span>
+        </div>
+        <h3 class="footer-salon-name">{{ salon?.nom || 'Notre Salon' }}</h3>
+      </div>
+      <p class="footer-desc">
+        {{ salon?.description || 'Votre maison de beauté dédiée à l\'art capillaire. Notre équipe d\'experts vous accueille pour des rituels et transformations sur-mesure.' }}
+      </p>
+      <div class="footer-badges">
+        <span class="badge-trust">
+          <mat-icon class="icon-xs">star</mat-icon> Note 4.9/5 Vérifiée
+        </span>
+        <span class="badge-trust">
+          <mat-icon class="icon-xs">flash_on</mat-icon> RDV en Direct
+        </span>
+        <span class="badge-trust">
+          <mat-icon class="icon-xs">shopping_bag</mat-icon> Click & Collect
+        </span>
+      </div>
+      <div class="footer-social-links">
+        <span class="social-label">Suivez le salon :</span>
+        <div class="social-icons">
+          <a [href]="salon?.instagramUrl || 'https://instagram.com'" target="_blank" rel="noopener noreferrer" class="social-chip" title="Instagram">
+            <mat-icon class="icon-xs">photo_camera</mat-icon> Instagram
+          </a>
+          <a [href]="salon?.facebookUrl || 'https://facebook.com'" target="_blank" rel="noopener noreferrer" class="social-chip" title="Facebook">
+            <mat-icon class="icon-xs">group</mat-icon> Facebook
+          </a>
+          <a [href]="salon?.tiktokUrl || 'https://tiktok.com'" target="_blank" rel="noopener noreferrer" class="social-chip" title="TikTok">
+            <mat-icon class="icon-xs">music_note</mat-icon> TikTok
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 2 : Coordonnées & Accès Direct -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">
+        <mat-icon class="icon-sm">location_on</mat-icon> Coordonnées & Accès
+      </h4>
+      <ul class="contact-list">
+        <li *ngIf="salon?.adresse">
+          <span class="c-icon"><mat-icon class="icon-xs">location_on</mat-icon></span>
+          <div>
+            <strong>Adresse :</strong>
+            <p>{{ salon?.adresse }}</p>
+          </div>
+        </li>
+        <li *ngIf="salon?.telephone">
+          <span class="c-icon"><mat-icon class="icon-xs">phone</mat-icon></span>
+          <div>
+            <strong>Téléphone :</strong>
+            <p><a [href]="'tel:' + salon?.telephone">{{ salon?.telephone }}</a></p>
+          </div>
+        </li>
+        <li *ngIf="salon?.email">
+          <span class="c-icon"><mat-icon class="icon-xs">mail</mat-icon></span>
+          <div>
+            <strong>Email direct :</strong>
+            <p><a [href]="'mailto:' + salon?.email">{{ salon?.email }}</a></p>
+          </div>
+        </li>
+      </ul>
+      <div class="payment-modes">
+        <span class="pay-title">Moyens de paiement acceptés :</span>
+        <div class="pay-badges">
+          <span class="pay-chip">Wave</span>
+          <span class="pay-chip">Orange Money</span>
+          <span class="pay-chip">Carte Bancaire</span>
+          <span class="pay-chip">Espèces</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Col 3 : Horaires d'Ouverture -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">
+        <mat-icon class="icon-sm">schedule</mat-icon> Horaires d'ouverture
+      </h4>
+      <!-- Horaires Dynamiques Réels -->
+      <div class="hours-schedule" *ngIf="horaires && horaires.length > 0">
+        <div *ngFor="let h of horaires" class="hour-row">
+          <span>{{ getJourLabel(h.jourSemaine) }}</span>
+          <span class="time-val" [class.closed]="!h.actif">
+            {{ h.actif ? (formatHour(h.heureOuverture) + ' - ' + formatHour(h.heureFermeture)) : 'Fermé' }}
+          </span>
+        </div>
+      </div>
+      <!-- Horaires Par Défaut -->
+      <div class="hours-schedule" *ngIf="!horaires || horaires.length === 0">
+        <div class="hour-row">
+          <span>Lundi - Vendredi</span>
+          <span class="time-val">09:00 - 19:30</span>
+        </div>
+        <div class="hour-row highlight-row">
+          <span>Samedi (Journée continue)</span>
+          <span class="time-val">08:30 - 20:00</span>
+        </div>
+        <div class="hour-row">
+          <span>Dimanche</span>
+          <span class="time-val closed">Fermé / Sur RDV</span>
+        </div>
+      </div>
+      <p class="hours-notice">
+        <mat-icon class="icon-xs">info</mat-icon> Les réservations en ligne restent accessibles 24h/24 et 7j/7.
+      </p>
+    </div>
+
+    <!-- Col 4 : Espace Client & Navigation Salon -->
+    <div class="footer-col">
+      <h4 class="footer-col-title">
+        <mat-icon class="icon-sm">account_circle</mat-icon> Espace Salon
+      </h4>
+      <ul class="footer-quick-links">
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/client']">
+            <mat-icon class="icon-xs">arrow_forward</mat-icon> Mon Espace Client (RDV & Factures)
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/login']">
+            <mat-icon class="icon-xs">arrow_forward</mat-icon> Connexion Client
+          </a>
+        </li>
+        <li>
+          <a (click)="scrollToTop()" class="cursor-pointer">
+            <mat-icon class="icon-xs">arrow_forward</mat-icon> Prendre Rendez-vous en haut de page
+          </a>
+        </li>
+      </ul>
+      <div class="footer-direct-booking-box">
+        <p class="direct-booking-hint">Envie d'un créneau dès aujourd'hui ?</p>
+        <button (click)="scrollToTop()" class="btn-footer-reserve">
+          Prendre RDV maintenant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bottom-bar">
+    <div class="bottom-container">
+      <p>© {{ currentYear }} {{ salon?.nom || 'Salon de Coiffure' }} • Tous droits réservés.</p>
+      <p class="security-text">
+        <mat-icon class="icon-xs">lock</mat-icon> Réservation en ligne et Click & Collect 100% sécurisés.
+      </p>
+    </div>
+  </div>
+</footer>

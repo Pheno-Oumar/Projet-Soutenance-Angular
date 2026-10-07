@@ -1,0 +1,513 @@
+/* ========================================================= */
+/* DÉTAIL SERVICE & FORMULES DU SALON                        */
+/* Palette : Warm Walnut, Sand Dune, Cream, Charcoal         */
+/* Zéro Gold (#D4AF37)                                       */
+/* ========================================================= */
+
+.service-detail-page {
+  min-height: calc(100vh - 80px);
+  background: #FAF8F5;
+  color: #1A1A1A;
+  padding-bottom: 6rem;
+}
+
+/* En-tête */
+.detail-header {
+  background: radial-gradient(circle at 50% 10%, #F5F0E8 0%, #FAF8F5 100%);
+  color: #1A1A1A;
+  padding: 3.5rem 1.5rem 3rem 1.5rem;
+  border-bottom: 1px solid rgba(200, 182, 166, 0.25);
+}
+
+.header-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.breadcrumb-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #7A726D;
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb-nav a {
+  color: #4A3B32;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 180ms ease;
+}
+
+.breadcrumb-nav a:hover {
+  color: #1A1A1A;
+}
+
+.header-main-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+}
+
+.header-text-col {
+  flex: 1;
+}
+
+.category-badge {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4A3B32;
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 182, 166, 0.45);
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.04);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+
+.service-title {
+  margin: 0 0 1rem 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 800;
+  color: #1A1A1A;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.service-desc {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.02rem;
+  color: #66605B;
+  line-height: 1.6;
+}
+
+.service-reassurance-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.reassurance-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 182, 166, 0.4);
+  border-radius: 8px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  color: #4A3B32;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.04);
+}
+
+.reassurance-chip mat-icon {
+  color: #4A3B32;
+}
+
+.header-img-col {
+  width: 220px;
+  height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid #C8B6A6;
+  box-shadow: 0 12px 32px rgba(74, 59, 50, 0.12);
+  flex-shrink: 0;
+}
+
+.header-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Contenu des variantes */
+.variantes-content {
+  padding: 3rem 1.5rem;
+}
+
+.content-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Préférence coiffeur */
+.coiffeur-preference-section {
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 182, 166, 0.35);
+  border-radius: 20px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 16px rgba(42, 36, 33, 0.04);
+}
+
+.pref-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.pref-header mat-icon {
+  color: #4A3B32;
+}
+
+.pref-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1A1A1A;
+}
+
+.pref-desc {
+  margin: 0 0 1.25rem 0;
+  font-size: 0.88rem;
+  color: #66605B;
+}
+
+.coiffeurs-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.coiffeur-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #FAF8F5;
+  border: 1px solid rgba(200, 182, 166, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #4A3B32;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.chip-avatar-img {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.coiffeur-chip:hover {
+  background: #F5F2EB;
+  border-color: #B5A89F;
+}
+
+.coiffeur-chip.is-active {
+  background: #4A3B32;
+  color: #FAF8F5;
+  border-color: #4A3B32;
+  box-shadow: 0 4px 12px rgba(74, 59, 50, 0.25);
+}
+
+.coiffeur-chip.is-active mat-icon {
+  color: #C8B6A6;
+}
+
+/* Titre de section */
+.section-title-wrap {
+  margin-bottom: 1.75rem;
+}
+
+.sub-label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8C827A;
+  margin-bottom: 0.25rem;
+}
+
+.section-title-wrap h2 {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #1A1A1A;
+}
+
+.section-title-wrap p {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #66605B;
+}
+
+/* Grille des variantes */
+.variantes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.variante-card {
+  background: #FFFFFF;
+  border: 1.5px solid rgba(200, 182, 166, 0.4);
+  border-radius: 20px;
+  padding: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 18px rgba(42, 36, 33, 0.05);
+  transition: all 220ms ease;
+}
+
+.variante-card:hover {
+  border-color: #B5A89F;
+  transform: translateY(-2px);
+}
+
+.variante-card.is-selected {
+  border-color: #4A3B32;
+  background: #FAF8F5;
+  box-shadow: 0 8px 28px rgba(74, 59, 50, 0.12);
+}
+
+.variante-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.variante-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1A1A1A;
+  line-height: 1.35;
+  flex: 1;
+}
+
+.variante-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #4A3B32;
+  white-space: nowrap;
+}
+
+.variante-meta {
+  margin-bottom: 1.5rem;
+}
+
+.duration-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #F5F2EB;
+  color: #66605B;
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.variante-actions {
+  margin-top: auto;
+}
+
+.btn-select-variante {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #FAF8F5;
+  border: 1.5px solid #C8B6A6;
+  color: #4A3B32;
+  padding: 0.8rem 1.25rem;
+  border-radius: 12px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.btn-select-variante:hover {
+  background: #4A3B32;
+  color: #FFFFFF;
+  border-color: #4A3B32;
+}
+
+.btn-select-variante.btn-selected {
+  background: #4A3B32;
+  color: #FFFFFF;
+  border-color: #4A3B32;
+}
+
+/* Loading & Empty */
+.loading-state, .empty-state {
+  text-align: center;
+  padding: 4rem 1.5rem;
+}
+
+.spinner-walnut {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(200, 182, 166, 0.3);
+  border-top-color: #4A3B32;
+  border-radius: 50%;
+  margin: 0 auto 1rem auto;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.empty-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #F5F2EB;
+  color: #C8B6A6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem auto;
+}
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #4A3B32;
+  color: #FFFFFF;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-decoration: none;
+  margin-top: 1rem;
+}
+
+/* Floating bar */
+.booking-floating-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 680px;
+  background: #FFFFFF;
+  border: 1.5px solid #C8B6A6;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(42, 36, 33, 0.2);
+  z-index: 999;
+  padding: 0.85rem 1.25rem;
+}
+
+.floating-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.floating-left {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.floating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #4A3B32;
+  color: #FAF8F5;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.floating-total {
+  font-size: 0.9rem;
+  color: #66605B;
+}
+
+.floating-total strong {
+  color: #1A1A1A;
+}
+
+.floating-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-floating-view {
+  background: transparent;
+  border: 1px solid rgba(200, 182, 166, 0.6);
+  color: #4A3B32;
+  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-floating-view:hover {
+  background: #F5F2EB;
+}
+
+.btn-floating-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #4A3B32;
+  color: #FFFFFF;
+  border: none;
+  padding: 0.6rem 1.15rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-floating-confirm:hover {
+  background: #382C25;
+}
+
+.icon-xs {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+.icon-sm {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 768px) {
+  .header-main-card {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+  .service-reassurance-row {
+    justify-content: center;
+  }
+  .header-img-col {
+    margin: 0 auto;
+  }
+  .floating-bar-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .floating-actions {
+    justify-content: space-between;
+  }
+}

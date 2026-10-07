@@ -1,0 +1,72 @@
+<main class="selection-wrapper">
+  <!-- Glowing ambient light orbs in the background -->
+  <div class="ambient-orb orb-brown" aria-hidden="true"></div>
+  <div class="ambient-orb orb-gold" aria-hidden="true"></div>
+
+  <!-- TOP BAR -->
+  <header class="top-nav">
+    <div class="user-greeting">
+      <div class="avatar-circle">
+        {{ currentUser()?.prenom?.charAt(0) || 'U' }}
+      </div>
+      <div class="user-info">
+        <span class="user-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        @if (salonContext()?.slugSalon) {
+          <span class="user-salon">Salon : {{ salonContext()?.slugSalon | titlecase }}</span>
+        }
+      </div>
+    </div>
+
+    <button type="button" class="btn-logout" (click)="logout()" aria-label="Se déconnecter">
+      <mat-icon class="logout-icon icon-sm">logout</mat-icon>
+      <span>Déconnexion</span>
+    </button>
+  </header>
+
+  <!-- CONTENT CONTAINER -->
+  <div class="content-container">
+    <section class="hero-header">
+      <span class="badge-selection">Espaces & Habilitations</span>
+      <h1 class="hero-title">Choisissez votre espace de travail</h1>
+      <p class="hero-subtitle">
+        Accédez à vos interfaces professionnelles métier ou à votre espace client personnel.
+      </p>
+    </section>
+
+    <!-- ROLES GRID 3D -->
+    <section class="roles-grid" aria-label="Liste de vos espaces disponibles">
+      @for (item of availableRoles(); track item.role; let i = $index) {
+        <article
+          class="role-card-3d"
+          (mouseenter)="hoveredIndex.set(i)"
+          (mouseleave)="hoveredIndex.set(null)"
+          (click)="selectRole(item.role)"
+        >
+          <div class="card-glow" [style.background]="item.accentColor"></div>
+
+          <!-- Card Header & Icon -->
+          <div class="card-top">
+            <div class="role-icon-box" [style.borderColor]="item.accentColor">
+              <mat-icon class="icon-md" [style.color]="item.accentColor">{{ item.iconName }}</mat-icon>
+            </div>
+            <span class="card-badge" [style.color]="item.accentColor">{{ item.badge }}</span>
+          </div>
+
+          <!-- Card Content -->
+          <div class="card-middle">
+            <h2 class="role-title">{{ item.titre }}</h2>
+            <p class="role-description">{{ item.description }}</p>
+          </div>
+
+          <!-- Action Button -->
+          <div class="card-bottom">
+            <span class="btn-enter" [style.borderColor]="item.accentColor">
+              <span>Entrer dans l'espace</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </span>
+          </div>
+        </article>
+      }
+    </section>
+  </div>
+</main>

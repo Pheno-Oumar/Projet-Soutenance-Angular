@@ -1,0 +1,107 @@
+<div class="stocks-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Synthèse des Stocks de Produits</h1>
+      <p class="page-subtitle">Suivi des quantités disponibles, valorisation du stock et alertes de réapprovisionnement</p>
+    </div>
+
+    @if (totalAlertes > 0) {
+      <div class="alert-pill">
+        <mat-icon class="alert-icon">warning</mat-icon>
+        <span>{{ totalAlertes }} produit(s) en alerte stock critique</span>
+      </div>
+    }
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Rechercher un produit, une catégorie..."
+        [(ngModel)]="searchTerm"
+      />
+    </div>
+
+    <label class="toggle-alert-label">
+      <input type="checkbox" [(ngModel)]="onlyAlerts" />
+      <span>Afficher uniquement les alertes</span>
+    </label>
+
+    <button type="button" class="btn-refresh" (click)="chargerStocks()" [disabled]="isLoading()">
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- DATA TABLE -->
+  <div class="data-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des stocks...</span>
+      </div>
+    } @else if (filteredStocks.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">inventory_2</mat-icon>
+        <h3>Aucun produit trouvé</h3>
+        <p>Aucun article en inventaire ne correspond à vos filtres.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Catégorie</th>
+              <th>Prix Unitaire</th>
+              <th>Quantité Disponible</th>
+              <th>Seuil d'Alerte</th>
+              <th class="text-right">Statut du Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (s of filteredStocks; track s.produitId) {
+              <tr [class.row-alert]="s.alerteStockBas">
+                <td>
+                  <strong>{{ s.produitNom }}</strong>
+                </td>
+                <td>
+                  <span class="cat-pill">{{ s.categorieNom }}</span>
+                </td>
+                <td>
+                  <span>{{ formatDevise(s.prixVente) }}</span>
+                </td>
+                <td>
+                  <strong class="qty-badge" [class.qty-low]="s.quantiteDisponible <= s.seuilMinimum">
+                    {{ s.quantiteDisponible }} unités
+                  </strong>
+                </td>
+                <td>
+                  <span class="seuil-text">Min : {{ s.seuilMinimum }}</span>
+                </td>
+                <td class="text-right">
+                  @if (s.alerteStockBas) {
+                    <span class="badge badge-warning">Stock Bas</span>
+                  } @else {
+                    <span class="badge badge-success">Optimal</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

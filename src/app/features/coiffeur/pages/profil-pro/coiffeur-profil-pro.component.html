@@ -1,0 +1,132 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mon Profil Professionnel</h1>
+      <p class="page-subtitle">Configurez votre vitrine praticien visible par les clients du salon</p>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-xs">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-xs">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de votre profil...</p>
+  </div>
+
+  <div *ngIf="!isLoading()" class="profile-layout">
+    <!-- Left Column: Photo Card -->
+    <div class="photo-card">
+      <div class="avatar-large-wrap">
+        <img
+          *ngIf="profil()?.photoProfilUrl; else defaultAvatar"
+          [src]="profil()?.photoProfilUrl"
+          [alt]="profil()?.nomAffichage"
+          class="avatar-large-img"
+        />
+        <ng-template #defaultAvatar>
+          <div class="avatar-large-fallback">
+            {{ (profil()?.nomAffichage || 'C').charAt(0).toUpperCase() }}
+          </div>
+        </ng-template>
+
+        <div *ngIf="isUploading()" class="uploading-overlay">
+          <div class="mini-spinner"></div>
+          <span>Upload WebP...</span>
+        </div>
+      </div>
+
+      <div class="upload-btn-wrap">
+        <label for="photoFile" class="btn-upload">
+          <mat-icon class="icon-xs">photo_camera</mat-icon> {{ isUploading() ? 'Envoi en cours...' : 'Changer la photo' }}
+        </label>
+        <input
+          type="file"
+          id="photoFile"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          [disabled]="isUploading()"
+          style="display: none;"
+        />
+        <span class="upload-hint">Format PNG/JPEG/WEBP max 5MB (optimisé automatiquement en WebP)</span>
+      </div>
+
+      <div class="salon-membership">
+        <span class="member-label">Statut au salon :</span>
+        <span class="member-badge">
+          <mat-icon class="icon-xs">content_cut</mat-icon> Coiffeur Actif
+        </span>
+      </div>
+    </div>
+
+    <!-- Right Column: Edit Form -->
+    <div class="form-card">
+      <h2 class="card-title">Informations de Présentation</h2>
+
+      <form (ngSubmit)="sauvegarder()">
+        <div class="form-group">
+          <label for="nomAffichage">Nom d'affichage ou pseudonyme *</label>
+          <input
+            type="text"
+            id="nomAffichage"
+            [(ngModel)]="formDto.nomAffichage"
+            name="nomAffichage"
+            class="form-input"
+            placeholder="Ex : Ali Traoré - Maître Coiffeur"
+            required
+          />
+          <span class="field-hint">Ce nom apparaît sur le planning et le choix du praticien lors de la réservation</span>
+        </div>
+
+        <div class="form-group">
+          <label for="anneeExperience">Années d'expérience professionnelle</label>
+          <input
+            type="number"
+            id="anneeExperience"
+            [(ngModel)]="formDto.anneeExperience"
+            name="anneeExperience"
+            class="form-input"
+            min="0"
+            max="60"
+            placeholder="Ex : 5"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="biographie">Biographie courte / Slogan</label>
+          <input
+            type="text"
+            id="biographie"
+            [(ngModel)]="formDto.biographie"
+            name="biographie"
+            class="form-input"
+            placeholder="Ex : Spécialiste des coupes tendances, barbes et soins texturés"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description détaillée & Spécialités</label>
+          <textarea
+            id="description"
+            [(ngModel)]="formDto.description"
+            name="description"
+            class="form-textarea"
+            rows="5"
+            placeholder="Présentez votre parcours, vos diplômes, techniques maîtrisées (coloration, tissage, dégradé américain, soins bio...)..."
+          ></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-save" [disabled]="isSaving()">
+            {{ isSaving() ? 'Enregistrement en cours...' : 'Enregistrer les modifications' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,209 @@
+<div class="player-viewport-container">
+  <!-- BOUTON FERMER PLEIN ÉCRAN -->
+  <button
+    type="button"
+    class="btn-close-player"
+    (click)="fermerLecteur()"
+    title="Quitter le lecteur"
+    aria-label="Fermer le lecteur"
+  >
+    <mat-icon class="icon-sm">close</mat-icon>
+  </button>
+
+  <!-- BOUTON MUTE / UNMUTE -->
+  <button
+    type="button"
+    class="btn-mute-player"
+    (click)="toggleMute()"
+    [title]="isMuted() ? 'Activer le son' : 'Couper le son'"
+    aria-label="Activer ou couper le son"
+  >
+    <mat-icon class="icon-sm">{{ isMuted() ? 'volume_off' : 'volume_up' }}</mat-icon>
+  </button>
+
+  <!-- ÉTAT DE CHARGEMENT -->
+  <div *ngIf="isLoading()" class="player-loading">
+    <div class="spinner-sand"></div>
+    <p>Ouverture du flux vidéo haute fidélité...</p>
+  </div>
+
+  <!-- ÉTAT VIDE -->
+  <div *ngIf="!isLoading() && realisations().length === 0" class="player-empty">
+    <mat-icon class="empty-icon">videocam_off</mat-icon>
+    <p>Aucune réalisation vidéo disponible actuellement.</p>
+    <button type="button" class="btn-back" (click)="fermerLecteur()">
+      Retour à la galerie
+    </button>
+  </div>
+
+  <!-- FLUX SNAP VERTICAL (SCROLL VERTICAL CONTINU TIKTOK-LIKE) -->
+  <div
+    *ngIf="!isLoading() && realisations().length > 0"
+    #snapFeed
+    class="reels-snap-feed"
+    (scroll)="onScrollFeed(snapFeed)"
+  >
+    <div
+      *ngFor="let r of realisations(); let i = index"
+      #slideEl
+      class="snap-reel-slide"
+      [attr.data-index]="i"
+      (dblclick)="onDoubleTapVideo($event, r)"
+    >
+      <!-- Vidéo principale (Streaming adaptatif HLS & Cloudinary) -->
+      <video
+        #videoEl
+        [appHlsVideo]="r.urlVideo"
+        [muted]="isMuted()"
+        playsinline
+        loop
+        autoplay
+        (click)="togglePlayPause(videoEl, $event)"
+        class="fullscreen-reel-video"
+      ></video>
+
+      <!-- Gradient somptueux Walnut / Charcoal -->
+      <div class="reel-vignette-overlay"></div>
+
+      <!-- Animation de cœur au double-tap -->
+      <div
+        class="double-tap-heart"
+        *ngIf="showHeartAnim() && activeIndex() === i"
+        [style.left.px]="heartPosition().x"
+        [style.top.px]="heartPosition().y"
+      >
+        <mat-icon class="heart-pulse-icon">favorite</mat-icon>
+      </div>
+
+      <!-- Actions Latérales Flottantes Droite -->
+      <aside class="reel-side-actions">
+        <!-- Avatar du styliste -->
+        <div class="stylist-avatar-wrap" *ngIf="r.coiffeurNomComplet" [title]="r.coiffeurNomComplet">
+          <div class="stylist-avatar-circle">
+            <mat-icon class="icon-sm">face</mat-icon>
+          </div>
+          <span class="avatar-plus">+</span>
+        </div>
+
+        <!-- Bouton Like -->
+        <button
+          type="button"
+          class="side-action-btn"
+          [class.is-liked]="isLiked(r.id)"
+          (click)="toggleLike(r, $event)"
+          aria-label="Aimer cette création"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="action-icon">
+              {{ isLiked(r.id) ? 'favorite' : 'favorite_border' }}
+            </mat-icon>
+          </div>
+          <span class="action-count">{{ getLikesCount(r) }}</span>
+        </button>
+
+        <!-- Bouton Commentaires -->
+        <button
+          type="button"
+          class="side-action-btn"
+          (click)="openComments($event)"
+          aria-label="Voir les commentaires"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="action-icon">chat_bubble_outline</mat-icon>
+          </div>
+          <span class="action-count">{{ comments().length }}</span>
+        </button>
+
+        <!-- Bouton Partager -->
+        <button
+          type="button"
+          class="side-action-btn"
+          (click)="partagerLien(r, $event)"
+          aria-label="Partager la vidéo"
+        >
+          <div class="action-icon-circle">
+            <mat-icon class="action-icon">share</mat-icon>
+          </div>
+          <span class="action-count">Partager</span>
+        </button>
+      </aside>
+
+      <!-- Informations Inférieures & Bouton d'Action Réserver ce style -->
+      <div class="reel-bottom-sheet">
+        <div class="reel-artist-tag" *ngIf="r.coiffeurNomComplet">
+          <mat-icon class="icon-xs">verified</mat-icon>
+          <span>Création par {{ r.coiffeurNomComplet }}</span>
+        </div>
+
+        <h2 class="reel-title-full">{{ r.titre }}</h2>
+        <p class="reel-desc-full" *ngIf="r.description">{{ r.description }}</p>
+
+        <!-- Bouton Conversion RDV Sand Dune (NO GOLD) -->
+        <button
+          type="button"
+          class="btn-book-this-look"
+          (click)="reserverCeStyle($event, r)"
+          aria-label="Réserver ce style au salon"
+        >
+          <mat-icon class="icon-sm">content_cut</mat-icon>
+          <span>Réserver ce style au salon</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIROIR DE COMMENTAIRES LATÉRAL / BAS -->
+  <div
+    class="comments-drawer-backdrop"
+    *ngIf="isCommentsOpen()"
+    (click)="closeComments()"
+  ></div>
+
+  <aside class="comments-drawer" [class.open]="isCommentsOpen()">
+    <div class="drawer-header">
+      <div class="drawer-title-group">
+        <mat-icon class="icon-sm">forum</mat-icon>
+        <h3>Commentaires ({{ comments().length }})</h3>
+      </div>
+      <button type="button" class="btn-close-drawer" (click)="closeComments()">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+    </div>
+
+    <div class="comments-list">
+      <div *ngFor="let c of comments()" class="comment-item">
+        <div class="comment-avatar">
+          <mat-icon class="icon-xs">person</mat-icon>
+        </div>
+        <div class="comment-content">
+          <div class="comment-top">
+            <strong class="comment-author">{{ c.auteur }}</strong>
+            <span class="comment-time">{{ c.temps }}</span>
+          </div>
+          <p class="comment-text">{{ c.texte }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saisie commentaire -->
+    <div class="comment-input-row">
+      <input
+        type="text"
+        class="comment-input"
+        placeholder="Partagez votre avis sur ce rituel..."
+        [ngModel]="nouveauCommentaire()"
+        (ngModelChange)="nouveauCommentaire.set($event)"
+        (keyup.enter)="envoyerCommentaire()"
+      />
+      <button
+        type="button"
+        class="btn-send-comment"
+        (click)="envoyerCommentaire()"
+        [disabled]="!nouveauCommentaire().trim()"
+      >
+        <mat-icon class="icon-xs">send</mat-icon>
+      </button>
+    </div>
+  </aside>
+</div>

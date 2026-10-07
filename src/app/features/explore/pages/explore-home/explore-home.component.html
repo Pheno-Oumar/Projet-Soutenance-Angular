@@ -1,0 +1,516 @@
+<div class="explore-page">
+  <!-- NAVBAR PLATEFORME (Brand HairStyle Elite & Kady's) -->
+  <app-public-navbar />
+
+  <!-- ============================================== -->
+  <!-- HERO SECTION 3D MARKETING SPECTACULAIRE        -->
+  <!-- ============================================== -->
+  <section class="hero-section">
+    <div class="hero-bg-shapes">
+      <div class="shape shape-1"></div>
+      <div class="shape shape-2"></div>
+      <div class="shape shape-3"></div>
+      <div class="shape shape-4"></div>
+    </div>
+
+    <!-- Floating particles ambiance -->
+    <div class="hero-particles">
+      <span class="particle" *ngFor="let p of [1,2,3,4,5,6,7,8]" [style.--p-i]="p"></span>
+    </div>
+
+    <div class="hero-content">
+      <!-- Kady's Teaser Pill — Sequential entrance -->
+      <a routerLink="/kadys" class="kadys-teaser-pill hero-anim hero-anim-1">
+        <mat-icon class="icon-xs pulsing-star">auto_awesome</mat-icon>
+        <span class="pill-text"><strong>Kady's Reels</strong> : Les tendances coiffures du moment en vidéo</span>
+        <mat-icon class="icon-xs pill-arrow">arrow_forward</mat-icon>
+      </a>
+
+      <h1 class="hero-title hero-anim hero-anim-2">
+        La Référence des Salons <br />
+        <span class="text-gradient">de Coiffure d'Exception.</span>
+      </h1>
+      <p class="hero-subtitle hero-anim hero-anim-3">
+        Trouvez le meilleur artisan styliste, découvrez les réalisations en direct, réservez vos créneaux 24h/24 sans avance obligatoire et commandez vos soins capillaires en Click &amp; Collect.
+      </p>
+
+      <!-- ═══ Moteur de Recherche + Sélecteur de Rayon GPS ═══ -->
+      <div class="search-box-3d hero-anim hero-anim-4">
+        <div class="input-wrapper">
+          <mat-icon class="icon-xs search-icon">search</mat-icon>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            (keydown.enter)="onSearch()"
+            placeholder="Prestation (tresses, balayage, barbe...), ville ou nom de salon..."
+            class="main-search-input"
+          />
+        </div>
+
+        <button
+          (click)="onSearch(); createRipple($event)"
+          [disabled]="rechercheEnCours()"
+          class="btn-search-main btn-ripple"
+        >
+          <span *ngIf="!rechercheEnCours()">Rechercher</span>
+          <span *ngIf="rechercheEnCours()" class="spinner-small"></span>
+        </button>
+
+        <!-- Rayon Selector Dropdown (5, 10, 15, 20 km) -->
+        <div class="rayon-selector">
+          <button
+            (click)="toggleRayonDropdown()"
+            class="btn-rayon-trigger"
+            [class.active]="geolocActive()"
+          >
+            <mat-icon class="icon-xs">location_on</mat-icon>
+            <span class="rayon-text">{{ selectedRayon() }} km</span>
+            <span class="rayon-chevron" [class.open]="showRayonDropdown()">▾</span>
+          </button>
+
+          <div class="rayon-dropdown" [class.show]="showRayonDropdown()">
+            <span class="rayon-dropdown-title">Rayon de recherche</span>
+            <button
+              *ngFor="let r of rayonOptions"
+              (click)="selectRayon(r); activerGeolocalisation()"
+              [class.selected]="selectedRayon() === r"
+              class="rayon-option"
+            >
+              <span class="rayon-dot"></span>
+              {{ r }} km
+              <mat-icon *ngIf="selectedRayon() === r" class="icon-xs rayon-check">check</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Trust Badges — Floating micro-animation -->
+      <div class="hero-trust-badges hero-anim hero-anim-5">
+        <span class="t-badge t-badge-float" [style.--badge-i]="0">
+          <mat-icon class="icon-xs">flash_on</mat-icon> Confirmation immédiate 24/7
+        </span>
+        <span class="t-badge t-badge-float" [style.--badge-i]="1">
+          <mat-icon class="icon-xs">star</mat-icon> Avis 100% certifiés
+        </span>
+        <span class="t-badge t-badge-float" [style.--badge-i]="2">
+          <mat-icon class="icon-xs">security</mat-icon> Zéro no-show garanti
+        </span>
+        <span class="t-badge t-badge-float" [style.--badge-i]="3">
+          <mat-icon class="icon-xs">science</mat-icon> Diagnostic capillaire avec code PIN
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION KADY'S REELS (TEASER TIKTOK/REELS)    -->
+  <!-- ============================================== -->
+  <section class="kadys-teaser-section">
+    <div class="section-container">
+      <div class="kadys-card-banner animate-on-scroll fade-up">
+        <div class="kadys-banner-text">
+          <span class="k-label">
+            <mat-icon class="icon-xs">local_fire_department</mat-icon> NOUVEAU SUR LA PLATEFORME
+          </span>
+          <h2>Kady's Reels : Le flux vidéo immersif de la coiffure</h2>
+          <p>
+            Inspirez-vous des transformations réelles filmées par les salons partenaires. Double-tapez pour liker, commentez et réservez le look exact en un clic !
+          </p>
+          <a routerLink="/kadys" class="btn-kadys-stream btn-ripple" (click)="createRipple($event)">
+            <mat-icon class="icon-xs">auto_awesome</mat-icon>
+            <span>Découvrir Kady's Reels en plein écran</span>
+            <mat-icon class="icon-xs">arrow_forward</mat-icon>
+          </a>
+        </div>
+        <div class="kadys-banner-visual">
+          <div class="phone-mockup-mini">
+            <img [src]="trendingCategories[0].image" alt="Reels Preview" class="mini-screen-img" />
+            <mat-icon class="heart-pulse-mini">favorite</mat-icon>
+            <div class="cta-pill-mini">
+              <span>Réserver ce look</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION PRESTATIONS PHARES (Horizontal Scroll) -->
+  <!-- ============================================== -->
+  <section class="categories-section" id="tendances">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll fade-up">
+        <div>
+          <span class="sub-tag">INSPIRATION &amp; RITUELS</span>
+          <h2 class="section-title">Prestations Phares du Moment</h2>
+          <p class="section-subtitle">Les styles les plus demandés et réalisés par nos maîtres artisans coiffeurs</p>
+        </div>
+      </div>
+
+      <div class="trending-scroll-wrapper">
+        <div class="trending-grid">
+          <div
+            *ngFor="let cat of trendingCategories; let i = index"
+            class="trending-card-visual animate-on-scroll fade-up"
+            [style.transition-delay]="(i * 100) + 'ms'"
+            (click)="filterByCategory(cat.id)"
+          >
+            <img [src]="cat.image | safeMedia" [alt]="cat.titre" class="trending-img" loading="lazy" />
+            <div class="trending-overlay">
+              <span class="trending-badge">{{ cat.badge }}</span>
+              <h3 class="trending-title">{{ cat.titre }}</h3>
+              <p class="trending-desc">{{ cat.description }}</p>
+              <span class="trending-link">Explorer les salons spécialisés <mat-icon class="icon-xs">arrow_forward</mat-icon></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION SALONS D'EXCELLENCE (3D Tilt Cards)    -->
+  <!-- ============================================== -->
+  <section class="salons-section" id="salons">
+    <div class="section-container">
+      <div class="section-header animate-on-scroll fade-up">
+        <div>
+          <span class="sub-tag">NOS ADRESSES SÉLECTIONNÉES</span>
+          <h2 class="section-title">Salons Partenaires d'Excellence</h2>
+          <p class="section-subtitle">Chaque salon possède sa propre identité, son équipe et sa carte de soins dédiée</p>
+        </div>
+        <span class="salons-count-badge">{{ salons().length }} salon{{ salons().length > 1 ? 's' : '' }} disponible{{ salons().length > 1 ? 's' : '' }}</span>
+      </div>
+
+      <!-- Loading Skeleton State -->
+      <div *ngIf="chargement()" class="salons-grid skeleton-grid">
+        <div *ngFor="let s of [1,2,3,4,5,6]" class="salon-card-3d skeleton-card">
+          <div class="skeleton-media shimmer"></div>
+          <div class="card-body">
+            <div class="skeleton-line shimmer" style="width: 40%; height: 16px; margin-bottom: 12px;"></div>
+            <div class="skeleton-line shimmer" style="width: 75%; height: 22px; margin-bottom: 10px;"></div>
+            <div class="skeleton-line shimmer" style="width: 90%; height: 14px; margin-bottom: 8px;"></div>
+            <div class="skeleton-line shimmer" style="width: 60%; height: 14px; margin-bottom: 16px;"></div>
+            <div class="skeleton-line shimmer" style="width: 100%; height: 42px; border-radius: 20px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!chargement() && salons().length === 0" class="empty-salons animate-on-scroll scale-in">
+        <mat-icon class="icon-empty">storefront</mat-icon>
+        <h3>Aucun salon ne correspond à votre recherche</h3>
+        <p>Essayez d'ajuster vos mots-clés ou de réinitialiser la recherche.</p>
+        <button (click)="searchQuery = ''; chargerSalons()" class="btn-reset">
+          Voir tous les salons
+        </button>
+      </div>
+
+      <!-- Grille Salons 3D Tilt avec Glow Cursor -->
+      <div *ngIf="!chargement() && salons().length > 0" class="salons-grid">
+        <div
+          *ngFor="let salon of salons(); let i = index"
+          class="salon-card-3d animate-on-scroll fade-up"
+          [style.transition-delay]="(i * 80) + 'ms'"
+          #salonCard
+          (mousemove)="onCardTilt($event, salonCard)"
+          (mouseleave)="onCardTiltReset(salonCard)"
+          (click)="openSalonDrawer(salon)"
+        >
+          <!-- Glow overlay that follows cursor position -->
+          <div class="card-glow"></div>
+
+          <!-- Card Media (Cover HD + Logo + Badges) -->
+          <div class="card-media">
+            <img
+              [src]="resolveSalonCover(i, salon.coverUrl)"
+              [alt]="salon.nom"
+              class="salon-cover-img"
+              loading="lazy"
+              referrerpolicy="no-referrer"
+            />
+            <div class="card-media-overlay"></div>
+
+            <!-- Logo du salon en médaillon -->
+            <div class="salon-mini-logo">
+              <img
+                [src]="resolveSalonLogo(i, salon.logoUrl)"
+                [alt]="salon.nom"
+                class="mini-logo-img"
+                referrerpolicy="no-referrer"
+              />
+            </div>
+
+            <!-- Status Badge -->
+            <div class="badge-status" [class.is-open]="salon.statut">
+              <mat-icon class="icon-xs">{{ salon.statut ? 'check_circle' : 'cancel' }}</mat-icon>
+              <span>{{ salon.statut ? 'Ouvert aujourd\'hui' : 'Fermé' }}</span>
+            </div>
+
+            <!-- Bouton Favori -->
+            <button
+              class="btn-fav"
+              [class.is-fav]="isSalonFavori(salon.slug)"
+              (click)="toggleFavori($event, salon)"
+              title="Ajouter aux favoris"
+            >
+              <mat-icon class="icon-xs">{{ isSalonFavori(salon.slug) ? 'favorite' : 'favorite_border' }}</mat-icon>
+            </button>
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-body">
+            <div class="rating-city-row">
+              <span class="rating-chip" [class.is-new]="getSalonRating(salon, i).isNew">
+                <mat-icon class="icon-xs">{{ getSalonRating(salon, i).isNew ? 'auto_awesome' : 'star' }}</mat-icon>
+                <span>{{ getSalonRating(salon, i).isNew ? 'Nouveau salon' : getSalonRating(salon, i).note + ' ' + getSalonRating(salon, i).countText }}</span>
+              </span>
+              <span class="city-chip" *ngIf="salon.ville">
+                <mat-icon class="icon-xs">location_on</mat-icon> {{ salon.ville }}
+              </span>
+            </div>
+
+            <h3 class="salon-card-title">{{ salon.nom }}</h3>
+
+            <p *ngIf="salon.adresse" class="salon-address">
+              <mat-icon class="icon-xs">location_on</mat-icon>
+              <span>{{ salon.adresse }}</span>
+            </p>
+
+            <p class="salon-description">
+              {{ salon.description || 'Salon haut de gamme proposant coiffures stylisées, colorations créatives, rituels de soins et boutique cosmétique.' }}
+            </p>
+
+            <!-- Tags Prestations Dynamiques & Variés -->
+            <div class="salon-tags">
+              <span class="s-tag" *ngFor="let tag of getSalonTags(salon, i)">{{ tag }}</span>
+            </div>
+
+            <!-- CTA Exclusif : Ouvre le drawer salon -->
+            <div class="card-footer-actions">
+              <button
+                class="btn-view-vitrine btn-ripple"
+                (click)="openSalonDrawer(salon); createRipple($event); $event.stopPropagation()"
+              >
+                <span>Découvrir le Salon &amp; Réserver</span>
+                <mat-icon class="icon-xs arrow">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination / Charger Plus de Salons -->
+      <div *ngIf="!chargement() && hasMoreSalons()" class="load-more-section">
+        <button
+          (click)="chargerPlusDeSalons()"
+          [disabled]="chargementMore()"
+          class="btn-load-more btn-ripple"
+        >
+          <span *ngIf="!chargementMore()">Découvrir plus d'adresses d'exception (Page {{ pageIndex() + 2 }}/{{ totalPages() }}) <mat-icon class="icon-xs">arrow_forward</mat-icon></span>
+          <span *ngIf="chargementMore()" class="spinner-small"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION POURQUOI RÉSERVER AVEC NOUS (Scale-in) -->
+  <!-- ============================================== -->
+  <section class="why-us-section" id="pourquoi-nous">
+    <div class="section-container">
+      <div class="section-header text-center animate-on-scroll fade-up">
+        <span class="sub-tag">L'EXPÉRIENCE CLIENT</span>
+        <h2 class="section-title">Pourquoi Réserver sur Notre Plateforme ?</h2>
+        <p class="section-subtitle">Un standard d'excellence conçu pour vous simplifier la beauté</p>
+      </div>
+
+      <div class="why-grid">
+        <div class="why-card animate-on-scroll scale-in" style="transition-delay: 0ms">
+          <div class="why-icon-box">
+            <mat-icon class="icon-md">flash_on</mat-icon>
+          </div>
+          <h3>Réservation 24h/24 en direct</h3>
+          <p>Consultez les créneaux disponibles en temps réel chez chaque artisan et réservez instantanément, même au milieu de la nuit.</p>
+        </div>
+
+        <div class="why-card animate-on-scroll scale-in" style="transition-delay: 120ms">
+          <div class="why-icon-box">
+            <mat-icon class="icon-md">star</mat-icon>
+          </div>
+          <h3>Avis 100% vérifiés</h3>
+          <p>Seuls les clients ayant effectué et réglé une prestation dans un salon partenaire peuvent laisser un avis authentique.</p>
+        </div>
+
+        <div class="why-card animate-on-scroll scale-in" style="transition-delay: 240ms">
+          <div class="why-icon-box">
+            <mat-icon class="icon-md">science</mat-icon>
+          </div>
+          <h3>Passeport Capillaire &amp; Code PIN</h3>
+          <p>Conservez l'historique de vos soins, votre porosité et vos textures dans votre espace, et partagez-le en salon avec un code secret à 4 chiffres.</p>
+        </div>
+
+        <div class="why-card animate-on-scroll scale-in" style="transition-delay: 360ms">
+          <div class="why-icon-box">
+            <mat-icon class="icon-md">shopping_bag</mat-icon>
+          </div>
+          <h3>Click &amp; Collect Express</h3>
+          <p>Commandez vos shampoings, huiles et masques professionnels en ligne et retirez-les sans attente au comptoir du salon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION TÉMOIGNAGES CLIENTS (Slide-up stagger) -->
+  <!-- ============================================== -->
+  <section class="reviews-section">
+    <div class="section-container">
+      <div class="section-header text-center animate-on-scroll fade-up">
+        <span class="sub-tag">TÉMOIGNAGES &amp; EXPÉRIENCES</span>
+        <h2 class="section-title">Ce que disent nos utilisateurs</h2>
+      </div>
+
+      <div class="reviews-grid">
+        <div
+          *ngFor="let r of platformReviews; let i = index"
+          class="review-box animate-on-scroll slide-up"
+          [style.transition-delay]="(i * 150) + 'ms'"
+        >
+          <div class="review-user">
+            <img [src]="r.avatar | safeMedia" [alt]="r.nom" class="r-avatar" />
+            <div>
+              <strong>{{ r.nom }}</strong>
+              <span class="r-loc">{{ r.ville }}</span>
+            </div>
+            <div class="r-stars">
+              <mat-icon
+                *ngFor="let s of [1,2,3,4,5]"
+                class="star-fill"
+                [style.animation-delay]="(s * 100) + 'ms'"
+              >star</mat-icon>
+            </div>
+          </div>
+          <p class="r-quote">« {{ r.commentaire }} »</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- SECTION ESPACE SALONS PARTENAIRES (Counter)    -->
+  <!-- ============================================== -->
+  <section class="pro-pitch-section" id="partenaires-pro">
+    <div class="section-container">
+      <div class="pro-pitch-card animate-on-scroll fade-up">
+        <div class="pro-text-col">
+          <span class="pro-badge">ESPACE PROFESSIONNEL DU SALON</span>
+          <h2>Vous êtes propriétaire ou manager d'un salon de coiffure ?</h2>
+          <p>
+            Rejoignez le réseau des salons d'excellence. Profitez d'une vitrine web ultra-moderne dédiée à votre salon, remplissez vos créneaux creux, supprimez les no-shows grâce aux rappels et gérez votre équipe, stock et caisse en toute sérénité.
+          </p>
+          <div class="pro-stats-row">
+            <div class="stat-item">
+              <span
+                class="stat-number"
+                data-count-to="35"
+                data-count-prefix="+"
+                data-count-suffix="%"
+              >0</span>
+              <span class="stat-label">de nouveaux clients</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number stat-zero">0</span>
+              <span class="stat-label">no-show avec les rappels</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number stat-accent">24/7</span>
+              <span class="stat-label">prise de RDV en continu</span>
+            </div>
+          </div>
+          <div class="pro-actions">
+            <a routerLink="/login" class="btn-pro-partner btn-ripple" (click)="createRipple($event)">
+              <span>Devenir Salon Partenaire</span>
+              <mat-icon class="icon-xs">arrow_forward</mat-icon>
+            </a>
+            <a routerLink="/login" class="btn-pro-login">
+              Connexion Espace Gérant
+            </a>
+          </div>
+        </div>
+        <div class="pro-media-col">
+          <img [src]="trendingCategories[1].image | safeMedia" alt="Espace Salon Pro" class="pro-preview-img" referrerpolicy="no-referrer" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================== -->
+  <!-- FOOTER DE LA PLATEFORME (GLOBAL)               -->
+  <!-- ============================================== -->
+  <footer class="platform-footer">
+    <div class="platform-footer-container">
+      <div class="p-col">
+        <div class="p-brand">
+          <mat-icon class="icon-sm p-logo">content_cut</mat-icon>
+          <strong>HAIR STYLE ELITE</strong>
+        </div>
+        <p class="p-text">La première plateforme de mise en relation et de découverte des meilleurs salons et stylistes capillaires.</p>
+        <span class="p-copy">© 2026 Hair Style Elite • Tous droits réservés.</span>
+      </div>
+
+      <div class="p-col">
+        <h4>Salons par Villes</h4>
+        <ul>
+          <li><a routerLink="/explore" (click)="searchQuery = 'Dakar'; onSearch()">Salons à Dakar</a></li>
+          <li><a routerLink="/explore" (click)="searchQuery = 'Abidjan'; onSearch()">Salons à Abidjan</a></li>
+          <li><a routerLink="/explore" (click)="searchQuery = 'Paris'; onSearch()">Salons à Paris</a></li>
+          <li><a routerLink="/explore" (click)="searchQuery = 'Lomé'; onSearch()">Salons à Lomé</a></li>
+        </ul>
+      </div>
+
+      <div class="p-col">
+        <h4>Soins Populaires</h4>
+        <ul>
+          <li><a (click)="filterByCategory('tresses')">Tresses &amp; Nattes africaines</a></li>
+          <li><a (click)="filterByCategory('balayages')">Balayages &amp; Colorations d'art</a></li>
+          <li><a (click)="filterByCategory('soins')">Botox &amp; Soins réparateurs</a></li>
+          <li><a (click)="filterByCategory('barber')">Barbershop &amp; Coupe homme</a></li>
+        </ul>
+      </div>
+
+      <div class="p-col">
+        <h4>Partenaires &amp; Légal</h4>
+        <ul>
+          <li><a routerLink="/login">Espace Professionnel Gérant</a></li>
+          <li><a routerLink="/login">Devenir Salon Partenaire</a></li>
+          <li><a routerLink="/client">Portabilité RGPD &amp; Droit à l'oubli</a></li>
+          <li><a href="javascript:void(0)">Mentions Légales &amp; Confidentialité</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================== -->
+  <!-- BACK TO TOP BUTTON (Floating)                  -->
+  <!-- ============================================== -->
+  <button
+    *ngIf="showBackToTop()"
+    (click)="scrollToTop()"
+    class="btn-back-to-top"
+    title="Retour en haut"
+  >
+    <mat-icon class="icon-sm">arrow_upward</mat-icon>
+  </button>
+
+  <!-- SALON DRAWER -->
+  <app-explore-salon-drawer
+    [salon]="drawerSalon()"
+    [isOpen]="drawerOpen()"
+    (closed)="closeSalonDrawer()"
+  />
+
+</div>

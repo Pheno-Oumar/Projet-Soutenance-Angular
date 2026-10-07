@@ -1,0 +1,354 @@
+<div class="commandes-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Commandes</span>
+      </div>
+      <h1 class="page-title">Commandes Clients & Retraits</h1>
+      <p class="page-subtitle">Validation des commandes passées en ligne, contrôle des stocks et remise en boutique</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerCommandes()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Status Tabs -->
+  <div class="status-tabs-container">
+    <button class="tab-btn" [class.active]="selectedStatutTab === 'TOUTES'" (click)="setStatutTab('TOUTES')">
+      Toutes les commandes
+    </button>
+    <button class="tab-btn tab-attente" [class.active]="selectedStatutTab === 'EN_ATTENTE'" (click)="setStatutTab('EN_ATTENTE')">
+      En attente
+    </button>
+    <button class="tab-btn tab-validee" [class.active]="selectedStatutTab === 'VALIDEE'" (click)="setStatutTab('VALIDEE')">
+      Validées (Prêtes au retrait)
+    </button>
+    <button class="tab-btn tab-recuperee" [class.active]="selectedStatutTab === 'RECUPEREE'" (click)="setStatutTab('RECUPEREE')">
+      Récupérées
+    </button>
+    <button class="tab-btn tab-rejetee" [class.active]="selectedStatutTab === 'REJETEE'" (click)="setStatutTab('REJETEE')">
+      Rejetées
+    </button>
+    <button class="tab-btn tab-annulee" [class.active]="selectedStatutTab === 'ANNULEE'" (click)="setStatutTab('ANNULEE')">
+      Annulées
+    </button>
+  </div>
+
+  <!-- Filters Card -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par N° commande, client, email ou code..."
+        class="search-input"
+      />
+      @if (searchQuery) {
+        <button class="clear-search" (click)="searchQuery = ''"><mat-icon class="icon-xs">close</mat-icon></button>
+      }
+    </div>
+
+    <div class="date-filters">
+      <div class="date-group">
+        <label>Du :</label>
+        <input type="date" [(ngModel)]="dateDebut" (change)="chargerCommandes()" class="date-input" />
+      </div>
+      <div class="date-group">
+        <label>Au :</label>
+        <input type="date" [(ngModel)]="dateFin" (change)="chargerCommandes()" class="date-input" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Commandes Content -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des commandes clients...</p>
+    </div>
+  } @else if (filteredCommandes.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon icon-xl">shopping_bag</mat-icon>
+      <h3>Aucune commande trouvée</h3>
+      <p>Aucune commande ne correspond aux filtres et critères sélectionnés.</p>
+    </div>
+  } @else {
+    <div class="commandes-grid">
+      @for (cmd of filteredCommandes; track cmd.id) {
+        <div class="cmd-card" [class.card-validee]="cmd.statut === 'VALIDEE'" [class.card-attente]="cmd.statut === 'EN_ATTENTE'">
+          <!-- Header Card -->
+          <div class="cmd-card-header">
+            <div>
+              <span class="cmd-num">{{ cmd.numeroCommande }}</span>
+              <span class="cmd-date">{{ cmd.dateCommande | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <span class="badge-statut" [class]="getStatutBadgeClass(cmd.statut)">
+              {{ cmd.statut }}
+            </span>
+          </div>
+
+          <!-- Body Card -->
+          <div class="cmd-card-body">
+            <div class="client-box">
+              <div class="client-avatar">
+                {{ cmd.clientNom.substring(0, 1).toUpperCase() }}
+              </div>
+              <div class="client-details">
+                <span class="client-name">{{ cmd.clientNom }}</span>
+                <span class="client-email">{{ cmd.clientEmail }}</span>
+              </div>
+            </div>
+
+            <!-- Code de Retrait mis en valeur si validée -->
+            @if (cmd.codeRetrait) {
+              <div class="code-retrait-banner">
+                <span class="code-label">Code de retrait client :</span>
+                <span class="code-val">{{ cmd.codeRetrait }}</span>
+              </div>
+            }
+
+            @if (cmd.motifRejet) {
+              <div class="rejet-banner">
+                <strong>Motif du rejet :</strong> {{ cmd.motifRejet }}
+              </div>
+            }
+
+            <!-- Lignes de commande aperçu -->
+            <div class="lignes-preview">
+              <div class="lignes-header">
+                <span>{{ cmd.lignes.length }} article(s)</span>
+                <span class="total-price">{{ formatMontant(cmd.montantTotal) }}</span>
+              </div>
+              <div class="lignes-list">
+                @for (ligne of cmd.lignes; track ligne.id) {
+                  <div class="ligne-item">
+                    <span class="ligne-nom">{{ ligne.quantite }}x {{ ligne.produitNom }}</span>
+                    <span class="ligne-subtotal">{{ formatMontant(ligne.sousTotal) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="cmd-card-footer">
+            <button class="btn btn-secondary btn-sm" (click)="ouvrirModalDetail(cmd)">
+              <mat-icon class="icon-xs">visibility</mat-icon>
+              <span>Détails</span>
+            </button>
+
+            <div class="action-buttons-group">
+              @if (cmd.statut === 'EN_ATTENTE') {
+                <button class="btn btn-sm btn-danger" (click)="ouvrirModalRejet(cmd)">
+                  <mat-icon class="icon-xs">close</mat-icon>
+                  <span>Rejeter</span>
+                </button>
+                <button class="btn btn-sm btn-valider" (click)="validerCommande(cmd)">
+                  <mat-icon class="icon-xs">check</mat-icon>
+                  <span>Valider & Déstocker</span>
+                </button>
+              }
+
+              @if (cmd.statut === 'VALIDEE') {
+                <button class="btn btn-sm btn-primary" (click)="ouvrirModalRetrait(cmd)">
+                  <mat-icon class="icon-xs">file_download_done</mat-icon>
+                  <span>Confirmer le Retrait</span>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL : Détail Commande -->
+  @if (isDetailModalOpen() && selectedCommandeDetail) {
+    <div class="modal-backdrop" (click)="fermerModalDetail()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Détail de la Commande</h3>
+            <p class="modal-subtitle">N° {{ selectedCommandeDetail.numeroCommande }} - {{ selectedCommandeDetail.dateCommande | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalDetail()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-grid">
+            <div class="detail-block">
+              <span class="detail-block-title">Client</span>
+              <p class="detail-text"><strong>{{ selectedCommandeDetail.clientNom }}</strong></p>
+              <p class="detail-sub">{{ selectedCommandeDetail.clientEmail }}</p>
+            </div>
+
+            <div class="detail-block">
+              <span class="detail-block-title">Statut actuel</span>
+              <span class="badge-statut" [class]="getStatutBadgeClass(selectedCommandeDetail.statut)">
+                {{ selectedCommandeDetail.statut }}
+              </span>
+              @if (selectedCommandeDetail.codeRetrait) {
+                <p class="detail-sub mt-2">Code retrait: <strong>{{ selectedCommandeDetail.codeRetrait }}</strong></p>
+              }
+            </div>
+          </div>
+
+          <div class="items-table-wrap">
+            <table class="detail-items-table">
+              <thead>
+                <tr>
+                  <th>Article</th>
+                  <th>Prix Unitaire</th>
+                  <th>Quantité</th>
+                  <th class="text-right">Sous-total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of selectedCommandeDetail.lignes; track ligne.id) {
+                  <tr>
+                    <td>{{ ligne.produitNom }}</td>
+                    <td>{{ formatMontant(ligne.prixUnitaire) }}</td>
+                    <td>{{ ligne.quantite }}</td>
+                    <td class="text-right font-bold">{{ formatMontant(ligne.sousTotal) }}</td>
+                  </tr>
+                }
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" class="text-right"><strong>Montant Total :</strong></td>
+                  <td class="text-right total-final">{{ formatMontant(selectedCommandeDetail.montantTotal) }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          @if (selectedCommandeDetail.motifRejet) {
+            <div class="rejet-banner mt-3">
+              <strong>Motif du rejet :</strong> {{ selectedCommandeDetail.motifRejet }}
+            </div>
+          }
+
+          @if (selectedCommandeDetail.traiteParNom) {
+            <p class="detail-sub mt-3">
+              Traité par {{ selectedCommandeDetail.traiteParNom }} le {{ selectedCommandeDetail.dateTraitement | date:'dd/MM/yyyy HH:mm' }}
+            </p>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalDetail()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Rejet Commande -->
+  @if (isRejectModalOpen() && commandeToReject) {
+    <div class="modal-backdrop" (click)="fermerModalRejet()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Rejeter la Commande</h3>
+            <p class="modal-subtitle">N° {{ commandeToReject.numeroCommande }} ({{ commandeToReject.clientNom }})</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalRejet()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Motif du rejet (obligatoire) *</label>
+            <textarea [(ngModel)]="motifRejet" rows="3" class="form-input" placeholder="Ex: Produit en rupture de stock définitive..."></textarea>
+            <small class="form-hint">Le client recevra ce motif de notification.</small>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalRejet()" [disabled]="isSubmittingReject()">
+            Annuler
+          </button>
+          <button class="btn btn-danger" (click)="confirmerRejet()" [disabled]="isSubmittingReject()">
+            @if (isSubmittingReject()) {
+              <span>Traitement...</span>
+            } @else {
+              <span>Confirmer le Rejet</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Confirmer Retrait -->
+  @if (isRetraitModalOpen() && commandeToRetrait) {
+    <div class="modal-backdrop" (click)="fermerModalRetrait()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Remise de la Commande</h3>
+            <p class="modal-subtitle">N° {{ commandeToRetrait.numeroCommande }} (Client: {{ commandeToRetrait.clientNom }})</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalRetrait()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="retrait-prompt">
+            <p>Demandez au client de vous présenter son <strong>Code de Retrait</strong> afin de finaliser la remise des articles.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Code de Retrait présenté *</label>
+            <input
+              type="text"
+              [(ngModel)]="codeRetraitSaisi"
+              class="form-input code-input-field"
+              placeholder="Ex: RET-4589"
+              autofocus
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalRetrait()" [disabled]="isSubmittingRetrait()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="confirmerRetrait()" [disabled]="isSubmittingRetrait()">
+            @if (isSubmittingRetrait()) {
+              <span>Validation...</span>
+            } @else {
+              <span>Valider le Retrait</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

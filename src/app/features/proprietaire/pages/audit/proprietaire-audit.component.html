@@ -1,0 +1,256 @@
+<div class="audit-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Journal d'Audit & Sécurité</h1>
+      <p class="page-subtitle">Historique horodaté et traçabilité de l'ensemble des opérations effectuées sur votre salon</p>
+    </div>
+    <button class="btn btn-secondary" (click)="chargerLogs()" [disabled]="isLoading()">
+      <mat-icon class="btn-icon" [class.animate-spin]="isLoading()">refresh</mat-icon>
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ALERTS -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- TABS NAV -->
+  <div class="tabs-nav">
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'TOUS'"
+      (click)="setTab('TOUS')"
+    >
+      <mat-icon class="tab-icon">format_list_bulleted</mat-icon>
+      Tous les événements
+    </button>
+
+    <button
+      type="button"
+      class="tab-btn"
+      [class.active]="activeTab === 'SENSIBLES'"
+      (click)="setTab('SENSIBLES')"
+    >
+      <mat-icon class="tab-icon warning-icon">shield</mat-icon>
+      Actions Sensibles
+    </button>
+  </div>
+
+  <!-- FILTER CONTROLS -->
+  <div class="filters-card">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Rechercher par mot-clé (nom, email, IP, détail)..."
+        [(ngModel)]="motCle"
+        (keyup.enter)="rechercher()"
+        class="search-input"
+      />
+      <button class="btn btn-search" (click)="rechercher()">Rechercher</button>
+    </div>
+
+    @if (activeTab === 'TOUS') {
+      <div class="advanced-filters">
+        <div class="filter-group">
+          <label>Type d'action</label>
+          <select [(ngModel)]="filtre.action" (change)="chargerLogs()" class="filter-select">
+            <option [ngValue]="undefined">Toutes les actions</option>
+            @for (act of actionsDisponibles; track act) {
+              <option [value]="act">{{ act }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Entité ciblée</label>
+          <input
+            type="text"
+            placeholder="Ex: EMPLOYE, PRESTATION..."
+            [(ngModel)]="filtre.entite"
+            (keyup.enter)="chargerLogs()"
+            class="filter-input"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label>Date Début</label>
+          <input
+            type="date"
+            [(ngModel)]="filtre.dateDebut"
+            (change)="chargerLogs()"
+            class="filter-input"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label>Date Fin</label>
+          <input
+            type="date"
+            [(ngModel)]="filtre.dateFin"
+            (change)="chargerLogs()"
+            class="filter-input"
+          />
+        </div>
+
+        <button class="btn-reset" (click)="reinitialiserFiltres()" title="Réinitialiser les filtres">
+          <mat-icon class="icon-xs">close</mat-icon>
+          Effacer
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- AUDIT LOGS TABLE -->
+  <div class="table-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des journaux d'audit...</span>
+      </div>
+    } @else if (logs().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">history</mat-icon>
+        <p>Aucun événement d'audit ne correspond aux critères sélectionnés.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date & Heure</th>
+              <th>Action</th>
+              <th>Entité</th>
+              <th>Auteur</th>
+              <th>Adresse IP</th>
+              <th class="text-right">Détails</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (log of logs(); track log.id) {
+              <tr>
+                <td class="cell-date">
+                  <span class="date-main">{{ log.dateHeure | date:'dd/MM/yyyy' }}</span>
+                  <span class="date-sub">{{ log.dateHeure | date:'HH:mm:ss' }}</span>
+                </td>
+
+                <td>
+                  <span class="badge" [ngClass]="getActionBadgeClass(log.action)">
+                    {{ log.action }}
+                  </span>
+                </td>
+
+                <td>
+                  <strong>{{ log.entite }}</strong>
+                  @if (log.entiteId) {
+                    <span class="text-muted"> (#{{ log.entiteId }})</span>
+                  }
+                </td>
+
+                <td>
+                  <div class="author-info">
+                    <span class="author-name">{{ log.compteNom || 'Système' }}</span>
+                    @if (log.compteEmail) {
+                      <span class="author-email">{{ log.compteEmail }}</span>
+                    }
+                  </div>
+                </td>
+
+                <td class="cell-ip">
+                  <code>{{ log.adresseIP || 'N/A' }}</code>
+                </td>
+
+                <td class="text-right">
+                  <button class="btn-icon-action" (click)="ouvrirModalDetail(log)" title="Voir le détail de l'événement">
+                    <mat-icon class="icon-sm">visibility</mat-icon>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- DETAIL MODAL -->
+  @if (showDetailModal() && selectedLog()) {
+    <div class="modal-overlay" (click)="fermerModalDetail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="badge" [ngClass]="getActionBadgeClass(selectedLog()!.action)">
+              {{ selectedLog()!.action }}
+            </span>
+            <h3 class="modal-title">Détail de l'événement #{{ selectedLog()!.id }}</h3>
+          </div>
+          <button class="btn-close" (click)="fermerModalDetail()" aria-label="Fermer la boîte de dialogue">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Horodatage précis</span>
+              <strong class="detail-val">{{ selectedLog()!.dateHeure | date:'dd/MM/yyyy HH:mm:ss' }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Entité & Référence</span>
+              <strong class="detail-val">{{ selectedLog()!.entite }} {{ selectedLog()!.entiteId ? '(ID: ' + selectedLog()!.entiteId + ')' : '' }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Utilisateur responsable</span>
+              <strong class="detail-val">{{ selectedLog()!.compteNom || 'Non renseigné' }} ({{ selectedLog()!.compteEmail || 'N/A' }})</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Rôle exécutant</span>
+              <strong class="detail-val">{{ selectedLog()!.roleUtilise || 'N/A' }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Adresse IP</span>
+              <strong class="detail-val">{{ selectedLog()!.adresseIP || 'Non renseignée' }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-label">Navigateur / User-Agent</span>
+              <span class="detail-val small-text">{{ selectedLog()!.userAgent || 'N/A' }}</span>
+            </div>
+          </div>
+
+          @if (selectedLog()!.ancienneValeur || selectedLog()!.nouvelleValeur) {
+            <div class="diff-section">
+              <h4 class="diff-title">Modifications appliquées</h4>
+
+              <div class="diff-comparison">
+                <div class="diff-box">
+                  <span class="diff-header">Ancienne Valeur :</span>
+                  <pre class="diff-code">{{ selectedLog()!.ancienneValeur || '(Aucune valeur antérieure)' }}</pre>
+                </div>
+
+                <div class="diff-box">
+                  <span class="diff-header">Nouvelle Valeur :</span>
+                  <pre class="diff-code">{{ selectedLog()!.nouvelleValeur || '(Aucune nouvelle valeur)' }}</pre>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="fermerModalDetail()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,75 @@
+<main class="page-404-container">
+  <!-- Glowing ambient light orbs -->
+  <div class="ambient-orb orb-primary" aria-hidden="true"></div>
+  <div class="ambient-orb orb-secondary" aria-hidden="true"></div>
+
+  <!-- 3D Perspective Scene -->
+  <section class="scene-3d">
+    <div
+      #card3d
+      class="card-3d"
+      [class.card-hovered]="isHovered()"
+      [style.transform]="'perspective(1000px) rotateX(' + tiltRotateX() + 'deg) rotateY(' + tiltRotateY() + 'deg)'"
+      (mousemove)="onMouseMove($event, card3d)"
+      (mouseleave)="onMouseLeave()"
+    >
+      <!-- Specular glare sheen overlay -->
+      <div class="card-glare" aria-hidden="true"></div>
+
+      <!-- Floating 3D Layer: Badge -->
+      <div class="layer-depth layer-badge">
+        <span class="status-badge">
+          <span class="badge-dot"></span>
+          ERREUR 404 • ESPACE INTROUVABLE
+        </span>
+      </div>
+
+      <!-- Floating 3D Layer: Icon / Hologram -->
+      <div class="layer-depth layer-illustration">
+        <div class="hologram-circle">
+          <mat-icon class="hologram-mat-icon">content_cut</mat-icon>
+        </div>
+      </div>
+
+      <!-- Floating 3D Layer: Big 404 Title -->
+      <div class="layer-depth layer-title">
+        <h1 class="glitch-title" data-text="404">404</h1>
+        <p class="subtitle-3d">Coupe manquée ! Ce lien semble s'être égaré dans le salon.</p>
+      </div>
+
+      <!-- Floating 3D Layer: Description -->
+      <div class="layer-depth layer-description">
+        <p class="explanation-text">
+          La page, l'espace métier ou le salon que vous essayez d'atteindre n'existe pas ou n'est plus accessible à cette adresse.
+        </p>
+      </div>
+
+      <!-- Floating 3D Layer: Action Buttons -->
+      <div class="layer-depth layer-actions">
+        <button
+          type="button"
+          id="btn-404-home"
+          class="btn-primary-3d"
+          (click)="goToHome()"
+        >
+          <mat-icon class="btn-icon">home</mat-icon>
+          @if (isAuthenticated()) {
+            Rejoindre Mon Espace
+          } @else {
+            Retour à l'accueil
+          }
+        </button>
+
+        <button
+          type="button"
+          id="btn-404-back"
+          class="btn-secondary-3d"
+          (click)="goBack()"
+        >
+          <mat-icon class="btn-icon">arrow_back</mat-icon>
+          Page précédente
+        </button>
+      </div>
+    </div>
+  </section>
+</main>

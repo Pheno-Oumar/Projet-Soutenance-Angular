@@ -1,0 +1,217 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestion des Retards & No-Shows</h1>
+      <p class="page-subtitle">Suivi en temps réel des dépassements d'horaires et libération immédiate des créneaux</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" (click)="chargerDonnees()">
+        <mat-icon class="icon-sm">refresh</mat-icon> Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Onglets -->
+  <div class="tabs-nav">
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'actifs'"
+      (click)="changerOnglet('actifs')"
+    >
+      Retards Actifs du Jour 
+      <span class="tab-count" *ngIf="retardsActifs().length > 0">{{ retardsActifs().length }}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="activeTab === 'historique'"
+      (click)="changerOnglet('historique')"
+    >
+      Historique des No-Shows & Signalements
+    </button>
+  </div>
+
+  <!-- Chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des dossiers de retards...</p>
+  </div>
+
+  <!-- Contenu Onglet 1: Retards Actifs -->
+  <div *ngIf="!isLoading() && activeTab === 'actifs'" class="tab-content">
+    <div *ngIf="retardsActifs().length === 0" class="empty-state success-empty">
+      <div class="empty-icon"><mat-icon class="icon-xl">check_circle</mat-icon></div>
+      <h3>Aucun client en retard actuellement</h3>
+      <p>Tous les rendez-vous de la journée se déroulent conformément au planning.</p>
+    </div>
+
+    <div *ngIf="retardsActifs().length > 0" class="retards-grid">
+      <div *ngFor="let ret of retardsActifs()" class="retard-card">
+        <div class="retard-card-header">
+          <div class="delay-badge">
+            Retard : +{{ ret.minutesRetard }} min
+          </div>
+          <span class="badge badge-warning">{{ ret.statut }}</span>
+        </div>
+
+        <div class="retard-card-body">
+          <div class="client-info">
+            <h3 class="client-name">
+              <mat-icon class="icon-xs">person</mat-icon> {{ ret.clientNom }}
+            </h3>
+            <span class="client-phone" *ngIf="ret.clientTelephone">
+              <mat-icon class="icon-xs">call</mat-icon> {{ ret.clientTelephone }}
+            </span>
+          </div>
+
+          <div class="time-info">
+            <span>Heure prévue : <strong>{{ ret.heurePrevue }}</strong></span>
+            <span>Coiffeur : <strong><mat-icon class="icon-xs">person</mat-icon> {{ ret.coiffeurNom }}</strong></span>
+          </div>
+        </div>
+
+        <div class="retard-card-footer">
+          <button class="btn-action" (click)="ouvrirModalTraitement(ret)">
+            <mat-icon class="icon-xs">bolt</mat-icon> Décider de l'action à mener
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu Onglet 2: Historique -->
+  <div *ngIf="!isLoading() && activeTab === 'historique'" class="tab-content">
+    <div *ngIf="historiqueRetards().length === 0" class="empty-state">
+      <p>Aucun antécédent de no-show enregistré dans l'historique.</p>
+    </div>
+
+    <div *ngIf="historiqueRetards().length > 0" class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Date & Heure</th>
+            <th>Client</th>
+            <th>Téléphone</th>
+            <th>Coiffeur</th>
+            <th>Minutes de Retard</th>
+            <th>Statut Final</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of historiqueRetards()">
+            <td>{{ h.heurePrevue }}</td>
+            <td><strong>{{ h.clientNom }}</strong></td>
+            <td>{{ h.clientTelephone || '—' }}</td>
+            <td><mat-icon class="icon-xs">person</mat-icon> {{ h.coiffeurNom }}</td>
+            <td>
+              <span class="pill-delay">+{{ h.minutesRetard }} min</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="h.statut === 'NO_SHOW' ? 'badge-danger' : 'badge-secondary'">
+                {{ h.statut }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal de Traitement Décisionnel -->
+  <div *ngIf="isTraitementModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Traitement du Retard Client</h2>
+        <button class="modal-close" (click)="fermerModalTraitement()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="retard-summary">
+          <p>
+            Client : <strong>{{ selectedRetard?.clientNom }}</strong>
+            <span *ngIf="selectedRetard?.clientTelephone"> • <mat-icon class="icon-xs">call</mat-icon> {{ selectedRetard?.clientTelephone }}</span>
+          </p>
+          <p>
+            Prévu à : <strong>{{ selectedRetard?.heurePrevue }}</strong> • 
+            Retard constaté : <strong class="text-danger">+{{ selectedRetard?.minutesRetard }} minutes</strong>
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label>Action à appliquer *</label>
+          <div class="action-choices">
+            <label class="choice-card" [class.selected]="traitementDto.action === 'DECALER'">
+              <input
+                type="radio"
+                name="action"
+                value="DECALER"
+                [(ngModel)]="traitementDto.action"
+              />
+              <div>
+                <strong>Décaler le créneau</strong>
+                <p>Le client est en route ou a prévenu du retard</p>
+              </div>
+            </label>
+
+            <label class="choice-card choice-danger" [class.selected]="traitementDto.action === 'NO_SHOW'">
+              <input
+                type="radio"
+                name="action"
+                value="NO_SHOW"
+                [(ngModel)]="traitementDto.action"
+              />
+              <div>
+                <strong>Déclarer NO_SHOW (Absent)</strong>
+                <p>Client non présenté (> 15 min). Libère immédiatement le fauteuil !</p>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Options pour DECALER -->
+        <div class="form-group" *ngIf="traitementDto.action === 'DECALER'">
+          <label for="decalageMin">Minutes de décalage</label>
+          <select id="decalageMin" [(ngModel)]="traitementDto.minutesDecalage" class="form-input">
+            <option [value]="10">10 minutes</option>
+            <option [value]="15">15 minutes (Recommandé)</option>
+            <option [value]="20">20 minutes</option>
+            <option [value]="30">30 minutes</option>
+            <option [value]="45">45 minutes</option>
+          </select>
+        </div>
+
+        <!-- Motif justificatif -->
+        <div class="form-group">
+          <label for="traitementMotif">Motif / Commentaire</label>
+          <textarea
+            id="traitementMotif"
+            [(ngModel)]="traitementDto.motif"
+            class="form-input"
+            rows="2"
+            placeholder="Ex : Le client a appelé pour prévenir qu'il est coincé dans les embouteillages..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalTraitement()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isSubmittingTraitement()"
+          (click)="validerTraitement()"
+        >
+          {{ isSubmittingTraitement() ? 'Enregistrement...' : 'Appliquer la décision' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

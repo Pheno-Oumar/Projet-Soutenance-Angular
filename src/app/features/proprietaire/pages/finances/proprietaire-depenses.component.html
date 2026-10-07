@@ -1,0 +1,104 @@
+<div class="depenses-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Dépenses & Frais du Salon</h1>
+      <p class="page-subtitle">Suivi des charges d'exploitation, approvisionnements, salaires et factures courantes</p>
+    </div>
+
+    <div class="header-summary">
+      <span class="summary-label">Total des dépenses</span>
+      <strong class="summary-val text-red">-{{ formatDevise(calculerTotal()) }}</strong>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Rechercher par libellé ou auteur..."
+        [(ngModel)]="searchTerm"
+      />
+    </div>
+
+    <select class="filter-select" [(ngModel)]="selectedCategorie">
+      <option value="">Toutes les catégories</option>
+      <option value="LOYER">Loyer</option>
+      <option value="ELECTRICITE">Électricité</option>
+      <option value="EAU">Eau</option>
+      <option value="INTERNET">Internet</option>
+      <option value="SALAIRE">Salaires</option>
+      <option value="FOURNITURES">Fournitures</option>
+      <option value="ACHAT_STOCK">Achat Stock</option>
+      <option value="ENTRETIEN">Entretien</option>
+      <option value="TRANSPORT">Transport</option>
+      <option value="AUTRE">Autre</option>
+    </select>
+
+    <button type="button" class="btn-refresh" (click)="chargerDepenses()" [disabled]="isLoading()">
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- DATA TABLE -->
+  <div class="data-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des dépenses...</span>
+      </div>
+    } @else if (filteredDepenses.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">account_balance_wallet</mat-icon>
+        <h3>Aucune dépense répertoriée</h3>
+        <p>Aucune charge ne correspond aux critères sélectionnés.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Catégorie</th>
+              <th>Description / Motif</th>
+              <th>Enregistré par</th>
+              <th class="text-right">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (d of filteredDepenses; track d.id) {
+              <tr>
+                <td>
+                  <span class="date-text">{{ d.dateDepense | date:'dd/MM/yyyy' }}</span>
+                </td>
+                <td>
+                  <span class="cat-pill">{{ d.categorie }}</span>
+                </td>
+                <td>
+                  <strong>{{ d.description || 'Frais de salon' }}</strong>
+                </td>
+                <td>
+                  <span class="user-text">{{ d.comptableNomComplet || 'Comptable' }}</span>
+                </td>
+                <td class="text-right text-red font-bold">
+                  -{{ formatDevise(d.montant) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

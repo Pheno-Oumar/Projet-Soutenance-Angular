@@ -1,0 +1,1151 @@
+<div class="page-container">
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">File d'Attente & Salon en Direct</h1>
+      <p class="page-subtitle">Gestion en temps réel : salon d'attente, fauteuils de coiffure et comptoir d'encaissement</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-primary" (click)="ouvrirModalWalkIn('EN_ATTENTE')">
+        <mat-icon class="icon-sm">weekend</mat-icon> Client Salle d'Attente
+      </button>
+      <button class="btn-primary-alt" (click)="ouvrirModalWalkIn('EN_COURS')">
+        <mat-icon class="icon-sm">content_cut</mat-icon> Direct au Fauteuil
+      </button>
+      <button class="btn-secondary" (click)="chargerDonnees()" title="Actualiser le tableau de bord">
+        <mat-icon class="icon-sm">refresh</mat-icon> Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Barre de Statut & Métriques -->
+  <div class="metrics-bar">
+    <div class="metric-pill pill-lounge">
+      <mat-icon class="pill-icon">weekend</mat-icon>
+      <div class="pill-info">
+        <span class="pill-val">{{ prestationsEnAttente().length }}</span>
+        <span class="pill-lbl">En attente (Lounge)</span>
+      </div>
+    </div>
+
+    <div class="metric-pill pill-chair">
+      <mat-icon class="pill-icon">content_cut</mat-icon>
+      <div class="pill-info">
+        <span class="pill-val">{{ prestationsEnCours().length }}</span>
+        <span class="pill-lbl">Aux fauteuils (En cours)</span>
+      </div>
+    </div>
+
+    <div class="metric-pill pill-checkout">
+      <mat-icon class="pill-icon">credit_card</mat-icon>
+      <div class="pill-info">
+        <span class="pill-val">{{ facturesAEncaisser().length }}</span>
+        <span class="pill-lbl">Prêts à encaisser</span>
+      </div>
+    </div>
+
+    <div class="metric-pill pill-caisse" [ngClass]="sessionCourante()?.statut === 'OUVERTE' ? 'caisse-ok' : 'caisse-warn'">
+      <mat-icon class="pill-icon">{{ sessionCourante()?.statut === 'OUVERTE' ? 'point_of_sale' : 'lock' }}</mat-icon>
+      <div class="pill-info">
+        <span class="pill-val">{{ sessionCourante()?.statut === 'OUVERTE' ? 'Caisse Ouverte' : 'Caisse Fermée' }}</span>
+        <span class="pill-lbl">{{ sessionCourante()?.statut === 'OUVERTE' ? ((sessionCourante()?.totalEntrees || 0) | number) + ' FCFA encaissés' : 'Encaissement bloqué' }}</span>
+      </div>
+      <a routerLink="../caisse" class="caisse-mini-btn" *ngIf="sessionCourante()?.statut !== 'OUVERTE'">Ouvrir →</a>
+    </div>
+
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Filtrer client, coiffeur..."
+        class="search-input"
+      />
+    </div>
+  </div>
+
+  <!-- Synchronisation Rendez-vous du Jour -->
+  <div class="rdv-today-card" *ngIf="rendezVousDuJour().length > 0">
+    <div class="rdv-today-header" (click)="toggleRdvPanel()">
+      <div class="rdv-header-title">
+        <mat-icon class="rdv-header-icon">calendar_month</mat-icon>
+        <h3>Rendez-vous programmés aujourd'hui ({{ rendezVousDuJour().length }})</h3>
+        <span class="badge-sync-live">Synchronisation Directe</span>
+      </div>
+      <button class="btn-toggle-rdv" type="button">
+        {{ isRdvPanelExpanded() ? '▲ Masquer' : '▼ Déplier (' + rendezVousDuJour().length + ')' }}
+      </button>
+    </div>
+
+    <div class="rdv-today-body" *ngIf="isRdvPanelExpanded()">
+      <div class="rdv-cards-scroll">
+        <div
+          *ngFor="let rdv of rendezVousDuJour()"
+          class="rdv-card-item"
+          [class.rdv-in-salon]="isRdvAlreadyInQueue(rdv.rdvId || rdv.id!)"
+        >
+          <div class="rdv-card-top">
+            <div class="rdv-time-box">
+              <mat-icon class="icon-sm">schedule</mat-icon>
+              <strong>{{ (rdv.dateHeureDebut || rdv.dateHeurePrevue) | date:'HH:mm' }}</strong>
+            </div>
+            <span
+              class="rdv-status-pill"
+              [ngClass]="rdv.statut === 'CONFIRME' ? 'status-confirme' : (rdv.statut === 'EN_COURS' ? 'status-encours' : 'status-autre')"
+            >
+              {{ rdv.statut }}
+            </span>
+          </div>
+
+          <div class="rdv-client-info">
+            <strong class="rdv-client-title">
+              <mat-icon class="icon-sm">person</mat-icon>
+              {{ rdv.prenomClient || rdv.clientPrenom }} {{ rdv.nomClient || rdv.clientNom }}
+            </strong>
+            <span class="rdv-client-contact" *ngIf="rdv.telephoneClient || rdv.clientTelephone">
+              <mat-icon class="icon-sm">phone</mat-icon> {{ rdv.telephoneClient || rdv.clientTelephone }}
+            </span>
+          </div>
+
+          <div class="rdv-coiffeur-row">
+            <span class="rdv-coiff-lbl">Coiffeur :</span>
+            <span class="rdv-coiff-val">
+              <mat-icon class="icon-sm">content_cut</mat-icon> {{ rdv.coiffeurPrenom }} {{ rdv.coiffeurNom }}
+              <span *ngIf="isCoiffeurOccupe(rdv.coiffeurAffectationId)" class="chip-occupe"><mat-icon class="icon-xs">cancel</mat-icon> Occupé</span>
+              <span *ngIf="!isCoiffeurOccupe(rdv.coiffeurAffectationId)" class="chip-libre"><mat-icon class="icon-xs">check_circle</mat-icon> Libre</span>
+            </span>
+          </div>
+
+          <div class="rdv-actions-bar">
+            <!-- Si pas encore présent en salon -->
+            <button
+              *ngIf="!isRdvAlreadyInQueue(rdv.rdvId || rdv.id!) && rdv.statut === 'CONFIRME'"
+              class="btn-rdv-action btn-checkin"
+              (click)="pointerArriveeRDV(rdv)"
+              title="Ajouter le client en salle d'attente"
+            >
+              <mat-icon class="icon-sm">login</mat-icon> Pointer l'arrivée
+            </button>
+            <span *ngIf="isRdvAlreadyInQueue(rdv.rdvId || rdv.id!)" class="badge-in-salon">
+              <mat-icon class="icon-sm">weekend</mat-icon> En salon d'attente
+            </span>
+
+            <button
+              *ngIf="rdv.statut === 'CONFIRME'"
+              class="btn-rdv-action btn-permute"
+              (click)="ouvrirModalPermuter(rdv)"
+              title="Permuter vers un autre coiffeur libre"
+            >
+              <mat-icon class="icon-sm">swap_horiz</mat-icon> Permuter
+            </button>
+
+            <button
+              *ngIf="rdv.statut === 'CONFIRME'"
+              class="btn-rdv-action btn-delay"
+              (click)="ouvrirModalNotifierRetard(rdv)"
+              title="Envoyer un message de retard personnalisé au client"
+            >
+              <mat-icon class="icon-sm">campaign</mat-icon> Notifier retard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- État Chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Actualisation de la file d'attente et du salon en direct...</p>
+  </div>
+
+  <!-- SECTION FAUTEUILS & POSTES DE COIFFURE 3D EN DIRECT -->
+  <div class="stations-deck-section" *ngIf="!isLoading() && coiffeurs().length > 0">
+    <div class="stations-deck-header" (click)="toggleStationsPanel()">
+      <div class="stations-title-wrap">
+        <mat-icon class="stations-header-icon">chair</mat-icon>
+        <div>
+          <h3 class="stations-section-title">Fauteuils & Postes de Coiffure en Direct (Vue 3D)</h3>
+          <p class="stations-section-sub">Vue spatiale des fauteuils : disponibilité en temps réel, chronomètres vivants et assignation rapide</p>
+        </div>
+      </div>
+      <div class="stations-header-stats">
+        <span class="station-stat-pill stat-free">
+          <mat-icon class="icon-xs">check_circle</mat-icon> {{ getCoiffeursLibres().length }} Libre(s)
+        </span>
+        <span class="station-stat-pill stat-busy">
+          <mat-icon class="icon-xs">chair</mat-icon> {{ prestationsEnCours().length }} Au fauteuil
+        </span>
+        <button class="btn-toggle-stations" type="button">
+          {{ isStationsPanelExpanded() ? '▲ Réduire' : '▼ Déplier (' + fauteuilsStations().length + ' fauteuils)' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Grille 3D Isometric des Fauteuils -->
+    <div class="stations-grid-3d" *ngIf="isStationsPanelExpanded()">
+      <div
+        *ngFor="let station of fauteuilsStations()"
+        class="station-card-3d"
+        [class.station-libre]="!station.isOccupe"
+        [class.station-occupe]="station.isOccupe"
+        (click)="clicSurFauteuilStation(station)"
+        [title]="station.isOccupe ? 'Prestation en cours - Cliquer pour terminer' : 'Fauteuil libre - Cliquer pour installer un client'"
+      >
+        <!-- Garniture supérieure façon cuir & métal doré -->
+        <div class="station-top-trim"></div>
+
+        <div class="station-card-inner">
+          <div class="station-head">
+            <div class="chair-badge-wrapper">
+              <div class="chair-3d-glyph" [class.glyph-pulse-free]="!station.isOccupe" [class.glyph-pulse-busy]="station.isOccupe">
+                <mat-icon>chair</mat-icon>
+              </div>
+              <span class="chair-live-indicator" [class.indicator-free]="!station.isOccupe" [class.indicator-busy]="station.isOccupe"></span>
+            </div>
+
+            <div class="station-barber-info">
+              <strong class="station-barber-name">
+                <mat-icon class="icon-xs">content_cut</mat-icon>
+                {{ station.coiffeur.coiffeurPrenom }} {{ station.coiffeur.coiffeurNom }}
+              </strong>
+              <span class="station-chair-tag tag-free" *ngIf="!station.isOccupe">Fauteuil Libre</span>
+              <span class="station-chair-tag tag-active" *ngIf="station.isOccupe">En Prestation</span>
+            </div>
+          </div>
+
+          <!-- ÉTAT 1 : FAUTEUIL LIBRE -->
+          <div class="station-body-free" *ngIf="!station.isOccupe">
+            <div class="free-ambient-box">
+              <mat-icon class="sparkle-icon">auto_awesome</mat-icon>
+              <p class="free-msg">Prêt à accueillir un client</p>
+              <span class="free-submsg" *ngIf="prestationsEnAttente().length > 0">
+                <mat-icon class="icon-xs">weekend</mat-icon> {{ prestationsEnAttente().length }} client(s) en salle d'attente
+              </span>
+              <span class="free-submsg" *ngIf="prestationsEnAttente().length === 0">
+                Aucun client en attente
+              </span>
+            </div>
+
+            <button
+              class="btn-station-action btn-station-assign"
+              type="button"
+              (click)="$event.stopPropagation(); clicSurFauteuilStation(station)"
+            >
+              <mat-icon class="icon-sm">bolt</mat-icon>
+              <span *ngIf="prestationsEnAttente().length > 0">Installer Client du Lounge</span>
+              <span *ngIf="prestationsEnAttente().length === 0">Nouveau Client Direct</span>
+            </button>
+          </div>
+
+          <!-- ÉTAT 2 : FAUTEUIL OCCUPÉ -->
+          <div class="station-body-busy" *ngIf="station.isOccupe">
+            <div class="busy-client-row">
+              <mat-icon class="busy-avatar">person</mat-icon>
+              <div class="busy-client-text">
+                <strong class="busy-client-name">{{ station.nomClient }}</strong>
+                <span class="busy-service-name">{{ station.serviceNom }}</span>
+              </div>
+            </div>
+
+            <!-- Chronomètre en cours & Jauge dynamique -->
+            <div class="busy-timer-section">
+              <div class="timer-badge-row">
+                <mat-icon class="timer-clock-icon">schedule</mat-icon>
+                <span class="timer-elapsed-text">Au fauteuil depuis <strong>{{ station.minutesEcoulees }} min</strong></span>
+              </div>
+              <div class="station-progress-track">
+                <div class="station-progress-fill" [style.width.%]="station.pourcentageProgression"></div>
+              </div>
+            </div>
+
+            <div class="busy-action-row">
+              <button
+                class="btn-station-action btn-station-finish"
+                type="button"
+                (click)="$event.stopPropagation(); station.prestationEnCours && terminerPrestation(station.prestationEnCours)"
+                title="Clôturer et envoyer la facture au comptoir"
+              >
+                <mat-icon class="icon-sm">task_alt</mat-icon> Terminer & Caisse
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Board 3 Colonnes Vivantes -->
+  <div *ngIf="!isLoading()" class="board-grid">
+    <!-- COLONNE 1 : SALLE D'ATTENTE -->
+    <div class="board-column column-waiting">
+      <div class="column-header">
+        <div class="col-title-group">
+          <mat-icon class="col-icon">weekend</mat-icon>
+          <h2 class="col-title">Salle d'Attente</h2>
+        </div>
+        <span class="badge-count badge-waiting">{{ prestationsEnAttente().length }}</span>
+      </div>
+
+      <div class="column-body">
+        <div *ngIf="prestationsEnAttente().length === 0" class="col-empty">
+          <mat-icon class="empty-icon">coffee</mat-icon>
+          <p>Aucun client en attente</p>
+          <button class="btn-col-empty" (click)="ouvrirModalWalkIn('EN_ATTENTE')">
+            + Installer un client
+          </button>
+        </div>
+
+        <div
+          *ngFor="let p of filtrerListe(prestationsEnAttente(), getPrestationLabel)"
+          class="queue-card card-waiting"
+        >
+          <div class="card-top">
+            <div class="client-ident">
+              <span class="client-avatar">
+                <mat-icon class="icon-sm">person</mat-icon>
+              </span>
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                  <strong class="client-name">{{ p.prenomClient && p.nomClient ? (p.prenomClient + ' ' + p.nomClient) : (p.clientNom || 'Client Walk-in') }}</strong>
+                  <span *ngIf="p.ordreFileAttente" class="badge-fifo">
+                    Ticket #{{ p.ordreFileAttente }}
+                  </span>
+                </div>
+                <span class="client-phone" *ngIf="p.telephoneClient">
+                  <mat-icon class="icon-xs">phone</mat-icon> {{ p.telephoneClient }}
+                </span>
+              </div>
+            </div>
+            <!-- Badge dynamique d'attente avec couleur adaptative -->
+            <span class="badge-attente-pill" [ngClass]="'pill-attente-' + getTempsAttenteInfo(p).level">
+              <span class="live-dot-pulse"></span>
+              <mat-icon class="icon-xs">schedule</mat-icon> {{ getTempsAttenteInfo(p).label }}
+            </span>
+          </div>
+
+          <!-- Alert retard critique si > 20 min -->
+          <div class="wait-alert-banner" *ngIf="getTempsAttenteInfo(p).level === 'critical'">
+            <mat-icon class="icon-xs">warning</mat-icon> Attente prolongée • Priorité d'installation au fauteuil
+          </div>
+
+          <div class="card-details">
+            <div class="detail-row" *ngIf="p.lignes && p.lignes.length > 0">
+              <span class="detail-label">Prestation :</span>
+              <span class="detail-val">{{ p.lignes[0].varianteNom || 'Coiffure' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Montant :</span>
+              <strong class="detail-val price-val">{{ p.montantTotal | number }} FCFA</strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Arrivé à :</span>
+              <span class="detail-val time-val">{{ (p.dateHeureDebut || p.datePrestation) | date:'HH:mm' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Coiffeur :</span>
+              <span class="detail-val" *ngIf="p.coiffeurPrenom">
+                <mat-icon class="icon-xs">content_cut</mat-icon> {{ p.coiffeurPrenom }} {{ p.coiffeurNom || '' }}
+              </span>
+              <span class="detail-val tag-unassigned" *ngIf="!p.coiffeurPrenom">
+                <mat-icon class="icon-xs">bolt</mat-icon> À attribuer au fauteuil
+              </span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button
+              class="btn-card btn-action-chair"
+              (click)="installerAuFauteuil(p)"
+              title="Passer au fauteuil de coiffure"
+            >
+              <mat-icon class="icon-sm">chair</mat-icon> Installer au Fauteuil
+            </button>
+            <button
+              class="btn-card btn-action-cancel"
+              (click)="annulerPrestation(p)"
+              title="Annuler cette attente"
+            >
+              <mat-icon class="icon-sm">close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLONNE 2 : AU FAUTEUIL (EN COURS) -->
+    <div class="board-column column-chair">
+      <div class="column-header">
+        <div class="col-title-group">
+          <mat-icon class="col-icon">content_cut</mat-icon>
+          <h2 class="col-title">Aux Fauteuils (En cours)</h2>
+        </div>
+        <span class="badge-count badge-chair">{{ prestationsEnCours().length }}</span>
+      </div>
+
+      <div class="column-body">
+        <div *ngIf="prestationsEnCours().length === 0" class="col-empty">
+          <mat-icon class="empty-icon">chair</mat-icon>
+          <p>Aucun coiffage en cours</p>
+          <button class="btn-col-empty" (click)="ouvrirModalWalkIn('EN_COURS')">
+            + Installer un client
+          </button>
+        </div>
+
+        <div
+          *ngFor="let p of filtrerListe(prestationsEnCours(), getPrestationLabel)"
+          class="queue-card card-chair"
+        >
+          <div class="card-top">
+            <div class="client-ident">
+              <span class="client-avatar chair-avatar">
+                <mat-icon class="icon-sm">face</mat-icon>
+              </span>
+              <div>
+                <strong class="client-name">{{ p.prenomClient && p.nomClient ? (p.prenomClient + ' ' + p.nomClient) : (p.clientNom || 'Client Salon') }}</strong>
+                <span class="hairdresser-name">
+                  <mat-icon class="icon-xs">content_cut</mat-icon>
+                  {{ p.coiffeurPrenom ? (p.coiffeurPrenom + ' ' + (p.coiffeurNom || '')) : (p.lignes[0]?.coiffeurNom || 'Coiffeur assigné') }}
+                </span>
+              </div>
+            </div>
+            <span class="badge-chair-timer">
+              <mat-icon class="chair-scissors-icon icon-xs">content_cut</mat-icon>
+              {{ getTempsEcouleFauteuil(p) }}
+            </span>
+          </div>
+
+          <div class="card-details">
+            <div class="detail-row" *ngIf="p.lignes && p.lignes.length > 0">
+              <span class="detail-label">Soin :</span>
+              <span class="detail-val">{{ p.lignes[0].varianteNom || 'Prestation' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Montant :</span>
+              <strong class="detail-val price-val">{{ p.montantTotal | number }} FCFA</strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Début :</span>
+              <span class="detail-val time-val">{{ (p.dateHeureDebut || p.datePrestation) | date:'HH:mm' }}</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button
+              class="btn-card btn-action-finish"
+              (click)="terminerPrestation(p)"
+              title="Terminer la prestation et envoyer à la caisse"
+            >
+              <mat-icon class="icon-sm">task_alt</mat-icon> Terminer la Coiffure
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLONNE 3 : AU COMPTOIR (À ENCAISSER) -->
+    <div class="board-column column-checkout">
+      <div class="column-header">
+        <div class="col-title-group">
+          <mat-icon class="col-icon">credit_card</mat-icon>
+          <h2 class="col-title">Au Comptoir (À Encaisser)</h2>
+        </div>
+        <span class="badge-count badge-checkout">{{ facturesAEncaisser().length }}</span>
+      </div>
+
+      <div class="column-body">
+        <div *ngIf="facturesAEncaisser().length === 0" class="col-empty">
+          <mat-icon class="empty-icon">task_alt</mat-icon>
+          <p>Toutes les prestations sont réglées !</p>
+        </div>
+
+        <div
+          *ngFor="let f of filtrerListe(facturesAEncaisser(), getFactureLabel)"
+          class="queue-card card-checkout"
+        >
+          <div class="card-top">
+            <div class="client-ident">
+              <span class="client-avatar checkout-avatar">
+                <mat-icon class="icon-sm">point_of_sale</mat-icon>
+              </span>
+              <div>
+                <strong class="client-name">{{ f.clientNom || ('Facture #' + f.numeroFacture) }}</strong>
+                <span class="invoice-number">Réf : {{ f.numeroFacture }}</span>
+              </div>
+            </div>
+            <span class="status-chip chip-checkout">Prêt au paiement</span>
+          </div>
+
+          <div class="card-details">
+            <div class="detail-row" *ngIf="f.prestationId">
+              <span class="detail-label">Prestation :</span>
+              <span class="detail-val">#{{ f.prestationId }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">À Régler :</span>
+              <strong class="detail-val price-val text-accent">
+                {{ (f.resteAPayer !== undefined ? f.resteAPayer : f.montantTotal) | number }} FCFA
+              </strong>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Émise à :</span>
+              <span class="detail-val time-val">{{ f.dateEmission | date:'HH:mm' }}</span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button
+              class="btn-card btn-action-pay"
+              (click)="ouvrirModalEncaissement(f)"
+              title="Encaisser le règlement de ce client"
+            >
+              <mat-icon class="icon-sm">point_of_sale</mat-icon> Encaisser Maintenant
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Encaissement -->
+  <div *ngIf="isEncaissementModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Encaissement Comptoir</h2>
+        <button class="modal-close" (click)="fermerModalEncaissement()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="facture-summary-banner">
+          <div>
+            <span class="sub-label">Facture {{ selectedFacture?.numeroFacture }}</span>
+            <h3 class="client-display-name">{{ selectedFacture?.clientNom || 'Client Salon' }}</h3>
+          </div>
+          <div class="amount-due-box">
+            <span class="sub-label">Reste à régler</span>
+            <strong class="due-amount">{{ (selectedFacture?.resteAPayer !== undefined ? selectedFacture?.resteAPayer : selectedFacture?.montantTotal) | number }} FCFA</strong>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="montantAEncaisserAttente">Montant à encaisser (FCFA) *</label>
+          <input
+            id="montantAEncaisserAttente"
+            type="number"
+            min="1"
+            class="form-input"
+            [(ngModel)]="encaissementDto.montant"
+            name="montantAEncaisserAttente"
+            required
+          />
+        </div>
+
+        <!-- Type de paiement -->
+        <div class="form-group">
+          <label>Type de Règlement *</label>
+          <div class="payment-methods-grid">
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.type === 'SOLDE'"
+              (click)="encaissementDto.type = 'SOLDE'"
+            >
+              <mat-icon class="icon-sm">check_circle</mat-icon> Solde complet
+            </button>
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.type === 'ACOMPTE'"
+              (click)="encaissementDto.type = 'ACOMPTE'"
+            >
+              <mat-icon class="icon-sm">hourglass_top</mat-icon> Acompte partiel
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode de paiement -->
+        <div class="form-group">
+          <label>Mode de Règlement *</label>
+          <div class="payment-methods-grid">
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.modePaiement === 'ESPECES'"
+              (click)="encaissementDto.modePaiement = 'ESPECES'"
+            >
+              <mat-icon class="icon-sm">payments</mat-icon> Espèces
+            </button>
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.modePaiement === 'WAVE'"
+              (click)="encaissementDto.modePaiement = 'WAVE'"
+            >
+              <mat-icon class="icon-sm">waves</mat-icon> Wave
+            </button>
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.modePaiement === 'ORANGE_MONEY'"
+              (click)="encaissementDto.modePaiement = 'ORANGE_MONEY'"
+            >
+              <mat-icon class="icon-sm">phone_android</mat-icon> Orange Money
+            </button>
+            <button
+              type="button"
+              class="method-btn"
+              [class.active]="encaissementDto.modePaiement === 'CARTE_BANCAIRE'"
+              (click)="encaissementDto.modePaiement = 'CARTE_BANCAIRE'"
+            >
+              <mat-icon class="icon-sm">credit_card</mat-icon> Carte Bancaire
+            </button>
+          </div>
+        </div>
+
+        <!-- Calculatrice Espèces / Monnaie -->
+        <div *ngIf="encaissementDto.modePaiement === 'ESPECES'" class="cash-calc-box">
+          <label>Calcul de la Monnaie à Rendre</label>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="montantRemis">Montant remis par le client (FCFA)</label>
+              <input
+                id="montantRemis"
+                type="number"
+                class="form-input"
+                [(ngModel)]="montantRemisParClient"
+                step="500"
+              />
+            </div>
+            <div class="quick-cash-buttons">
+              <button type="button" class="btn-quick-cash" (click)="definirMontantRemis(encaissementDto.montant)">Exact</button>
+              <button type="button" class="btn-quick-cash" (click)="definirMontantRemis(5000)">5 000</button>
+              <button type="button" class="btn-quick-cash" (click)="definirMontantRemis(10000)">10 000</button>
+              <button type="button" class="btn-quick-cash" (click)="definirMontantRemis(20000)">20 000</button>
+            </div>
+          </div>
+
+          <div class="change-display" [ngClass]="monnaieRendue() > 0 ? 'has-change' : ''">
+            <span>Monnaie à rendre au client :</span>
+            <strong class="change-val">{{ monnaieRendue() | number }} FCFA</strong>
+          </div>
+        </div>
+
+        <!-- Référence transaction (Mobile Money / Carte) -->
+        <div *ngIf="encaissementDto.modePaiement !== 'ESPECES'" class="form-group">
+          <label for="refPaiement">Référence de Transaction (Optionnel)</label>
+          <input
+            id="refPaiement"
+            type="text"
+            class="form-input"
+            [(ngModel)]="encaissementDto.referencePaiement"
+            placeholder="Ex : ID Transaction Wave ou Code OM..."
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalEncaissement()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isSubmittingEncaissement() || encaissementDto.montant <= 0"
+          (click)="validerEncaissement()"
+        >
+          <mat-icon class="icon-sm">task_alt</mat-icon>
+          {{ isSubmittingEncaissement() ? 'Validation...' : 'Valider le Paiement & Ticket' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ticket / Reçu de caisse imprimable -->
+  <div *ngIf="isTicketModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-ticket">
+      <div class="modal-header">
+        <h2 class="modal-title">Reçu de Caisse</h2>
+        <button class="modal-close" (click)="fermerModalTicket()">×</button>
+      </div>
+
+      <div class="modal-body printable-ticket">
+        <div class="ticket-header text-center">
+          <h3 class="ticket-salon-name">HAIR STYLE SALON</h3>
+          <p class="ticket-salon-sub">Comptoir Réception & Caisse</p>
+          <p class="ticket-date">{{ ticketFacture?.dateEmission | date:'dd/MM/yyyy HH:mm' }}</p>
+          <p class="ticket-ref">Ticket Facture : <strong>{{ ticketFacture?.numeroFacture }}</strong></p>
+        </div>
+
+        <div class="ticket-divider">--------------------------------</div>
+
+        <div class="ticket-client">
+          <p>Client : <strong>{{ ticketFacture?.clientNom || 'Client Salon' }}</strong></p>
+        </div>
+
+        <div class="ticket-divider">--------------------------------</div>
+
+        <div class="ticket-total-row">
+          <span>TOTAL PAYÉ :</span>
+          <strong>{{ ticketFacture?.montantTotal | number }} FCFA</strong>
+        </div>
+
+        <div class="ticket-status-stamp text-center">
+          <span class="stamp-regle">*** FACTURE ACQUITTÉE ***</span>
+          <p class="ticket-thanks">Merci de votre visite et à très bientôt !</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalTicket()">Fermer</button>
+        <button type="button" class="btn-primary" (click)="imprimerTicket()">
+          <mat-icon class="icon-sm">print</mat-icon> Imprimer le Reçu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Walk-in Express -->
+  <div *ngIf="isWalkInModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          <mat-icon class="icon-sm">{{ walkInStatutChoisi === 'EN_ATTENTE' ? 'weekend' : 'content_cut' }}</mat-icon>
+          {{ walkInStatutChoisi === 'EN_ATTENTE' ? 'Nouveau Client en Salle d\'Attente' : 'Nouveau Client au Fauteuil' }}
+        </h2>
+        <button class="modal-close" (click)="fermerModalWalkIn()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Recherche / Sélection Client Existant -->
+        <div class="form-group client-search-section">
+          <label>
+            <mat-icon class="icon-xs">search</mat-icon>
+            Recherche Client existant (Téléphone ou Nom)
+          </label>
+          <div class="input-with-button" *ngIf="!selectedClientExistant">
+            <input
+              type="text"
+              class="form-input"
+              [(ngModel)]="clientSearchQuery"
+              name="clientSearchQuery"
+              placeholder="Tapez un numéro ou nom..."
+              (input)="rechercherClientsRapides()"
+            />
+            <button
+              type="button"
+              class="btn-secondary"
+              (click)="rechercherClientsRapides()"
+              [disabled]="isSearchingClients()"
+            >
+              <mat-icon class="icon-xs">search</mat-icon>
+              {{ isSearchingClients() ? 'Recherche...' : 'Chercher' }}
+            </button>
+          </div>
+
+          <!-- Liste déroulante des résultats de recherche -->
+          <div class="client-results-dropdown" *ngIf="clientSearchResults().length > 0">
+            <div
+              *ngFor="let cl of clientSearchResults()"
+              class="client-result-item"
+              (click)="selectionnerClientRapide(cl)"
+            >
+              <div class="client-result-name">
+                <mat-icon class="icon-xs">person</mat-icon> {{ cl.prenom }} {{ cl.nom }}
+              </div>
+              <div class="client-result-meta">
+                <mat-icon class="icon-xs">phone</mat-icon> {{ cl.telephone }}
+                <span *ngIf="cl.email">
+                  • <mat-icon class="icon-xs">mail</mat-icon> {{ cl.email }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badge Client Sélectionné -->
+          <div class="client-selected-badge" *ngIf="selectedClientExistant">
+            <div class="client-selected-info">
+              <strong>
+                <mat-icon class="icon-xs">verified</mat-icon> Client fidèle identifié :
+              </strong>
+              <span>{{ selectedClientExistant.prenom }} {{ selectedClientExistant.nom }} (<mat-icon class="icon-xs">phone</mat-icon> {{ selectedClientExistant.telephone }})</span>
+            </div>
+            <button type="button" class="btn-sm btn-secondary" (click)="reinitialiserClientSelectionne()">
+              Changer de client
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="walkPrenom">Prénom *</label>
+            <input
+              id="walkPrenom"
+              type="text"
+              class="form-input"
+              [(ngModel)]="walkInPrenom"
+              [readonly]="!!selectedClientExistant"
+              placeholder="Ex: Aïssatou"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="walkNom">Nom *</label>
+            <input
+              id="walkNom"
+              type="text"
+              class="form-input"
+              [(ngModel)]="walkInNom"
+              [readonly]="!!selectedClientExistant"
+              placeholder="Ex: Sow"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="walkTel">Téléphone</label>
+            <input
+              id="walkTel"
+              type="tel"
+              class="form-input"
+              [(ngModel)]="walkInTel"
+              [readonly]="!!selectedClientExistant"
+              placeholder="Ex: 77 123 45 67"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="walkCoiffeur">
+            Coiffeur assigné {{ walkInStatutChoisi === 'EN_COURS' ? '*' : '(optionnel pour la salle d’attente)' }}
+          </label>
+          <select
+            id="walkCoiffeur"
+            class="form-input"
+            [(ngModel)]="walkInCoiffeurId"
+            [required]="walkInStatutChoisi === 'EN_COURS'"
+          >
+            <option [ngValue]="null" *ngIf="walkInStatutChoisi === 'EN_COURS'" disabled selected>
+              -- Sélectionner un coiffeur pour ce fauteuil * --
+            </option>
+            <option [ngValue]="null" *ngIf="walkInStatutChoisi === 'EN_ATTENTE'">
+              -- Sans coiffeur attitré (Sera choisi au moment du passage au fauteuil) --
+            </option>
+            <option
+              *ngFor="let c of coiffeurs()"
+              [ngValue]="c.affectationId"
+              [disabled]="walkInStatutChoisi === 'EN_COURS' && isCoiffeurOccupe(c.affectationId)"
+            >
+              {{ c.coiffeurPrenom }} {{ c.coiffeurNom }} {{ isCoiffeurOccupe(c.affectationId) ? '(Occupé)' : '(Disponible)' }}
+            </option>
+          </select>
+          <span class="input-hint" *ngIf="walkInStatutChoisi === 'EN_ATTENTE'">
+            Vous pouvez laisser vide et attribuer le coiffeur dès qu’un fauteuil se libère.
+          </span>
+          <span class="input-hint text-accent" *ngIf="walkInStatutChoisi === 'EN_COURS'">
+            Veuillez sélectionner le coiffeur qui prend immédiatement en charge le client au fauteuil.
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>Prestations demandées *</label>
+          <div class="input-with-button">
+            <select class="form-input" [(ngModel)]="selectedVarianteToAdd">
+              <option [ngValue]="null" disabled>Choisir une prestation dans le catalogue...</option>
+              <option *ngFor="let v of allVariantes()" [ngValue]="v.id">
+                {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA • {{ v.dureeMinutes }} min)
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="!selectedVarianteToAdd"
+              (click)="ajouterVarianteWalkIn()"
+            >
+              <mat-icon class="icon-xs">add</mat-icon> Ajouter
+            </button>
+          </div>
+
+          <div class="tags-container" *ngIf="selectedVariantesWalkIn().length > 0">
+            <span *ngFor="let v of selectedVariantesWalkIn()" class="tag-pill">
+              <mat-icon class="icon-xs">auto_awesome</mat-icon>
+              {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA)
+              <button class="tag-remove" (click)="retirerVarianteWalkIn(v.id)">×</button>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalWalkIn()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isSubmittingWalkIn() || (walkInStatutChoisi === 'EN_COURS' && (!walkInCoiffeurId || isCoiffeurOccupe(walkInCoiffeurId))) || !walkInNom.trim() || !walkInPrenom.trim() || selectedVariantesWalkIn().length === 0"
+          (click)="validerWalkIn()"
+        >
+          <mat-icon class="icon-sm">how_to_reg</mat-icon>
+          {{ isSubmittingWalkIn() ? 'Enregistrement...' : 'Enregistrer le client' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 1 : Passage au Fauteuil (Choix du Coiffeur & Règle d'exclusivité) -->
+  <div class="modal-backdrop" *ngIf="isInstallChairModalOpen()" (click)="fermerModalInstallChair()">
+    <div class="modal-box modal-wide modal-install-chair" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">
+            <mat-icon class="icon-sm">chair</mat-icon> Installer au Fauteuil de Coiffure
+          </h3>
+          <p class="modal-subtitle">
+            Client : <strong>{{ prestationToInstall?.prenomClient }} {{ prestationToInstall?.nomClient }}</strong>
+          </p>
+        </div>
+        <button class="modal-close" (click)="fermerModalInstallChair()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="install-info-box">
+          <p>
+            Attribuez un coiffeur disponible pour prendre en charge ce client.
+            <strong>Un coiffeur ne peut pas coiffer deux personnes en même temps au fauteuil.</strong>
+          </p>
+        </div>
+
+        <div class="coiffeurs-selection-list">
+          <div
+            *ngFor="let c of coiffeurs()"
+            class="coiffeur-choice-row"
+            [class.coiffeur-row-selected]="selectedChairCoiffeurId === c.affectationId"
+            [class.coiffeur-row-busy]="isCoiffeurOccupe(c.affectationId)"
+            (click)="!isCoiffeurOccupe(c.affectationId) && (selectedChairCoiffeurId = c.affectationId)"
+          >
+            <div class="coiffeur-choice-main">
+              <mat-icon class="coiffeur-icon">content_cut</mat-icon>
+              <div class="coiffeur-names">
+                <strong>{{ c.coiffeurPrenom }} {{ c.coiffeurNom }}</strong>
+                <span class="status-indicator-tag tag-free" *ngIf="!isCoiffeurOccupe(c.affectationId)">
+                  <mat-icon class="icon-xs">check_circle</mat-icon> Fauteuil Libre
+                </span>
+                <span class="status-indicator-tag tag-busy" *ngIf="isCoiffeurOccupe(c.affectationId)">
+                  <mat-icon class="icon-xs">person</mat-icon> Occupé au fauteuil (avec {{ getNomClientOccupe(c.affectationId) }})
+                </span>
+              </div>
+            </div>
+
+            <input
+              type="radio"
+              name="chairCoiffeurChoice"
+              [value]="c.affectationId"
+              [ngModel]="selectedChairCoiffeurId"
+              [disabled]="isCoiffeurOccupe(c.affectationId)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalInstallChair()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="!selectedChairCoiffeurId || isCoiffeurOccupe(selectedChairCoiffeurId) || isSubmittingInstallChair()"
+          (click)="confirmerInstallationFauteuil()"
+        >
+          <mat-icon class="icon-sm">play_arrow</mat-icon>
+          <span *ngIf="!isSubmittingInstallChair()">Démarrer la Prestation <mat-icon class="icon-xs">arrow_forward</mat-icon></span>
+          <span *ngIf="isSubmittingInstallChair()">Installation en cours...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2 : Permuter le Coiffeur du Rendez-vous -->
+  <div class="modal-backdrop" *ngIf="isPermuterModalOpen()" (click)="fermerModalPermuter()">
+    <div class="modal-box modal-wide modal-permute-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">
+            <mat-icon class="icon-sm">swap_horiz</mat-icon> Permuter le Rendez-vous
+          </h3>
+          <p class="modal-subtitle">
+            Client : <strong>{{ rdvToPermute?.prenomClient || rdvToPermute?.clientPrenom }} {{ rdvToPermute?.nomClient || rdvToPermute?.clientNom }}</strong> (RDV {{ (rdvToPermute?.dateHeureDebut || rdvToPermute?.dateHeurePrevue) | date:'HH:mm' }})
+          </p>
+        </div>
+        <button class="modal-close" (click)="fermerModalPermuter()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="permute-current-box">
+          <span>Coiffeur actuellement attribué :</span>
+          <strong>
+            <mat-icon class="icon-xs">content_cut</mat-icon>
+            {{ rdvToPermute?.coiffeurPrenom }} {{ rdvToPermute?.coiffeurNom }}
+          </strong>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label for="nouveauCoiffeurSelect">Choisir le nouveau coiffeur :</label>
+          <select
+            id="nouveauCoiffeurSelect"
+            class="form-input"
+            [(ngModel)]="nouveauCoiffeurPermutationId"
+          >
+            <option [ngValue]="null" disabled>Sélectionner un collègue disponible...</option>
+            <option
+              *ngFor="let c of coiffeurs()"
+              [ngValue]="c.affectationId"
+              [disabled]="c.affectationId === rdvToPermute?.coiffeurAffectationId"
+            >
+              {{ c.coiffeurPrenom }} {{ c.coiffeurNom }}
+              {{ c.affectationId === rdvToPermute?.coiffeurAffectationId ? '(Actuel)' : (isCoiffeurOccupe(c.affectationId) ? '(Occupé)' : '(Libre)') }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalPermuter()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="!nouveauCoiffeurPermutationId || nouveauCoiffeurPermutationId === rdvToPermute?.coiffeurAffectationId || isSubmittingPermuter()"
+          (click)="confirmerPermutation()"
+        >
+          <mat-icon class="icon-sm">swap_horiz</mat-icon>
+          <span *ngIf="!isSubmittingPermuter()">Valider la Permutation <mat-icon class="icon-xs">arrow_forward</mat-icon></span>
+          <span *ngIf="isSubmittingPermuter()">Mise à jour...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3 : Notifier un Léger Retard (Message 100% personnalisable par la réceptionniste) -->
+  <div class="modal-backdrop" *ngIf="isNotifierRetardModalOpen()" (click)="fermerModalNotifierRetard()">
+    <div class="modal-box modal-wide modal-notification-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">
+            <mat-icon class="icon-sm">campaign</mat-icon> Notifier un Retard au Client
+          </h3>
+          <p class="modal-subtitle">
+            Destinataire : <strong>{{ rdvToNotify?.prenomClient || rdvToNotify?.clientPrenom }} {{ rdvToNotify?.nomClient || rdvToNotify?.clientNom }}</strong>
+            <span *ngIf="rdvToNotify?.telephoneClient || rdvToNotify?.clientTelephone">
+              • <mat-icon class="icon-xs">call</mat-icon> {{ rdvToNotify?.telephoneClient || rdvToNotify?.clientTelephone }}
+            </span>
+          </p>
+        </div>
+        <button class="modal-close" (click)="fermerModalNotifierRetard()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="notif-tip-box">
+          <span>
+            <mat-icon class="icon-xs">edit_note</mat-icon>
+            Vous pouvez modifier ou réécrire complètement le message ci-dessous avant son envoi :
+          </span>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="notifMessageContent">Texte du message envoyé au client :</label>
+          <textarea
+            id="notifMessageContent"
+            class="form-input notif-textarea"
+            rows="5"
+            [(ngModel)]="customMessageNotification"
+            placeholder="Écrivez le message de notification au client..."
+          ></textarea>
+        </div>
+
+        <div class="notif-channels-note">
+          <span>
+            <mat-icon class="icon-xs">mark_email_read</mat-icon>
+            Notification transmise au client et tracée dans le journal d'audit du salon.
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalNotifierRetard()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="!customMessageNotification.trim() || isSubmittingNotification()"
+          (click)="confirmerEnvoiNotificationRetard()"
+        >
+          <mat-icon class="icon-sm">send</mat-icon>
+          <span *ngIf="!isSubmittingNotification()">Envoyer la Notification <mat-icon class="icon-xs">arrow_forward</mat-icon></span>
+          <span *ngIf="isSubmittingNotification()">Envoi en cours...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4 : Sélection Rapide d'un Client Lounge pour un Fauteuil Libre -->
+  <div class="modal-backdrop" *ngIf="isStationAssignModalOpen()" (click)="fermerModalSelectionClientPourFauteuil()">
+    <div class="modal-box modal-wide modal-station-assign" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">
+            <mat-icon class="icon-sm">chair</mat-icon> Installer un Client au Fauteuil
+          </h3>
+          <p class="modal-subtitle">
+            Fauteuil de <strong>{{ targetStationForAssign?.coiffeur?.coiffeurPrenom }} {{ targetStationForAssign?.coiffeur?.coiffeurNom }}</strong> (Disponible)
+          </p>
+        </div>
+        <button class="modal-close" (click)="fermerModalSelectionClientPourFauteuil()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="station-assign-instructions">
+          <span>
+            <mat-icon class="icon-xs">weekend</mat-icon>
+            Sélectionnez le client de la salle d'attente à installer immédiatement sur ce fauteuil :
+          </span>
+        </div>
+
+        <div class="waiting-clients-picker" *ngIf="prestationsEnAttente().length > 0">
+          <div
+            *ngFor="let p of prestationsEnAttente()"
+            class="waiting-client-picker-row"
+            (click)="assignerClientSurStation(p)"
+          >
+            <div class="picker-left">
+              <span class="picker-ticket-badge" *ngIf="p.ordreFileAttente">Ticket #{{ p.ordreFileAttente }}</span>
+              <span class="picker-avatar">
+                <mat-icon class="icon-sm">person</mat-icon>
+              </span>
+              <div class="picker-names">
+                <strong class="picker-client-title">{{ p.prenomClient && p.nomClient ? (p.prenomClient + ' ' + p.nomClient) : (p.clientNom || 'Client') }}</strong>
+                <span class="picker-service-subtitle">{{ (p.lignes && p.lignes[0]?.varianteNom) || 'Coiffure' }} • {{ p.montantTotal | number }} FCFA</span>
+              </div>
+            </div>
+
+            <div class="picker-right">
+              <span class="badge-attente-pill" [ngClass]="'pill-attente-' + getTempsAttenteInfo(p).level">
+                <mat-icon class="icon-xs">schedule</mat-icon> {{ getTempsAttenteInfo(p).label }}
+              </span>
+              <button class="btn-picker-seat" type="button" [disabled]="isSubmittingStationAssign()">
+                Installer ici <mat-icon class="icon-xs">arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="prestationsEnAttente().length === 0" class="empty-picker-notice">
+          <p>Aucun client n'est actuellement en salle d'attente.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalSelectionClientPourFauteuil()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

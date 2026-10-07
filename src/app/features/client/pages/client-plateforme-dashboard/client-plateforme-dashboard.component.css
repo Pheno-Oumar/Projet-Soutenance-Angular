@@ -1,0 +1,792 @@
+.plateforme-dashboard-page {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  padding-bottom: 70px;
+}
+
+/* Header */
+.plateforme-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+  padding: 32px 20px;
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.user-intro {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.user-avatar-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #4A3B32 0%, #1A1A1A 100%);
+  color: #FAF8F5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(74, 59, 50, 0.25);
+  border: 2px solid #C8B6A6;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.user-avatar-circle:hover {
+  transform: scale(1.05) rotate(2deg);
+}
+
+.user-avatar-letter {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #FAF8F5;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.recent-salon-card {
+  border-left: 3px solid #C8B6A6;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FAF8F5 100%);
+}
+
+.recent-salon-card:hover {
+  border-left-color: #4A3B32;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(74, 59, 50, 0.08);
+}
+
+.user-role-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: rgba(74, 59, 50, 0.08);
+  padding: 3px 10px;
+  border-radius: 10px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.user-title {
+  margin: 0 0 4px 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+
+.user-sub {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.header-shortcuts {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-explore-shortcut, .btn-kadys-shortcut {
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn-explore-shortcut {
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+}
+
+.btn-explore-shortcut:hover {
+  background: #EFECE4;
+}
+
+.btn-kadys-shortcut {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+.btn-kadys-shortcut:hover {
+  background: var(--primary-hover);
+}
+
+/* Nav Tabs */
+.plateforme-nav-tabs {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 10px;
+  padding: 0 20px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-container::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab-item {
+  background: none;
+  border: none;
+  padding: 16px 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.nav-tab-item:hover {
+  color: var(--primary);
+}
+
+.nav-tab-item.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tab-badge {
+  background: rgba(74, 59, 50, 0.08);
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--primary);
+}
+
+.nav-tab-item.active .tab-badge {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
+/* Content Area */
+.plateforme-tab-content {
+  max-width: 1200px;
+  margin: 36px auto 0 auto;
+  padding: 0 20px;
+}
+
+/* Profil Capillaire Layout */
+.profil-capillaire-wrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.card-diagnostic {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 28px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.diagnostic-intro h3 {
+  margin: 0 0 6px 0;
+  color: var(--primary);
+  font-size: 1.25rem;
+}
+
+.diagnostic-intro p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.diagnostic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.form-select, .form-input, .form-textarea {
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.form-select:focus, .form-input:focus, .form-textarea:focus {
+  border-color: var(--primary);
+}
+
+.btn-save-diagnostic {
+  align-self: flex-start;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 26px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-save-diagnostic:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-save-diagnostic:disabled {
+  opacity: 0.6;
+}
+
+/* PIN Code Card */
+.card-pin-code {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-pin-code .icon-lock {
+  font-size: 2rem;
+}
+
+.card-pin-code h4 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.card-pin-code p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.pin-status-pill {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #FFEBEE;
+  color: #C62828;
+  align-self: flex-start;
+}
+
+.pin-status-pill.has-pin {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.pin-input-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.input-pin {
+  width: 100px;
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 10px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.btn-save-pin {
+  flex: 1;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Global RDV List */
+.global-rdv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.global-rdv-card-3d {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 22px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.salon-name-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: #FAF8F5;
+  padding: 2px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.rdv-date {
+  margin: 6px 0 8px 0;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.services-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.chip-service {
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.hairdresser-txt {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.rdv-status-badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background: #E3F2FD;
+  color: #1565C0;
+}
+
+.rdv-status-badge[data-statut="TERMINE"] {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+.rdv-status-badge[data-statut="ANNULE"] {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+/* Orders */
+.global-orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.global-order-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.order-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.order-num {
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.order-status {
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.order-pickup-box {
+  background: #FAF8F5;
+  border: 1px dashed #C8B6A6;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.order-pickup-box .label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.order-pickup-box .code {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  font-family: monospace;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+}
+
+.order-items .item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+/* Favorites */
+.subsection-title {
+  margin: 0 0 16px 0;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.favs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+.fav-card {
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fav-icon-box {
+  font-size: 2rem;
+}
+
+.fav-meta h4 {
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+
+.link-vitrine {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.salon-name-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Inspirations */
+.inspirations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.inspiration-card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.insp-video-box {
+  position: relative;
+  height: 280px;
+  background: #000000;
+}
+
+.insp-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.insp-heart-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #FFFFFF;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.insp-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.insp-body h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--primary);
+}
+
+.salon-tag {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.btn-book-look-insp {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Mon Compte */
+.compte-security-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.card-compte-info, .card-password {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 26px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-compte-info h3, .card-password h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.compte-field-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(74, 59, 50, 0.08);
+}
+
+.compte-field-row .label {
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.compte-field-row .val {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.btn-save-pwd {
+  align-self: flex-start;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+/* RGPD */
+.rgpd-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.card-reclamation, .card-rgpd-actions {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 26px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card-reclamation h3, .card-rgpd-actions h3 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.card-reclamation p, .card-rgpd-actions p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.btn-send-reclamation {
+  align-self: flex-start;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.rgpd-button-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-rgpd-export {
+  background: #FAF8F5;
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.btn-rgpd-delete {
+  background: #FFEBEE;
+  border: 1px solid #FFCDD2;
+  color: #C62828;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+/* Empty Card */
+.empty-plateforme-card {
+  background: #FFFFFF;
+  border-radius: 24px;
+  padding: 50px 30px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  max-width: 480px;
+  margin: 30px auto;
+}
+
+.empty-plateforme-card span {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.empty-plateforme-card h3 {
+  margin: 0 0 8px 0;
+  color: var(--primary);
+}
+
+.empty-plateforme-card p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0 0 20px 0;
+}
+
+.btn-empty-action {
+  display: inline-block;
+  background: var(--primary);
+  color: #FFFFFF;
+  padding: 10px 22px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profil-capillaire-wrapper, .compte-security-wrapper, .rgpd-wrapper {
+    grid-template-columns: 1fr;
+  }
+  .diagnostic-grid {
+    grid-template-columns: 1fr;
+  }
+}

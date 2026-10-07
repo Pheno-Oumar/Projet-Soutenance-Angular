@@ -1,0 +1,110 @@
+<div class="comment-drawer-backdrop" (click)="close.emit()">
+  <div class="drawer-card" (click)="$event.stopPropagation()">
+    <!-- Drawer Drag Pill -->
+    <div class="drag-handle"></div>
+
+    <!-- Header -->
+    <div class="drawer-header">
+      <div class="header-title">
+        <h3>Commentaires</h3>
+        <span class="count-badge">{{ commentaires().length }}</span>
+      </div>
+      <button class="btn-close" (click)="close.emit()" aria-label="Fermer">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+    </div>
+
+    <!-- Comment List -->
+    <div class="comments-scroll">
+      <!-- Loading State -->
+      <div *ngIf="chargement()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des avis et commentaires...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!chargement() && commentaires().length === 0" class="empty-state">
+        <mat-icon class="empty-icon">chat_bubble_outline</mat-icon>
+        <p class="empty-title">Soyez le premier à commenter ce look !</p>
+        <p class="empty-desc">Partagez vos impressions ou posez une question sur cette coiffure.</p>
+      </div>
+
+      <!-- Comments Items -->
+      <div *ngFor="let c of commentaires()" class="comment-item" [class.is-masked]="c.statut === 'MASQUE'">
+        <div class="comment-avatar">
+          <img *ngIf="c.auteurPhotoUrl" [src]="c.auteurPhotoUrl" [alt]="c.auteurNomComplet" />
+          <div *ngIf="!c.auteurPhotoUrl" class="avatar-letter">
+            {{ c.auteurNomComplet.charAt(0).toUpperCase() }}
+          </div>
+        </div>
+
+        <div class="comment-body">
+          <div class="comment-author-row">
+            <span class="author-name">{{ c.auteurNomComplet }}</span>
+            <span class="comment-date">{{ c.dateCreation | date:'short' }}</span>
+            <span *ngIf="c.statut === 'MASQUE'" class="badge-masked">Masqué par le salon</span>
+          </div>
+
+          <p class="comment-text">{{ c.contenu }}</p>
+
+          <!-- Action buttons (Delete or Moderation) -->
+          <div class="comment-actions">
+            <!-- Author Delete -->
+            <button
+              *ngIf="c.isMine"
+              (click)="supprimerCommentaire(c.id)"
+              class="btn-action-delete"
+              title="Supprimer mon commentaire"
+            >
+              Supprimer
+            </button>
+
+            <!-- Manager Moderation (Masquer) -->
+            <button
+              *ngIf="isManagerInThisSalon && c.statut === 'ACTIF'"
+              (click)="masquerCommentaire(c.id)"
+              class="btn-action-mask"
+              title="Masquer ce commentaire pour le public"
+            >
+              Masquer (Modération)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="drawer-input-bar">
+      <div *ngIf="isAuthenticated" class="input-form">
+        <input
+          type="text"
+          [(ngModel)]="nouveauCommentaire"
+          (keydown.enter)="publierCommentaire()"
+          placeholder="Ajouter un commentaire constructif..."
+          [disabled]="envoiEnCours"
+          maxlength="500"
+          class="comment-input"
+        />
+        <button
+          (click)="publierCommentaire()"
+          [disabled]="envoiEnCours || !nouveauCommentaire.trim()"
+          class="btn-send-comment"
+          aria-label="Envoyer"
+        >
+          <mat-icon class="icon-xs" *ngIf="!envoiEnCours">send</mat-icon>
+          <span *ngIf="envoiEnCours" class="mini-spinner"></span>
+        </button>
+      </div>
+
+      <div *ngIf="!isAuthenticated" class="login-prompt">
+        <mat-icon class="icon-xs prompt-icon">lock</mat-icon>
+        <div class="prompt-text">
+          <span>Connectez-vous pour réagir et commenter ce look</span>
+        </div>
+        <a [routerLink]="['/login']" (click)="close.emit()" class="btn-prompt-login">
+          Se connecter
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

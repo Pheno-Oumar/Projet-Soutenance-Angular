@@ -1,0 +1,394 @@
+<div class="categories-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Catégories</span>
+      </div>
+      <h1 class="page-title">Catégories de Produits</h1>
+      <p class="page-subtitle">Structurez les familles de soins, cosmétiques et articles de coiffure</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerCategories()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">
+        <mat-icon class="btn-icon icon-sm">add</mat-icon>
+        <span>Nouvelle Catégorie</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filters -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher une catégorie..."
+        class="search-input"
+      />
+      @if (searchQuery) {
+        <button class="clear-search" (click)="searchQuery = ''">×</button>
+      }
+    </div>
+
+    <div class="select-filters">
+      <select [(ngModel)]="statutFilter" class="filter-select">
+        <option value="TOUS">Tous les statuts</option>
+        <option value="ACTIF">Actives uniquement</option>
+        <option value="INACTIF">Inactives uniquement</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Grid of Categories -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des catégories...</p>
+    </div>
+  } @else if (filteredCategories.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon icon-xl">category</mat-icon>
+      <h3>Aucune catégorie enregistrée</h3>
+      <p>Créez votre première catégorie pour organiser vos produits en boutique.</p>
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">Créer une catégorie</button>
+    </div>
+  } @else {
+    <div class="categories-grid">
+      @for (cat of filteredCategories; track cat.id) {
+        <div class="category-card" [class.is-inactive]="!cat.statut">
+          <div class="category-media">
+            @if (cat.imageUrl) {
+              <img [src]="cat.imageUrl" [alt]="cat.nom" class="cat-img" />
+            } @else {
+              <div class="cat-placeholder">
+                <mat-icon class="icon-lg">category</mat-icon>
+              </div>
+            }
+
+            <button class="btn-change-image" (click)="ouvrirModalImage(cat)" title="Changer l'image">
+              <mat-icon class="icon-xs">photo_camera</mat-icon>
+            </button>
+
+            <span class="statut-badge" [class.statut-actif]="cat.statut" [class.statut-inactif]="!cat.statut">
+              {{ cat.statut ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+
+          <div class="category-body">
+            <div class="category-title-row">
+              <h3 class="category-name">{{ cat.nom }}</h3>
+              <span class="product-count-badge">{{ cat.produits?.length || cat.nombreProduits || 0 }} réf(s)</span>
+            </div>
+
+            @if (cat.description) {
+              <p class="category-desc">{{ cat.description }}</p>
+            }
+
+            <!-- Produits list preview -->
+            <div class="products-preview">
+              <span class="preview-label">Produits associés :</span>
+              @if ((cat.produits?.length || 0) === 0) {
+                <span class="preview-empty">Aucun produit actif</span>
+              } @else {
+                <div class="preview-chips">
+                  @for (p of cat.produits.slice(0, 3); track p.id) {
+                    <span class="chip">{{ p.nom }}</span>
+                  }
+                  @if (cat.produits.length > 3) {
+                    <span class="chip chip-more">+{{ cat.produits.length - 3 }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="category-footer">
+            <div class="actions-left">
+              <button class="action-btn" (click)="ouvrirModalEdit(cat)" title="Modifier les informations">
+                <mat-icon class="icon-xs">edit</mat-icon>
+              </button>
+
+              <button
+                class="action-btn"
+                [class.btn-deactivate]="cat.statut"
+                [class.btn-activate]="!cat.statut"
+                (click)="basculerStatut(cat)"
+                [title]="cat.statut ? 'Désactiver la catégorie' : 'Activer la catégorie'"
+              >
+                <mat-icon class="icon-xs">{{ cat.statut ? 'block' : 'check' }}</mat-icon>
+              </button>
+            </div>
+
+            <button class="btn btn-sm btn-add-prod" (click)="ouvrirModalAjoutProduit(cat)">
+              <mat-icon class="icon-xs">add</mat-icon>
+              <span>Ajouter Produit</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL : Création Catégorie (avec Produit Initial) -->
+  @if (isCreateModalOpen()) {
+    <div class="modal-backdrop" (click)="fermerModalCreation()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Nouvelle Catégorie de Produits</h3>
+            <p class="modal-subtitle">Créez une catégorie pour y regrouper vos articles en rayon</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalCreation()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nom de la catégorie *</label>
+            <input type="text" [(ngModel)]="newCatNom" class="form-input" placeholder="Ex: Shampoings & Soins Capillaires" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description de la catégorie</label>
+            <textarea [(ngModel)]="newCatDescription" rows="2" class="form-input" placeholder="Description générale des articles de cette catégorie..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Image de couverture de la catégorie (optionnelle)</label>
+            <div class="file-upload-zone">
+              <input type="file" (change)="onFileSelectedCat($event)" accept="image/*" id="create-cat-img-input" class="hidden-file-input" />
+              <label for="create-cat-img-input" class="file-upload-label">
+                @if (catImagePreview) {
+                  <div class="preview-wrap">
+                    <img [src]="catImagePreview" alt="Aperçu" class="image-preview" />
+                    <span>Cliquer pour changer</span>
+                  </div>
+                } @else {
+                  <div class="upload-placeholder">
+                    <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                    <span>Choisir une image pour la catégorie</span>
+                  </div>
+                }
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalCreation()" [disabled]="isSubmittingCreate()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerCreation()" [disabled]="isSubmittingCreate()">
+            @if (isSubmittingCreate()) {
+              <span>Création en cours...</span>
+            } @else {
+              <span>Créer la Catégorie</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Modification Catégorie -->
+  @if (isEditModalOpen() && editingCat) {
+    <div class="modal-backdrop" (click)="fermerModalEdit()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Modifier la Catégorie</h3>
+            <p class="modal-subtitle">{{ editingCat.nom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalEdit()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nom de la catégorie *</label>
+            <input type="text" [(ngModel)]="editCatNom" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea [(ngModel)]="editCatDescription" rows="3" class="form-input"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalEdit()" [disabled]="isSubmittingEdit()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerEdit()" [disabled]="isSubmittingEdit()">
+            @if (isSubmittingEdit()) {
+              <span>Mise à jour...</span>
+            } @else {
+              <span>Enregistrer</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Image Catégorie -->
+  @if (isImageModalOpen() && targetImageCat) {
+    <div class="modal-backdrop" (click)="fermerModalImage()">
+      <div class="modal-card modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Photo de la Catégorie</h3>
+            <p class="modal-subtitle">{{ targetImageCat.nom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalImage()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="file-upload-zone">
+            <input type="file" (change)="onFileSelectedNewCat($event)" accept="image/*" id="new-cat-img-input" class="hidden-file-input" />
+            <label for="new-cat-img-input" class="file-upload-label">
+              @if (newCatImagePreview) {
+                <div class="preview-wrap">
+                  <img [src]="newCatImagePreview" alt="Aperçu" class="image-preview" />
+                  <span>Cliquer pour choisir une autre photo</span>
+                </div>
+              } @else {
+                <div class="upload-placeholder">
+                  <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                  <span>Sélectionner une nouvelle photo</span>
+                </div>
+              }
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalImage()" [disabled]="isSubmittingImage()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerUploadImage()" [disabled]="isSubmittingImage() || !selectedNewCatImageFile">
+            @if (isSubmittingImage()) {
+              <span>Envoi...</span>
+            } @else {
+              <span>Enregistrer l'image</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL : Ajout Produit dans Catégorie -->
+  @if (isAddProductModalOpen() && targetCatForProduct) {
+    <div class="modal-backdrop" (click)="fermerModalAjoutProduit()">
+      <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Ajouter un Produit</h3>
+            <p class="modal-subtitle">Dans la catégorie : {{ targetCatForProduct.nom }}</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalAjoutProduit()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">Nom du produit *</label>
+            <input type="text" [(ngModel)]="addProdNom" class="form-input" placeholder="Ex: Sérum Réparateur Pointes 100ml" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea [(ngModel)]="addProdDescription" rows="2" class="form-input" placeholder="Conseils d'application..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Prix de vente (FCFA) *</label>
+              <input type="number" min="1" [(ngModel)]="addProdPrixVente" class="form-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+              <input type="number" min="0" [(ngModel)]="addProdPrixAchat" class="form-input" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label">Stock initial *</label>
+              <input type="number" min="0" [(ngModel)]="addProdQuantite" class="form-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label">Seuil minimum *</label>
+              <input type="number" min="1" [(ngModel)]="addProdSeuilMin" class="form-input" />
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label">Seuil maximum</label>
+              <input type="number" min="1" [(ngModel)]="addProdSeuilMax" class="form-input" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Photo du produit (optionnelle)</label>
+            <div class="file-upload-zone">
+              <input type="file" (change)="onFileSelectedAddProd($event)" accept="image/*" id="add-prod-img" class="hidden-file-input" />
+              <label for="add-prod-img" class="file-upload-label">
+                @if (addProdImagePreview) {
+                  <div class="preview-wrap">
+                    <img [src]="addProdImagePreview" alt="Aperçu" class="image-preview" />
+                    <span>Cliquer pour changer</span>
+                  </div>
+                } @else {
+                  <div class="upload-placeholder">
+                    <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                    <span>Choisir une photo produit</span>
+                  </div>
+                }
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalAjoutProduit()" [disabled]="isSubmittingAddProduct()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerAjoutProduit()" [disabled]="isSubmittingAddProduct()">
+            @if (isSubmittingAddProduct()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Ajouter le produit</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

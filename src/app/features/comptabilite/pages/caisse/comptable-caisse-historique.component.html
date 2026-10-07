@@ -1,0 +1,155 @@
+<div class="page-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Historique des Sessions de Caisse</h1>
+      <p class="page-subtitle">Consultez les clôtures de caisse, les écarts comptables et les journaux passés</p>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['../courante']" class="btn-primary">
+        <mat-icon class="icon-xs">point_of_sale</mat-icon> Session en direct
+      </a>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerHistorique()">Réessayer</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de l'historique des sessions...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && sessions().length === 0" class="empty-state">
+    <mat-icon class="icon-xl">folder_open</mat-icon>
+    <h3>Aucune session archivée</h3>
+    <p>Aucune session de caisse n'a encore été ouverte ou clôturée sur ce salon.</p>
+  </div>
+
+  <!-- Table Sessions -->
+  <div *ngIf="!isLoading() && sessions().length > 0" class="card-section">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Période & Dates</th>
+            <th>Comptable</th>
+            <th class="text-right">Fond Initial</th>
+            <th class="text-right">Total Entrées</th>
+            <th class="text-right">Total Sorties</th>
+            <th class="text-right">Solde Clôture</th>
+            <th class="text-right">Écart</th>
+            <th>Statut</th>
+            <th class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let s of sessions()">
+            <td class="font-bold">#{{ s.id }}</td>
+            <td>
+              <div class="period-cell">
+                <span>Ouvert : {{ s.dateOuverture | date:'dd/MM/yy HH:mm' }}</span>
+                <span *ngIf="s.dateCloture" class="text-sub">Clôturé : {{ s.dateCloture | date:'dd/MM/yy HH:mm' }}</span>
+              </div>
+            </td>
+            <td>{{ s.comptablePrenom }} {{ s.comptableNom }}</td>
+            <td class="text-right">{{ s.soldeOuverture | number:'1.0-0' }} F</td>
+            <td class="text-right val-positive">+{{ s.totalEntrees | number:'1.0-0' }} F</td>
+            <td class="text-right val-negative">-{{ s.totalSorties | number:'1.0-0' }} F</td>
+            <td class="text-right font-bold">
+              {{ s.statut === 'CLOTUREE' ? ((s.soldeFermeture || 0) | number:'1.0-0') + ' F' : '-' }}
+            </td>
+            <td class="text-right">
+              <span *ngIf="s.statut === 'CLOTUREE'" [ngClass]="calculerEcart(s) === 0 ? 'badge-ok' : (calculerEcart(s) > 0 ? 'badge-warn' : 'badge-danger')">
+                {{ calculerEcart(s) > 0 ? '+' : '' }}{{ calculerEcart(s) | number:'1.0-0' }} F
+              </span>
+              <span *ngIf="s.statut !== 'CLOTUREE'">-</span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="s.statut === 'OUVERTE' ? 'badge-open' : 'badge-closed'">
+                <mat-icon class="icon-xs" *ngIf="s.statut === 'OUVERTE'" style="color: #22c55e;">check_circle</mat-icon>
+                <mat-icon class="icon-xs" *ngIf="s.statut !== 'OUVERTE'">lock</mat-icon>
+                {{ s.statut === 'OUVERTE' ? 'EN COURS' : 'CLÔTURÉE' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <button class="btn-table-action" (click)="voirOperations(s)">
+                <mat-icon class="icon-xs">receipt_long</mat-icon> Écritures
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Opérations Détaillées -->
+  <div *ngIf="showOperationsModal" class="modal-backdrop" (click)="fermerOperationsModal()">
+    <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span class="modal-subtitle">Journal des écritures</span>
+          <h2>Session #{{ selectedSession?.id }} - {{ selectedSession?.dateOuverture | date:'dd/MM/yyyy' }}</h2>
+        </div>
+        <button class="btn-close" (click)="fermerOperationsModal()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div class="session-summary-strip" *ngIf="selectedSession">
+        <div>Fond initial : <strong>{{ selectedSession.soldeOuverture | number:'1.0-0' }} FCFA</strong></div>
+        <div>Entrées : <strong class="val-positive">+{{ selectedSession.totalEntrees | number:'1.0-0' }} FCFA</strong></div>
+        <div>Sorties : <strong class="val-negative">-{{ selectedSession.totalSorties | number:'1.0-0' }} FCFA</strong></div>
+        <div>Théorique : <strong>{{ selectedSession.soldeTheorique | number:'1.0-0' }} FCFA</strong></div>
+      </div>
+
+      <div *ngIf="isLoadingOperations" class="sub-loading">
+        <div class="mini-spinner"></div>
+        <p>Chargement des opérations...</p>
+      </div>
+
+      <div *ngIf="!isLoadingOperations && operations().length === 0" class="empty-sub">
+        <p>Aucune écriture enregistrée pour cette session.</p>
+      </div>
+
+      <div *ngIf="!isLoadingOperations && operations().length > 0" class="table-responsive modal-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date & Heure</th>
+              <th>Type</th>
+              <th>Motif</th>
+              <th>Auteur</th>
+              <th class="text-right">Montant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let op of operations()">
+              <td class="date-cell">{{ op.dateOperation | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>
+                <span class="badge" [ngClass]="op.type === 'ENTREE' ? 'badge-entree' : 'badge-sortie'">
+                  {{ op.type === 'ENTREE' ? '↓ ENTRÉE' : '↑ SORTIE' }}
+                </span>
+              </td>
+              <td>{{ op.motif || 'Opération' }}</td>
+              <td>{{ op.auteurNom || 'Système' }}</td>
+              <td class="text-right font-bold" [ngClass]="op.type === 'ENTREE' ? 'val-positive' : 'val-negative'">
+                {{ op.type === 'ENTREE' ? '+' : '-' }} {{ op.montant | number:'1.0-0' }} FCFA
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-primary" (click)="fermerOperationsModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+</div>

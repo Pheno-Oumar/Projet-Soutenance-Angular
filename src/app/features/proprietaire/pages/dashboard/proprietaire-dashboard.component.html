@@ -1,0 +1,200 @@
+<div class="dashboard-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="salon-badge" [class.badge-active]="salon()?.statut">
+        <span class="status-indicator"></span>
+        <span>{{ salon()?.statut ? 'Établissement Ouvert' : 'Établissement Suspendu' }}</span>
+      </div>
+      <h1 class="page-title">Tableau de Bord Propriétaire</h1>
+      <p class="page-subtitle">
+        Pilotage d'activité et performance pour
+        <strong class="salon-name-highlight">{{ salon()?.nom || slugSalon }}</strong>
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-secondary" (click)="chargerDonnees()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon" [class.spin]="isLoading()">refresh</mat-icon>
+        Actualiser
+      </button>
+
+      <a [routerLink]="['planning']" class="btn-primary">
+        <mat-icon class="btn-icon">calendar_month</mat-icon>
+        Consulter le Planning
+      </a>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <div class="alert-content">
+        <span class="alert-title">Erreur de chargement</span>
+        <span class="alert-desc">{{ errorMessage() }}</span>
+      </div>
+      <button type="button" class="btn-retry" (click)="chargerDonnees()">Réessayer</button>
+    </div>
+  }
+
+  <!-- 4 KPI CARDS (3D SOFT-SHADOW) -->
+  <section class="kpi-grid">
+    <!-- Card 1: Chiffre d'Affaires -->
+    <div class="kpi-card card-ca">
+      <div class="kpi-icon-wrapper ca-icon">
+        <mat-icon>payments</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Chiffre d’Affaires Total</span>
+        <span class="kpi-value">{{ formatDevise(kpi()?.totalRevenus) }}</span>
+        <span class="kpi-trend positive">
+          <mat-icon class="trend-icon">trending_up</mat-icon>
+          Bénéfice net: {{ formatDevise(kpi()?.beneficeNet) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Card 2: Rendez-vous -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper rdv-icon">
+        <mat-icon>event</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Rendez-Vous Enregistrés</span>
+        <span class="kpi-value">{{ kpi()?.nombreRendezVousTotal ?? 0 }}</span>
+        <span class="kpi-desc">Tous créneaux confondus</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Équipe -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper team-icon">
+        <mat-icon>badge</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Collaborateurs</span>
+        <span class="kpi-value">{{ kpi()?.nombreCoiffeurs ?? 0 }}</span>
+        <span class="kpi-desc">Coiffeurs actifs au salon</span>
+      </div>
+    </div>
+
+    <!-- Card 4: Fichier Clients -->
+    <div class="kpi-card">
+      <div class="kpi-icon-wrapper client-icon">
+        <mat-icon>groups</mat-icon>
+      </div>
+      <div class="kpi-info">
+        <span class="kpi-label">Fichier Clients</span>
+        <span class="kpi-value">{{ kpi()?.nombreClients ?? 0 }}</span>
+        <span class="kpi-desc">Profils enregistrés</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHARTS & SUMMARY SECTION -->
+  <div class="content-grid">
+    <!-- Chart 1: CA Mensuel -->
+    <div class="dashboard-panel chart-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Progression Financière</h2>
+          <p class="panel-subtitle">Comparatif de performance & objectifs du salon</p>
+        </div>
+        <a [routerLink]="['rapports']" class="panel-link">
+          <span>Détails financiers</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+      <div class="chart-container">
+        <canvas #caChartCanvas></canvas>
+      </div>
+    </div>
+
+    <!-- Chart 2: Répartition RDV -->
+    <div class="dashboard-panel chart-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Taux d'Achèvement des RDV</h2>
+          <p class="panel-subtitle">Distribution de l'assiduité client</p>
+        </div>
+      </div>
+      <div class="chart-container doughnut-container">
+        <canvas #rdvDoughnutCanvas></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS & RECENT CLOSURES -->
+  <div class="secondary-grid">
+    <!-- Quick Actions Cards -->
+    <div class="dashboard-panel">
+      <h2 class="panel-title">Actions Rapides</h2>
+      <p class="panel-subtitle">Raccourcis vers la gestion courante</p>
+      
+      <div class="actions-list">
+        <a [routerLink]="['prestations']" class="action-item">
+          <div class="action-icon">
+            <mat-icon>add</mat-icon>
+          </div>
+          <div class="action-text">
+            <strong>Ajouter une Prestation</strong>
+            <span>Créer un service ou une variante avec photo</span>
+          </div>
+        </a>
+
+        <a [routerLink]="['employes']" class="action-item">
+          <div class="action-icon">
+            <mat-icon>person_add</mat-icon>
+          </div>
+          <div class="action-text">
+            <strong>Recruter un Collaborateur</strong>
+            <span>Créer un compte employé et assigner ses rôles</span>
+          </div>
+        </a>
+
+        <a [routerLink]="['fermetures']" class="action-item">
+          <div class="action-icon">
+            <mat-icon>event_busy</mat-icon>
+          </div>
+          <div class="action-text">
+            <strong>Fermeture Exceptionnelle</strong>
+            <span>Planifier des congés ou jours de fermeture</span>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Recent Closures Notice -->
+    <div class="dashboard-panel">
+      <div class="panel-header">
+        <div>
+          <h2 class="panel-title">Fermetures Exceptionnelles</h2>
+          <p class="panel-subtitle">Dernières périodes enregistrées</p>
+        </div>
+        <a [routerLink]="['fermetures']" class="panel-link">
+          <span>Gérer</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+
+      @if (fermetures().length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">event_busy</mat-icon>
+          <p>Aucune fermeture exceptionnelle programmée</p>
+        </div>
+      } @else {
+        <ul class="fermeture-list">
+          @for (f of fermetures(); track f.id) {
+            <li class="fermeture-item">
+              <div class="fermeture-dates">
+                <span class="date-badge">Du {{ f.dateDebut | date:'dd/MM/yyyy' }} au {{ f.dateFin | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <span class="fermeture-motif">{{ f.motif || 'Fermeture exceptionnelle' }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,382 @@
+/* ==========================================================================
+   PAGE 404 - LUXURY NOT FOUND EXPERIENCE (CHARTE 60-30-10 & 3D PERSPECTIVE)
+   ========================================================================== */
+
+.page-404-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 20%, #FAF8F5 0%, var(--bg-main) 60%, #E8E3D8 100%);
+  padding: 2rem 1.5rem;
+}
+
+/* Ambient glowing orbs */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.55;
+  animation: floatOrb 12s ease-in-out infinite alternate;
+}
+
+.orb-primary {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(200, 182, 166, 0.45) 0%, rgba(74, 59, 50, 0.08) 70%, transparent 100%);
+  top: -100px;
+  left: 10%;
+}
+
+.orb-secondary {
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(74, 59, 50, 0.18) 0%, rgba(200, 182, 166, 0.12) 65%, transparent 100%);
+  bottom: -120px;
+  right: 10%;
+  animation-delay: -6s;
+}
+
+@keyframes floatOrb {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, 20px) scale(1.08);
+  }
+  100% {
+    transform: translate(-25px, -15px) scale(0.95);
+  }
+}
+
+/* 3D Scene Perspective */
+.scene-3d {
+  position: relative;
+  z-index: 2;
+  perspective: 1000px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 3D Interactive Card */
+.card-3d {
+  position: relative;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(74, 59, 50, 0.12);
+  border-radius: 32px;
+  padding: 3.5rem 2.5rem;
+  text-align: center;
+  box-shadow: 
+    0 30px 60px -15px rgba(74, 59, 50, 0.18),
+    0 0 40px rgba(200, 182, 166, 0.25),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  transform-style: preserve-3d;
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease;
+  cursor: default;
+}
+
+.card-3d.card-hovered {
+  box-shadow: 
+    0 40px 80px -18px rgba(74, 59, 50, 0.24),
+    0 0 50px rgba(200, 182, 166, 0.35),
+    inset 0 1px 3px rgba(255, 255, 255, 1);
+}
+
+/* Specular glare sheen overlay */
+.card-glare {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 32px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Depth Layers */
+.layer-depth {
+  position: relative;
+  z-index: 2;
+  transform-style: preserve-3d;
+}
+
+/* 1. Status Badge */
+.layer-badge {
+  transform: translateZ(25px);
+  margin-bottom: 2rem;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 1.1rem;
+  background: rgba(74, 59, 50, 0.06);
+  border: 1px solid rgba(74, 59, 50, 0.14);
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  text-transform: uppercase;
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D97706;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.6);
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+/* 2. Hologram Circle & Scissors Illustration */
+.layer-illustration {
+  transform: translateZ(45px);
+  margin-bottom: 1.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.hologram-circle {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(200, 182, 166, 0.25) 0%, rgba(74, 59, 50, 0.08) 100%);
+  border: 2px solid rgba(200, 182, 166, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 
+    0 12px 28px -6px rgba(74, 59, 50, 0.15),
+    0 0 24px rgba(200, 182, 166, 0.3);
+  position: relative;
+}
+
+.hologram-circle::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px dashed rgba(74, 59, 50, 0.2);
+  animation: rotateCircle 25s linear infinite;
+}
+
+@keyframes rotateCircle {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hologram-icon,
+.hologram-mat-icon {
+  width: 52px;
+  height: 52px;
+  font-size: 52px;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: floatIcon 4s ease-in-out infinite;
+}
+
+.blade-gold {
+  stroke: var(--primary);
+}
+
+.blade-cyan {
+  stroke: #A89080;
+}
+
+.ring-glow {
+  stroke: var(--primary);
+}
+
+.pivot-glow {
+  fill: #D97706;
+}
+
+@keyframes floatIcon {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 3. Title 404 */
+.layer-title {
+  transform: translateZ(55px);
+  margin-bottom: 1rem;
+}
+
+.glitch-title {
+  margin: 0;
+  font-size: 6rem;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, var(--primary) 20%, #7A695F 60%, #C8B6A6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  position: relative;
+}
+
+.subtitle-3d {
+  margin: 0.75rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* 4. Description */
+.layer-description {
+  transform: translateZ(35px);
+  margin-bottom: 2.25rem;
+}
+
+.explanation-text {
+  margin: 0 auto;
+  max-width: 440px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* 5. Actions */
+.layer-actions {
+  transform: translateZ(50px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary-3d {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.6rem;
+  background: var(--primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 
+    0 10px 20px -5px rgba(74, 59, 50, 0.35),
+    0 0 15px rgba(200, 182, 166, 0.25);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-primary-3d:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 14px 26px -6px rgba(74, 59, 50, 0.45),
+    0 0 20px rgba(200, 182, 166, 0.35);
+}
+
+.btn-primary-3d:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(74, 59, 50, 0.25);
+}
+
+.btn-secondary-3d {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary);
+  border: 1px solid rgba(74, 59, 50, 0.18);
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(74, 59, 50, 0.05);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+  text-decoration: none;
+}
+
+.btn-secondary-3d:hover {
+  background: #FAF8F5;
+  border-color: rgba(74, 59, 50, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(74, 59, 50, 0.09);
+}
+
+.btn-secondary-3d:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .card-3d {
+    padding: 2.5rem 1.5rem;
+    border-radius: 24px;
+  }
+
+  .glitch-title {
+    font-size: 4.5rem;
+  }
+
+  .subtitle-3d {
+    font-size: 1.05rem;
+  }
+
+  .explanation-text {
+    font-size: 0.88rem;
+  }
+
+  .layer-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-primary-3d,
+  .btn-secondary-3d {
+    width: 100%;
+  }
+}

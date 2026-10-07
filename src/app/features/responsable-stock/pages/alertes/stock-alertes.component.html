@@ -1,0 +1,249 @@
+<div class="alertes-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+    <div class="alert-banner alert-danger">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">error</mat-icon>
+        <span>{{ errorMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  @if (successMessage()) {
+    <div class="alert-banner alert-success">
+      <div class="alert-content">
+        <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+        <span>{{ successMessage() }}</span>
+      </div>
+      <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+    </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Alertes</span>
+      </div>
+      <h1 class="page-title">Alertes & Ruptures de Stock</h1>
+      <p class="page-subtitle">Surveillance proactive des niveaux critiques pour éviter toute interruption de vente</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn btn-secondary" (click)="chargerAlertes()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <a [routerLink]="['../produits']" class="btn btn-primary">
+        <mat-icon class="btn-icon icon-sm">inventory_2</mat-icon>
+        <span>Voir tous les produits</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards-grid">
+    <div class="summary-card" [class.active-filter]="typeFiltre === 'TOUS'" (click)="typeFiltre = 'TOUS'">
+      <div class="summary-icon icon-brown">
+        <mat-icon class="icon-md">warning</mat-icon>
+      </div>
+      <div>
+        <span class="summary-title">Total Alertes</span>
+        <span class="summary-count">{{ alertes().length }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card" [class.active-filter]="typeFiltre === 'RUPTURE'" (click)="typeFiltre = 'RUPTURE'">
+      <div class="summary-icon icon-danger">
+        <mat-icon class="icon-md">block</mat-icon>
+      </div>
+      <div>
+        <span class="summary-title">Ruptures Totales (0 stock)</span>
+        <span class="summary-count text-danger">{{ totalRupturesTotales }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card" [class.active-filter]="typeFiltre === 'CRITIQUE'" (click)="typeFiltre = 'CRITIQUE'">
+      <div class="summary-icon icon-warning">
+        <mat-icon class="icon-md">priority_high</mat-icon>
+      </div>
+      <div>
+        <span class="summary-title">Stocks Critiques (≤ Seuil)</span>
+        <span class="summary-count text-warning">{{ totalStocksCritiques }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Bar -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par produit ou catégorie..."
+        class="search-input"
+      />
+      @if (searchQuery) {
+        <button class="clear-search" (click)="searchQuery = ''"><mat-icon class="icon-xs">close</mat-icon></button>
+      }
+    </div>
+
+    <div class="select-filters">
+      <button class="filter-chip" [class.active]="typeFiltre === 'TOUS'" (click)="typeFiltre = 'TOUS'">
+        Toutes les alertes ({{ alertes().length }})
+      </button>
+      <button class="filter-chip chip-danger" [class.active]="typeFiltre === 'RUPTURE'" (click)="typeFiltre = 'RUPTURE'">
+        Rupture totale ({{ totalRupturesTotales }})
+      </button>
+      <button class="filter-chip chip-warning" [class.active]="typeFiltre === 'CRITIQUE'" (click)="typeFiltre = 'CRITIQUE'">
+        Seuil critique ({{ totalStocksCritiques }})
+      </button>
+    </div>
+  </section>
+
+  <!-- Alerts Content -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Vérification des seuils de stock en cours...</p>
+    </div>
+  } @else if (filteredAlertes.length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon text-success icon-xl">check_circle</mat-icon>
+      <h3>Aucune alerte de rupture</h3>
+      <p>Tous vos produits disposent actuellement d'un volume de stock suffisant.</p>
+    </div>
+  } @else {
+    <div class="alertes-grid">
+      @for (item of filteredAlertes; track item.produitId) {
+        <div class="alerte-card" [class.card-rupture]="item.estEnRuptureTotale">
+          <div class="card-header">
+            <div class="header-left">
+              <span class="category-tag">{{ item.categorieNom }}</span>
+              <h3 class="produit-title">{{ item.produitNom }}</h3>
+            </div>
+            @if (item.estEnRuptureTotale) {
+              <span class="status-pill pill-danger">RUPTURE TOTALE</span>
+            } @else {
+              <span class="status-pill pill-warning">SEUIL CRITIQUE</span>
+            }
+          </div>
+
+          <div class="card-body">
+            <div class="metric-row">
+              <div class="metric-box">
+                <span class="metric-label">Stock disponible</span>
+                <span class="metric-value" [class.text-danger]="item.estEnRuptureTotale" [class.text-warning]="!item.estEnRuptureTotale">
+                  {{ item.quantiteDisponible }} unité(s)
+                </span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Seuil minimum</span>
+                <span class="metric-value">{{ item.seuilMinimum }}</span>
+              </div>
+              <div class="metric-box">
+                <span class="metric-label">Prix de vente</span>
+                <span class="metric-value">{{ formatMontant(item.prixVente) }}</span>
+              </div>
+            </div>
+
+            <!-- Jauge visuelle de niveau de sécurité -->
+            <div class="gauge-container">
+              <div class="gauge-labels">
+                <span>Niveau de sécurité</span>
+                <span [class.text-danger]="item.estEnRuptureTotale">
+                  {{ item.quantiteDisponible === 0 ? '0% (Épuisé)' : Math.round((item.quantiteDisponible / (item.seuilMinimum || 1)) * 100) + '% du seuil' }}
+                </span>
+              </div>
+              <div class="gauge-track">
+                <div
+                  class="gauge-fill"
+                  [class.gauge-danger]="item.estEnRuptureTotale"
+                  [class.gauge-warning]="!item.estEnRuptureTotale"
+                  [style.width.%]="Math.min(100, (item.quantiteDisponible / Math.max(1, (item.seuilMinimum || 5) * 1.5)) * 100)"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="deficit-info">
+              Déficit estimé :
+              <strong>+{{ Math.max(1, (item.seuilMinimum * 2) - item.quantiteDisponible) }} unités conseillées</strong>
+            </span>
+            <button class="btn btn-primary btn-sm" (click)="ouvrirModalReappro(item)">
+              <mat-icon class="icon-xs">add</mat-icon>
+              <span>Réapprovisionner</span>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL : Réapprovisionnement -->
+  @if (isRestockModalOpen() && selectedAlerte) {
+    <div class="modal-backdrop" (click)="fermerModalReappro()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">Entrée de Réapprovisionnement</h3>
+            <p class="modal-subtitle">{{ selectedAlerte.produitNom }} ({{ selectedAlerte.categorieNom }})</p>
+          </div>
+          <button class="modal-close" (click)="fermerModalReappro()"><mat-icon class="icon-sm">close</mat-icon></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="summary-box-modal">
+            <div>
+              <span class="sub-label">Stock actuel</span>
+              <strong class="sub-val" [class.text-danger]="selectedAlerte.estEnRuptureTotale">{{ selectedAlerte.quantiteDisponible }}</strong>
+            </div>
+            <div>
+              <span class="sub-label">Seuil de sécurité</span>
+              <strong class="sub-val">{{ selectedAlerte.seuilMinimum }}</strong>
+            </div>
+            <div>
+              <span class="sub-label">Prix de vente</span>
+              <strong class="sub-val">{{ formatMontant(selectedAlerte.prixVente) }}</strong>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Quantité reçue du fournisseur *</label>
+            <input type="number" min="1" [(ngModel)]="restockQuantite" class="form-input" />
+            <small class="form-hint">Le nouveau stock sera de : {{ selectedAlerte.quantiteDisponible + restockQuantite }} unités.</small>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+            <input type="number" min="0" [(ngModel)]="restockPrixUnitaire" class="form-input" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Motif ou Bon de livraison</label>
+            <textarea [(ngModel)]="restockMotif" rows="2" class="form-input" placeholder="Ex: Livraison express fournisseur"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="fermerModalReappro()" [disabled]="isSubmittingRestock()">
+            Annuler
+          </button>
+          <button class="btn btn-primary" (click)="validerReappro()" [disabled]="isSubmittingRestock()">
+            @if (isSubmittingRestock()) {
+              <span>Enregistrement...</span>
+            } @else {
+              <span>Valider l'Entrée (+{{ restockQuantite }})</span>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

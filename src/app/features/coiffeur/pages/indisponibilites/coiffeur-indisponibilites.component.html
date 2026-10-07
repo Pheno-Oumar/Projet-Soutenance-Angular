@@ -1,0 +1,176 @@
+<div class="page-container">
+  <!-- Header with title & Action -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mes Congés & Indisponibilités</h1>
+      <p class="page-subtitle">Déclarez et gérez vos périodes d'absence au salon</p>
+    </div>
+    <button class="btn-create" (click)="ouvrirModalCreation()">
+      <mat-icon class="icon-sm">add</mat-icon> Poser une absence
+    </button>
+  </div>
+
+  <!-- Success Toast -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerIndisponibilites()">Réessayer</button>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'all'"
+      (click)="filterMode = 'all'"
+    >
+      Toutes ({{ indisponibilites().length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'upcoming'"
+      (click)="filterMode = 'upcoming'"
+    >
+      À venir
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'past'"
+      (click)="filterMode = 'past'"
+    >
+      Passées
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de vos indisponibilités...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && filteredIndisponibilites.length === 0" class="empty-state">
+    <mat-icon class="icon-xl">calendar_month</mat-icon>
+    <h3>Aucune indisponibilité</h3>
+    <p>Aucun créneau d'indisponibilité trouvé pour ce filtre.</p>
+  </div>
+
+  <!-- Indisponibilités Grid/Cards -->
+  <div *ngIf="!isLoading() && filteredIndisponibilites.length > 0" class="indispos-grid">
+    <div *ngFor="let ind of filteredIndisponibilites" class="indispo-card">
+      <div class="card-top">
+        <span class="motif-tag" [ngClass]="'motif-' + (ind.motif || 'conge').toLowerCase()">
+          {{ ind.motif || 'CONGÉ' }}
+        </span>
+        <span *ngIf="estFutur(ind.dateDebut)" class="status-upcoming">À venir</span>
+        <span *ngIf="!estFutur(ind.dateDebut)" class="status-past">Passée / En cours</span>
+      </div>
+
+      <div class="period-box">
+        <div class="period-date">
+          <span class="lbl">Début :</span>
+          <strong>{{ ind.dateDebut | date:'dd MMM yyyy, HH:mm' }}</strong>
+        </div>
+        <div class="period-arrow">↓</div>
+        <div class="period-date">
+          <span class="lbl">Fin :</span>
+          <strong>{{ ind.dateFin | date:'dd MMM yyyy, HH:mm' }}</strong>
+        </div>
+      </div>
+
+      <p class="comment-text" *ngIf="ind.commentaire">
+        <mat-icon class="icon-xs">chat</mat-icon> {{ ind.commentaire }}
+      </p>
+
+      <div class="card-footer">
+        <span class="date-created">Enregistré le {{ ind.dateCreation | date:'dd/MM/yyyy' }}</span>
+        <!-- Can only delete if before start date -->
+        <button
+          *ngIf="estFutur(ind.dateDebut)"
+          class="btn-delete"
+          (click)="supprimer(ind.id)"
+          title="Annuler cette indisponibilité"
+        >
+          <mat-icon class="icon-xs">delete</mat-icon> Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Création -->
+  <div *ngIf="showCreateModal" class="modal-backdrop" (click)="fermerModalCreation()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Déclarer une indisponibilité</h2>
+        <button class="btn-close" (click)="fermerModalCreation()">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+
+      <div *ngIf="modalError" class="modal-alert-error">
+        <mat-icon class="icon-sm">warning</mat-icon> {{ modalError }}
+      </div>
+
+      <form (ngSubmit)="creerIndisponibilite()">
+        <div class="form-group">
+          <label for="motif">Motif d'absence *</label>
+          <select id="motif" [(ngModel)]="newIndispo.motif" name="motif" class="form-input" required>
+            <option value="CONGE">Congé payé / Vacances</option>
+            <option value="MALADIE">Maladie / Raison médicale</option>
+            <option value="FORMATION">Formation professionnelle</option>
+            <option value="PERSONNEL">Raison personnelle</option>
+            <option value="AUTRE">Autre motif</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dateDebut">Date et heure de début *</label>
+            <input
+              type="datetime-local"
+              id="dateDebut"
+              [(ngModel)]="newIndispo.dateDebut"
+              name="dateDebut"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="dateFin">Date et heure de fin *</label>
+            <input
+              type="datetime-local"
+              id="dateFin"
+              [(ngModel)]="newIndispo.dateFin"
+              name="dateFin"
+              class="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="commentaire">Commentaire ou précision (optionnel)</label>
+          <textarea
+            id="commentaire"
+            [(ngModel)]="newIndispo.commentaire"
+            name="commentaire"
+            class="form-textarea"
+            rows="3"
+            placeholder="Précisez un motif ou une information utile pour le salon..."
+          ></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" (click)="fermerModalCreation()">Annuler</button>
+          <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Enregistrement...' : 'Confirmer l’indisponibilité' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

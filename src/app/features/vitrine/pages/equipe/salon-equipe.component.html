@@ -1,0 +1,65 @@
+<div class="equipe-page">
+  <header class="equipe-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>L'Équipe du Salon</span>
+      </nav>
+      <span class="sub-badge">NOS ARTISTES COIFFEURS</span>
+      <h1 class="page-title">Les Maîtres Artisans</h1>
+      <p class="page-desc">
+        Une équipe d'experts passionnés, formés aux techniques de coupe, de coloration et de rituels de soins les plus exigeants.
+      </p>
+    </div>
+  </header>
+
+  <main class="equipe-content">
+    <div class="content-container">
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement de l'équipe du salon...</p>
+      </div>
+
+      <div *ngIf="!isLoading() && coiffeurs().length === 0" class="empty-state">
+        <mat-icon class="empty-icon">groups</mat-icon>
+        <h3>Aucun coiffeur répertorié</h3>
+        <p>L'équipe du salon sera présentée très bientôt.</p>
+        <a [routerLink]="['/' + slugSalon]" class="btn-back">
+          <mat-icon class="icon-xs">arrow_back</mat-icon> Retour à l'accueil
+        </a>
+      </div>
+
+      <div *ngIf="!isLoading() && coiffeurs().length > 0" class="equipe-grid">
+        <div *ngFor="let c of coiffeurs()" class="coiffeur-card">
+          <div class="avatar-wrap">
+            <img
+              *ngIf="c.photoProfilUrl"
+              [src]="c.photoProfilUrl | safeMedia"
+              [alt]="c.coiffeurPrenom + ' ' + c.coiffeurNom"
+              class="coiffeur-photo"
+            />
+            <div *ngIf="!c.photoProfilUrl" class="avatar-initials">
+              {{ c.coiffeurPrenom.charAt(0) }}{{ c.coiffeurNom.charAt(0) }}
+            </div>
+          </div>
+
+          <div class="coiffeur-info">
+            <h2 class="coiffeur-name">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }}</h2>
+            <span class="coiffeur-speciality">{{ c.description || 'Artiste Capillaire' }}</span>
+            <p class="coiffeur-bio">{{ c.biographie || 'Expert certifié, passionné par la valorisation de la beauté naturelle de vos cheveux.' }}</p>
+
+            <button
+              type="button"
+              class="btn-book-coiffeur"
+              (click)="choisirCoiffeur(c)"
+            >
+              <mat-icon class="icon-xs">calendar_month</mat-icon>
+              <span>Réserver avec {{ c.coiffeurPrenom }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

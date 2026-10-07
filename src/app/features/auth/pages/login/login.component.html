@@ -1,0 +1,206 @@
+<main class="login-wrapper">
+  <!-- Glowing ambient light orbs in the background -->
+  <div class="ambient-orb orb-brown" aria-hidden="true"></div>
+  <div class="ambient-orb orb-gold" aria-hidden="true"></div>
+
+  <div class="login-container">
+    <!-- LEFT PANEL: 3D Form Card -->
+    <section class="form-section">
+      <div
+        #card3d
+        class="login-card-3d"
+        [class.card-hovered]="isHovered()"
+        [style.transform]="'perspective(1000px) rotateX(' + tiltRotateX() + 'deg) rotateY(' + tiltRotateY() + 'deg)'"
+        (mousemove)="onMouseMove($event, card3d)"
+        (mouseleave)="onMouseLeave()"
+      >
+        <div class="card-glare" aria-hidden="true"></div>
+
+        <!-- LOGO & HEADER -->
+        <header class="card-header">
+          @if (isSalonMode()) {
+            <!-- Salon Logo Monogram 3D -->
+            <div class="logo-box salon-logo-box">
+              @if (logoUrl()) {
+                <img
+                  [src]="logoUrl()! | safeMedia"
+                  [alt]="nomSalon()"
+                  referrerpolicy="no-referrer"
+                  style="width: 100%; height: 100%; object-fit: cover; border-radius: 14px;"
+                />
+              } @else {
+                <div class="salon-monogram">
+                  <span class="monogram-letter">{{ nomSalon()?.charAt(0)?.toUpperCase() || 'S' }}</span>
+                </div>
+              }
+            </div>
+            <div class="header-text">
+              <span class="badge-role">Espace Salon</span>
+              <h1 class="card-title">{{ nomSalon() | titlecase }}</h1>
+              <p class="card-subtitle">Connectez-vous pour accéder à vos services et plannings</p>
+            </div>
+          } @else {
+            <!-- Platform Logo AON 3D -->
+            <div class="logo-box platform-logo-box">
+              <svg class="aon-logo-icon" viewBox="0 0 48 48" fill="none">
+                <path d="M24 4L42 38H6L24 4Z" stroke="url(#aonGoldGrad)" stroke-width="3" stroke-linejoin="round" />
+                <circle cx="24" cy="26" r="5" fill="#C8B6A6" />
+                <defs>
+                  <linearGradient id="aonGoldGrad" x1="6" y1="4" x2="42" y2="38" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#FFFDFC" />
+                    <stop offset="0.5" stop-color="#C8B6A6" />
+                    <stop offset="1" stop-color="#4A3B32" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div class="header-text">
+              <span class="badge-role badge-admin">Administration Plateforme</span>
+              <h1 class="card-title">Portail Hair Style</h1>
+              <p class="card-subtitle">Accès sécurisé réservé à l'équipe de gouvernance système</p>
+            </div>
+          }
+        </header>
+
+        <!-- LOGIN FORM -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+          <!-- Email -->
+          <div class="form-group">
+            <label for="email" class="form-label">Adresse Email</label>
+            <div class="input-wrapper" [class.input-error]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+              <mat-icon class="input-icon">mail</mat-icon>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                class="form-control"
+                placeholder="nom@exemple.com"
+                autocomplete="email"
+              />
+            </div>
+            @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
+              <span class="error-text">L'adresse email est requise</span>
+            }
+            @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']) {
+              <span class="error-text">Format d'adresse email invalide</span>
+            }
+          </div>
+
+          <!-- Mot de passe -->
+          <div class="form-group">
+            <div class="label-row">
+              <label for="password" class="form-label">Mot de passe</label>
+            </div>
+            <div class="input-wrapper" [class.input-error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+              <mat-icon class="input-icon">lock</mat-icon>
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                class="form-control"
+                placeholder="••••••••••••"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="toggle-pwd-btn"
+                (click)="togglePasswordVisibility()"
+                aria-label="Afficher ou masquer le mot de passe"
+              >
+                <mat-icon class="icon-sm">{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+            @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']) {
+              <span class="error-text">Le mot de passe est obligatoire</span>
+            }
+          </div>
+
+          <!-- Options: Se souvenir & Mot de passe oublié -->
+          <div class="form-row-options">
+            <label class="remember-label">
+              <input type="checkbox" formControlName="rememberMe" class="custom-checkbox" />
+              <span class="checkbox-text">Mémoriser ma session</span>
+            </label>
+            <button type="button" (click)="onForgotPassword()" class="forgot-link-btn">
+              Mot de passe oublié ?
+            </button>
+          </div>
+
+          <!-- Bouton de connexion -->
+          <button
+            type="submit"
+            class="btn-submit"
+            [disabled]="loginForm.invalid || isSubmitting()"
+            id="btn-login-submit"
+          >
+            @if (isSubmitting()) {
+              <span class="spinner-small" aria-hidden="true"></span>
+              Connexion en cours...
+            } @else {
+              <span>Accéder à mon espace</span>
+              <mat-icon class="btn-arrow">arrow_forward</mat-icon>
+            }
+          </button>
+
+          <!-- Lien explicite de retour vitrine -->
+          <div class="back-vitrine-row">
+            <a [routerLink]="isSalonMode() ? ['/' + slugSalon() + '/vitrine'] : ['/explore']" class="back-link-vitrine">
+              <mat-icon class="icon-xs align-middle">arrow_back</mat-icon> {{ isSalonMode() ? 'Retourner à la vitrine du salon' : 'Explorer les salons et rituels' }}
+            </a>
+          </div>
+        </form>
+
+        <!-- FOOTER: Lien inscription si salon -->
+        @if (isSalonMode()) {
+          <footer class="card-footer">
+            <p class="register-hint">
+              Nouveau client dans ce salon ?
+              <a [routerLink]="['/' + slugSalon() + '/register']" class="register-link">
+                Créer un compte
+              </a>
+            </p>
+          </footer>
+        }
+      </div>
+    </section>
+
+    <!-- RIGHT PANEL: Visual Showcase & Brand Aesthetic -->
+    <aside class="showcase-section" aria-hidden="true">
+      <div class="showcase-image-wrapper">
+        <img
+          [src]="'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80' | safeMedia"
+          alt="Ambiance salon de coiffure luxury"
+          class="showcase-image"
+          loading="eager"
+          fetchpriority="high"
+          referrerpolicy="no-referrer"
+        />
+        <div class="showcase-overlay"></div>
+      </div>
+
+      <div class="showcase-content">
+        <div class="floating-glass-box">
+          <div class="glass-badge">
+            <span class="glass-dot"></span>
+            HAUTE COIFFURE DIGITALE
+          </div>
+          <h2 class="glass-title">L'art capillaire sublimé par l'innovation</h2>
+          <p class="glass-desc">
+            Gestion sur-mesure des rendez-vous, profils capillaires confidentiels et pilotage d'excellence de votre salon.
+          </p>
+          <div class="glass-stats">
+            <div class="stat-item">
+              <span class="stat-number">100%</span>
+              <span class="stat-label">Multi-tenant sécurisé</span>
+            </div>
+            <div class="stat-separator"></div>
+            <div class="stat-item">
+              <span class="stat-number">3D</span>
+              <span class="stat-label">Expérience immersive</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>

@@ -1,0 +1,537 @@
+<div class="realisations-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Portfolio & Réalisations Vidéo</h1>
+      <p class="page-subtitle">Galerie audiovisuelle du salon mettant en valeur vos transformations capillaires et modération des échanges</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="header-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'VIDEOS'"
+        (click)="activeTab = 'VIDEOS'"
+      >
+        <mat-icon class="tab-icon">videocam</mat-icon>
+        Portfolio Vidéos ({{ realisations().length }})
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'COMMENTAIRES'"
+        (click)="activeTab = 'COMMENTAIRES'; chargerCommentaires()"
+      >
+        <mat-icon class="tab-icon">comment</mat-icon>
+        Commentaires Réalisations ({{ commentaires().length }})
+      </button>
+    </div>
+  </header>
+
+  <!-- TAB 1: PORTFOLIO & VIDÉOS -->
+  @if (activeTab === 'VIDEOS') {
+    <div class="toolbar-section">
+      <div class="filter-pills">
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterStatut === null"
+          (click)="filterStatut = null"
+        >
+          Toutes ({{ realisations().length }})
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterStatut === true"
+          (click)="filterStatut = true"
+        >
+          Publiées
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterStatut === false"
+          (click)="filterStatut = false"
+        >
+          Brouillons / Masquées
+        </button>
+      </div>
+
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Nouvelle Réalisation
+      </button>
+    </div>
+
+    <!-- REALISATIONS GRID -->
+    <div class="realisations-container">
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Chargement du portfolio vidéo...</span>
+        </div>
+      } @else if (filteredRealisations.length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">videocam_off</mat-icon>
+          <h3>Aucune réalisation trouvée</h3>
+          <p>Ajoutez votre première vidéo de coiffure ou transformation pour enrichir votre vitrine.</p>
+          <button type="button" class="btn-primary" (click)="openCreateModal()">Ajouter une réalisation</button>
+        </div>
+      } @else {
+        <div class="realisations-grid">
+          @for (r of filteredRealisations; track r.id) {
+            <div class="realisation-card" [class.card-hidden]="!r.statutPublication">
+              <!-- VIDEO PREVIEW BOX -->
+              <div class="video-preview-box" (click)="openPlayerModal(r)">
+                <video [appHlsVideo]="r.urlVideo" preload="metadata" class="video-thumbnail"></video>
+                <div class="play-overlay">
+                  <div class="play-btn-circle">
+                    <mat-icon>play_arrow</mat-icon>
+                  </div>
+                </div>
+                <span class="publication-badge" [class.badge-published]="r.statutPublication" [class.badge-draft]="!r.statutPublication">
+                  {{ r.statutPublication ? 'Publiée' : 'Brouillon' }}
+                </span>
+              </div>
+
+              <!-- CARD CONTENT -->
+              <div class="card-content">
+                <h3 class="realisation-title">{{ r.titre }}</h3>
+                @if (r.description) {
+                  <p class="realisation-desc">{{ r.description }}</p>
+                }
+
+                <div class="realisation-meta">
+                  @if (r.dateRealisation) {
+                    <span class="meta-item">
+                      <mat-icon class="meta-icon">event</mat-icon>
+                      {{ r.dateRealisation | date:'dd MMM yyyy' }}
+                    </span>
+                  }
+                  @if (r.coiffeurNomComplet) {
+                    <span class="meta-item">
+                      <mat-icon class="meta-icon">person</mat-icon>
+                      {{ r.coiffeurNomComplet }}
+                    </span>
+                  }
+                </div>
+
+                <!-- ACTIONS -->
+                <div class="card-actions-bar">
+                  <button type="button" class="btn-action-sm" (click)="openPlayerModal(r)" title="Visionner">
+                    Visionner
+                  </button>
+                  <button type="button" class="btn-action-sm" (click)="openVideoModal(r)" title="Changer la vidéo">
+                    Vidéo
+                  </button>
+                  <button type="button" class="btn-action-sm" (click)="openEditModal(r)" title="Modifier les textes">
+                    Modifier
+                  </button>
+                  <button type="button" class="btn-action-sm" (click)="basculerPublication(r)">
+                    {{ r.statutPublication ? 'Masquer' : 'Publier' }}
+                  </button>
+                  <button type="button" class="btn-action-sm btn-delete" (click)="openDeleteModal(r)" title="Supprimer">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- TAB 2: COMMENTAIRES RÉALISATIONS -->
+  @if (activeTab === 'COMMENTAIRES') {
+    <div class="toolbar-section">
+      <div class="filter-pills">
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterCommentStatut === 'TOUS'"
+          (click)="filterCommentStatut = 'TOUS'"
+        >
+          Tous ({{ commentaires().length }})
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterCommentStatut === 'ACTIF'"
+          (click)="filterCommentStatut = 'ACTIF'"
+        >
+          Actifs / Visibles
+        </button>
+        <button
+          type="button"
+          class="pill-btn"
+          [class.active]="filterCommentStatut === 'MASQUE'"
+          (click)="filterCommentStatut = 'MASQUE'"
+        >
+          Masqués par la modération
+        </button>
+      </div>
+
+      <button type="button" class="btn-secondary" (click)="chargerCommentaires()">
+        <mat-icon class="btn-icon">refresh</mat-icon>
+        Actualiser
+      </button>
+    </div>
+
+    <div class="comments-container">
+      @if (isLoadingComments()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Chargement des commentaires...</span>
+        </div>
+      } @else if (filteredCommentaires.length === 0) {
+        <div class="empty-state">
+          <mat-icon class="empty-icon">chat_bubble_outline</mat-icon>
+          <h3>Aucun commentaire</h3>
+          <p>Aucun commentaire ne correspond au filtre sélectionné.</p>
+        </div>
+      } @else {
+        <div class="comments-list">
+          @for (c of filteredCommentaires; track c.id) {
+            <div class="comment-card" [class.card-muted]="c.statut === 'MASQUE'">
+              <div class="comment-header">
+                <div class="comment-author-info">
+                  <div class="author-avatar">
+                    {{ (c.auteurNomComplet || 'C').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <h4 class="author-name">{{ c.auteurNomComplet }}</h4>
+                    <span class="comment-date">{{ c.dateCreation | date:'dd MMM yyyy à HH:mm' }}</span>
+                  </div>
+                </div>
+
+                <div class="comment-meta-right">
+                  <span class="video-ref">Vidéo : <strong>{{ getRealisationTitre(c.realisationId) }}</strong></span>
+                  <span class="status-badge" [class.badge-active]="c.statut === 'ACTIF'" [class.badge-masked]="c.statut === 'MASQUE'">
+                    {{ c.statut === 'ACTIF' ? 'Visible' : 'Masqué' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="comment-body">
+                <p class="comment-text">{{ c.contenu }}</p>
+              </div>
+
+              <div class="comment-actions">
+                @if (c.statut === 'ACTIF') {
+                  <button type="button" class="btn-action-warning" (click)="masquerCommentaire(c)">
+                    <mat-icon class="mini-icon">visibility_off</mat-icon>
+                    Masquer ce commentaire
+                  </button>
+                } @else {
+                  <button type="button" class="btn-action-success" (click)="demasquerCommentaire(c)">
+                    <mat-icon class="mini-icon">visibility</mat-icon>
+                    Rendre visible
+                  </button>
+                }
+
+                <button type="button" class="btn-action-danger" (click)="openDeleteCommentModal(c)">
+                  <mat-icon class="mini-icon">delete</mat-icon>
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- MODAL: CRÉER RÉALISATION (VIDÉO OBLIGATOIRE) -->
+  @if (showCreateModal) {
+    <div class="modal-backdrop" (click)="showCreateModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Nouvelle Réalisation Vidéo</h2>
+          <button type="button" class="btn-close" (click)="showCreateModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="creerRealisation()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="realTitre" class="form-label">Titre de la réalisation *</label>
+              <input
+                id="realTitre"
+                type="text"
+                class="form-control"
+                [(ngModel)]="newRealisation.titre"
+                name="titre"
+                placeholder="Ex: Balayage Cendré & Brushing Hollywoodien"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="realDesc" class="form-label">Description / Détails techniques</label>
+              <textarea
+                id="realDesc"
+                class="form-control"
+                [(ngModel)]="newRealisation.description"
+                name="description"
+                rows="3"
+                placeholder="Précisez les produits utilisés, le type de cheveu, etc."
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="realDate" class="form-label">Date de réalisation</label>
+                <input
+                  id="realDate"
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="newRealisation.dateRealisation"
+                  name="dateRealisation"
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="realCoiffeur" class="form-label">Coiffeur réalisateur</label>
+                <select
+                  id="realCoiffeur"
+                  class="form-control"
+                  [(ngModel)]="newRealisation.coiffeurId"
+                  name="coiffeurId"
+                >
+                  <option [ngValue]="undefined">-- Aucun (Salon en général) --</option>
+                  @for (c of coiffeurs(); track c.id) {
+                    <option [ngValue]="c.id">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})</option>
+                  }
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group video-upload-group">
+              <label for="videoFile" class="form-label">Fichier Vidéo (Strictement Obligatoire) *</label>
+              <input
+                id="videoFile"
+                type="file"
+                accept="video/*"
+                (change)="onVideoSelected($event)"
+                class="form-control"
+                required
+              />
+              @if (videoFileName) {
+                <span class="file-chosen-text">Fichier sélectionné : <strong>{{ videoFileName }}</strong></span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input
+                  type="checkbox"
+                  [(ngModel)]="newRealisation.publierImmediatement"
+                  name="publierImmediatement"
+                />
+                <span>Rendre visible immédiatement sur la vitrine publique du salon</span>
+              </label>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showCreateModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isCreating || !newVideoFile">
+              {{ isCreating ? 'Téléversement en cours...' : 'Mettre en ligne' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: MODIFIER RÉALISATION (TEXTES) -->
+  @if (showEditModal) {
+    <div class="modal-backdrop" (click)="showEditModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Modifier la Réalisation</h2>
+          <button type="button" class="btn-close" (click)="showEditModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="modifierRealisation()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="editRealTitre" class="form-label">Titre *</label>
+              <input
+                id="editRealTitre"
+                type="text"
+                class="form-control"
+                [(ngModel)]="editRealisationData.titre"
+                name="titre"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editRealDesc" class="form-label">Description</label>
+              <textarea
+                id="editRealDesc"
+                class="form-control"
+                [(ngModel)]="editRealisationData.description"
+                name="description"
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="editRealDate" class="form-label">Date de réalisation</label>
+                <input
+                  id="editRealDate"
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="editRealisationData.dateRealisation"
+                  name="dateRealisation"
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="editRealCoiffeur" class="form-label">Coiffeur réalisateur</label>
+                <select
+                  id="editRealCoiffeur"
+                  class="form-control"
+                  [(ngModel)]="editRealisationData.coiffeurId"
+                  name="coiffeurId"
+                >
+                  <option [ngValue]="undefined">-- Aucun (Salon en général) --</option>
+                  @for (c of coiffeurs(); track c.id) {
+                    <option [ngValue]="c.id">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showEditModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isUpdating">
+              {{ isUpdating ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: CHANGER VIDÉO -->
+  @if (showVideoModal) {
+    <div class="modal-backdrop" (click)="showVideoModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Remplacer la Vidéo</h2>
+          <button type="button" class="btn-close" (click)="showVideoModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="uploadVideoRealisation()">
+          <div class="modal-body">
+            <p class="modal-description">
+              Sélectionnez une nouvelle vidéo pour remplacer l'ancienne sur Cloudinary. L'ancienne vidéo sera définitivement écrasée.
+            </p>
+
+            <div class="form-group">
+              <label for="repVideoFile" class="form-label">Nouveau Fichier Vidéo *</label>
+              <input
+                id="repVideoFile"
+                type="file"
+                accept="video/*"
+                (change)="onReplacementVideoSelected($event)"
+                class="form-control"
+                required
+              />
+              @if (replacementVideoName) {
+                <span class="file-chosen-text">Nouveau fichier sélectionné : <strong>{{ replacementVideoName }}</strong></span>
+              }
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showVideoModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isUploadingVideo || !replacementVideoFile">
+              {{ isUploadingVideo ? 'Téléversement Cloudinary...' : 'Mettre à jour la vidéo' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: LECTURE VIDÉO -->
+  @if (showPlayerModal && playingRealisation) {
+    <div class="modal-backdrop" (click)="closePlayerModal()">
+      <div class="modal-dialog modal-video-player" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h3 class="modal-title">{{ playingRealisation.titre }}</h3>
+          <button type="button" class="btn-close" (click)="closePlayerModal()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <div class="video-player-body">
+          <video [appHlsVideo]="playingRealisation.urlVideo" controls autoplay class="main-video-player"></video>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: SUPPRESSION RÉALISATION -->
+  @if (showDeleteModal && realisationToDelete) {
+    <div class="modal-backdrop" (click)="showDeleteModal = false">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Confirmer la Suppression</h2>
+          <button type="button" class="btn-close" (click)="showDeleteModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <div class="modal-body">
+          <p>Êtes-vous sûr de vouloir supprimer la réalisation <strong>{{ realisationToDelete.titre }}</strong> ?</p>
+          <p class="modal-danger-note">Cette action est irréversible et supprimera le média sur Cloudinary.</p>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showDeleteModal = false">Annuler</button>
+          <button type="button" class="btn-danger" (click)="confirmerSuppression()" [disabled]="isDeleting">
+            {{ isDeleting ? 'Suppression...' : 'Supprimer définitivement' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: SUPPRESSION COMMENTAIRE -->
+  @if (showDeleteCommentModal && commentToDelete) {
+    <div class="modal-backdrop" (click)="showDeleteCommentModal = false">
+      <div class="modal-dialog modal-sm" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Supprimer le Commentaire</h2>
+          <button type="button" class="btn-close" (click)="showDeleteCommentModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+        <div class="modal-body">
+          <p>Supprimer définitivement le commentaire de <strong>{{ commentToDelete.auteurNomComplet }}</strong> ?</p>
+          <blockquote class="comment-preview-quote">« {{ commentToDelete.contenu }} »</blockquote>
+          <p class="modal-danger-note">Cette action est irréversible.</p>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showDeleteCommentModal = false">Annuler</button>
+          <button type="button" class="btn-danger" (click)="confirmerSuppressionCommentaire()" [disabled]="isDeletingComment">
+            {{ isDeletingComment ? 'Suppression...' : 'Supprimer' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</div>

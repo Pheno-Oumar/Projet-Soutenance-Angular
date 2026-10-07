@@ -1,0 +1,110 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mes Avis & Évaluations Clients</h1>
+      <p class="page-subtitle">Consultez les retours et commentaires laissés par vos clients après vos prestations</p>
+    </div>
+  </div>
+
+  <!-- Summary Banner -->
+  <div class="summary-banner" *ngIf="!isLoading()">
+    <div class="rating-large-block">
+      <span class="rating-big-num">{{ noteMoyenne > 0 ? noteMoyenne : '-' }}</span>
+      <div class="rating-stars">
+        <mat-icon class="icon-sm star-fill" *ngFor="let s of getStarsArray(noteMoyenne)">star</mat-icon>
+        <mat-icon class="icon-sm star-empty" *ngFor="let s of getEmptyStarsArray(noteMoyenne)">star_outline</mat-icon>
+      </div>
+      <span class="rating-count">{{ avisList().length }} avis au total</span>
+    </div>
+    <div class="rating-encouragement">
+      <h3>Qualité du service & Accueil</h3>
+      <p>
+        Les avis sont déposés par les clients ayant réservé une prestation avec vous.
+        Un bon suivi et une écoute attentive renforcent votre visibilité et votre réputation dans le salon !
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="selectedStatut === null"
+      (click)="setStatutFilter(null)"
+    >
+      Tous les avis
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="selectedStatut === true"
+      (click)="setStatutFilter(true)"
+    >
+      Validés / Publiés
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="selectedStatut === false"
+      (click)="setStatutFilter(false)"
+    >
+      En attente de modération
+    </button>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerAvis()">Réessayer</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de vos avis...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && avisList().length === 0" class="empty-state">
+    <mat-icon class="icon-xl">rate_review</mat-icon>
+    <h3>Aucun avis trouvé</h3>
+    <p>Aucun avis client ne correspond à ce filtre pour le moment.</p>
+  </div>
+
+  <!-- Avis Grid -->
+  <div *ngIf="!isLoading() && avisList().length > 0" class="avis-grid">
+    <div *ngFor="let a of avisList()" class="avis-card">
+      <div class="avis-header">
+        <div class="reviewer-info">
+          <div class="reviewer-avatar">
+            {{ (a.clientNomComplet || 'C').charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <h4 class="reviewer-name">{{ a.clientNomComplet || 'Client Anonyme' }}</h4>
+            <span class="service-name">
+              <mat-icon class="icon-xs">content_cut</mat-icon> {{ a.serviceNom }} - {{ a.varianteNom }}
+            </span>
+          </div>
+        </div>
+        <div class="avis-meta">
+          <div class="stars-row">
+            <mat-icon class="icon-sm star-fill" *ngFor="let s of getStarsArray(a.note)">star</mat-icon>
+            <mat-icon class="icon-sm star-empty" *ngFor="let s of getEmptyStarsArray(a.note)">star_outline</mat-icon>
+          </div>
+          <span class="avis-date">{{ a.dateCreation | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="avis-body">
+        <p class="avis-comment">"{{ a.commentaire || 'Aucun commentaire textuel' }}"</p>
+      </div>
+
+      <div class="avis-footer">
+        <span *ngIf="a.statut" class="badge-approved">
+          <mat-icon class="icon-xs">check_circle</mat-icon> Publié sur le salon
+        </span>
+        <span *ngIf="!a.statut" class="badge-pending">
+          <mat-icon class="icon-xs">hourglass_empty</mat-icon> En cours de modération manager
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
