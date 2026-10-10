@@ -11,10 +11,27 @@ import { SeoService } from '../../../../core/services/seo.service';
 import { SafeMediaUrlPipe } from '../../../../shared/pipes/safe-media-url.pipe';
 import { MatIconModule } from '@angular/material/icon';
 
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SafeMediaUrlPipe, MatIconModule],
+  imports: [
+    CommonModule,
+     ReactiveFormsModule, 
+     RouterLink, 
+     SafeMediaUrlPipe,
+      MatIconModule,
+     MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatProgressSpinnerModule],
+
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })

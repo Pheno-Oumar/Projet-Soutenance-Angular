@@ -9,7 +9,6 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 import { Salon, Produit, Realisation } from '../../../../shared/models';
 import { PublicNavbarComponent } from '../../../../core/layout/public-navbar/public-navbar.component';
 import { MediaProxyService } from '../../../../core/services/media-proxy.service';
-import { SafeMediaUrlPipe } from '../../../../shared/pipes/safe-media-url.pipe';
 import { IMAGE_CATALOG } from '../../../../shared/constants/image-catalog.constants';
 import { ExploreSalonDrawerComponent } from '../../components/explore-salon-drawer/explore-salon-drawer.component';
 
@@ -18,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 @Component({
   selector: 'app-explore-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PublicNavbarComponent, SafeMediaUrlPipe, ExploreSalonDrawerComponent, MatIconModule],
+  imports: [CommonModule, RouterModule, FormsModule,  MatIconModule],
   templateUrl: './explore-home.component.html',
   styleUrls: ['./explore-home.component.css']
 })

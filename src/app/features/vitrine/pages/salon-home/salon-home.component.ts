@@ -22,7 +22,7 @@ import { VitrineService } from '../../../../core/services/vitrine.service';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { FlyToTargetService } from '../../interactions/fly-to-target.service';
 import { RevealOnScrollDirective } from '../../interactions/reveal-on-scroll.directive';
-import { Tilt3dDirective } from '../../interactions/tilt-3d.directive';
+// import { Tilt3dDirective } from '../../interactions/tilt-3d.directive';
 import { SalonHero3dComponent } from '../../components/salon-hero-3d/salon-hero-3d.component';
 import { SafeMediaUrlPipe } from '../../../../shared/pipes/safe-media-url.pipe';
 
@@ -37,6 +37,7 @@ import {
 } from '../../../../shared/models';
 
 import { HlsVideoDirective } from '../../../../shared/directives/hls-video.directive';
+import { Tilt3dDirective } from '../../interactions/tilt-3d.directive';
 
 @Component({
   selector: 'app-salon-home',
@@ -45,9 +46,9 @@ import { HlsVideoDirective } from '../../../../shared/directives/hls-video.direc
     CommonModule,
     RouterModule,
     MatIconModule,
-    SalonHero3dComponent,
+   //lonHero3dComponent,
     RevealOnScrollDirective,
-    Tilt3dDirective,
+    // Tilt3dDirective,
     SafeMediaUrlPipe,
     HlsVideoDirective
   ],
@@ -180,36 +181,6 @@ export class SalonHomeComponent implements OnInit, AfterViewInit, OnDestroy {
         commentaire: 'Un rituel de soin d’une douceur absolue. L’équipe maîtrise l’art capillaire avec une précision rare !',
         statut: true,
         dateCreation: '2026-09-28'
-      },
-      {
-        id: 2,
-        salonSlug: this.slugSalon,
-        clientId: 102,
-        clientNomComplet: 'Fatou Diallo',
-        note: 5,
-        commentaire: 'Réservation en ligne ultra simple et prise en charge ponctuelle. Le salon est splendide et apaisant.',
-        statut: true,
-        dateCreation: '2026-09-25'
-      },
-      {
-        id: 3,
-        salonSlug: this.slugSalon,
-        clientId: 103,
-        clientNomComplet: 'Cheick Oumar',
-        note: 5,
-        commentaire: 'Meilleur salon de la ville pour les coupes précises et les soins profonds. Je recommande les yeux fermés.',
-        statut: true,
-        dateCreation: '2026-09-20'
-      },
-      {
-        id: 4,
-        salonSlug: this.slugSalon,
-        clientId: 104,
-        clientNomComplet: 'Mariam Konaté',
-        note: 5,
-        commentaire: 'Les produits de la boutique sont incroyables, mes cheveux ont retrouvé toute leur brillance naturelle.',
-        statut: true,
-        dateCreation: '2026-09-18'
       }
     ];
   });
@@ -519,7 +490,7 @@ export class SalonHomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   playPreview(video: HTMLVideoElement): void {
     if (video) {
-      video.play().catch(() => {});
+      video.play().catch(() => { });
     }
   }
 

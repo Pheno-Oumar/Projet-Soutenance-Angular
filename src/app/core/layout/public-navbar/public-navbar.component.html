@@ -6,7 +6,7 @@
         <mat-icon class="icon-sm">content_cut</mat-icon>
       </div>
       <div class="brand-text">
-        <span class="brand-title">HAIR STYLE <span class="brand-badge-pro">ELITE</span></span>
+        <span class="brand-title">HAIR STYLE </span>
         <span class="brand-tagline">Le Guide des Salons & Tendances</span>
       </div>
     </a>
@@ -20,7 +20,7 @@
         class="nav-item"
       >
         <mat-icon class="icon-sm">storefront</mat-icon>
-        <span>Salons & Spas</span>
+        <span>Salons</span>
       </a>
 
       <a
@@ -30,7 +30,6 @@
       >
         <mat-icon class="icon-sm pulsing-glow">auto_awesome</mat-icon>
         <span>Kady's Reels</span>
-        <span class="badge-hot">LIVE</span>
       </a>
 
       <a
@@ -120,33 +119,33 @@
       </button>
     </div>
 
-    <div class="mobile-drawer-nav">
+    <!-- <div class="mobile-drawer-nav">
       <a routerLink="/explore" (click)="closeMobileMenu()" class="drawer-nav-item">
         <mat-icon class="icon-sm">storefront</mat-icon>
         <span>Salons & Spas</span>
-      </a>
+      </a> -->
 
-      <a routerLink="/kadys" (click)="closeMobileMenu()" class="drawer-nav-item kadys-item">
+      <!--  <a routerLink="/kadys" (click)="closeMobileMenu()" class="drawer-nav-item kadys-item">
         <mat-icon class="icon-sm">auto_awesome</mat-icon>
-        <span>Kady's Reels</span>
-        <span class="d-live">LIVE</span>
-      </a>
+        <span>Kady's Reels</span>  -->
+        <!-- <span class="d-live">LIVE</span> -->
+      <!-- </a> -->
 
-      <a routerLink="/explore" fragment="tendances" (click)="closeMobileMenu()" class="drawer-nav-item">
+      <!-- <a routerLink="/explore" fragment="tendances" (click)="closeMobileMenu()" class="drawer-nav-item">
         <mat-icon class="icon-sm">local_fire_department</mat-icon>
         <span>Prestations Phares</span>
-      </a>
+      </a> -->
 
-      <a routerLink="/explore" fragment="pourquoi-nous" (click)="closeMobileMenu()" class="drawer-nav-item">
+      <!-- <a routerLink="/explore" fragment="pourquoi-nous" (click)="closeMobileMenu()" class="drawer-nav-item">
         <mat-icon class="icon-sm">star</mat-icon>
         <span>Pourquoi Réserver ?</span>
-      </a>
+      </a> -->
 
-      <a routerLink="/explore" fragment="partenaires-pro" (click)="closeMobileMenu()" class="drawer-nav-item">
+      <!-- <a routerLink="/explore" fragment="partenaires-pro" (click)="closeMobileMenu()" class="drawer-nav-item">
         <mat-icon class="icon-sm">handshake</mat-icon>
         <span>Devenir Salon Partenaire</span>
-      </a>
-    </div>
+      </a> -->
+    <!-- </div> -->
 
     <div class="mobile-drawer-footer">
       <ng-container *ngIf="authService.isAuthenticated()">
@@ -154,14 +153,14 @@
           <mat-icon class="icon-sm">account_circle</mat-icon>
           <span>Mon Compte ({{ userDisplayName }})</span>
         </a>
-        <a *ngIf="!isClient" routerLink="/espace-selection" (click)="closeMobileMenu()" class="btn-drawer-account">
+        <!-- <a *ngIf="!isClient" routerLink="/espace-selection" (click)="closeMobileMenu()" class="btn-drawer-account">
           <mat-icon class="icon-sm">business_center</mat-icon>
           <span>Mon Espace Pro</span>
-        </a>
-        <button (click)="logout()" class="btn-drawer-logout">
+        </a> -->
+        <!-- <button (click)="logout()" class="btn-drawer-logout">
           <mat-icon class="icon-sm">logout</mat-icon>
           <span>Se déconnecter</span>
-        </button>
+        </button> -->
       </ng-container>
 
       <ng-container *ngIf="!authService.isAuthenticated()">
