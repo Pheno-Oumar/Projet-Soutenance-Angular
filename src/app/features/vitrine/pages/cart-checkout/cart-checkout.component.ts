@@ -38,6 +38,7 @@ export class CartCheckoutComponent implements OnInit {
   readonly submitting = signal<boolean>(false);
   readonly orderConfirmed = signal<boolean>(false);
   readonly orderReference = signal<string>('');
+  readonly showConfirmationPopup = signal<boolean>(false);
 
   // Coordonnées client
   nomClient = '';
@@ -79,17 +80,20 @@ export class CartCheckoutComponent implements OnInit {
       this.notificationService.error('Votre panier est vide.');
       return;
     }
-
     if (!this.authService.isAuthenticated()) {
-      if (!this.nomClient.trim() || !this.telephoneClient.trim()) {
-        this.notificationService.error('Veuillez renseigner votre nom et votre numéro de téléphone pour le retrait.');
-        return;
-      }
-      if (this.creerCompte && (!this.motDePasse || this.motDePasse.length < 6)) {
+  this.notificationService.error(
+    'Veuillez vous connecter pour valider votre commande.'
+  );
+
+  this.router.navigate(['/login']);
+  return;
+}
+
+    if (this.creerCompte && (!this.motDePasse || this.motDePasse.length < 6)) {
         this.notificationService.error('Le mot de passe pour la création de compte doit comporter au moins 6 caractères.');
         return;
       }
-    }
+    
 
     const p = this.cartStore.panier();
     if (!p || !p.lignes || p.lignes.length === 0) {
@@ -113,9 +117,8 @@ export class CartCheckoutComponent implements OnInit {
     this.vitrineService.passerCommande(this.slugSalon, payload).subscribe({
       next: (cmd) => {
         this.orderReference.set(cmd.numeroCommande || cmd.codeRetrait || `CMD-${cmd.id}`);
-        this.orderConfirmed.set(true);
-        this.cartStore.viderPanier(this.slugSalon);
-        this.submitting.set(false);
+       this.showConfirmationPopup.set(true);
+       this.submitting.set(false);
         this.notificationService.success('Commande Click & Collect confirmée avec succès !');
       },
       error: (err) => {
@@ -126,6 +129,12 @@ export class CartCheckoutComponent implements OnInit {
       }
     });
   }
+
+  fermerConfirmation(): void {
+  this.showConfirmationPopup.set(false);
+  this.cartStore.viderPanier(this.slugSalon);
+  this.orderConfirmed.set(false);
+}
 
   nouvelleCommande(): void {
     this.orderConfirmed.set(false);

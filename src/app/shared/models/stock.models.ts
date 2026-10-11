@@ -107,6 +107,7 @@ export interface LignePanier {
   id: number;
   produitId: number;
   produitNom: string;
+  imageUrl?: string; 
   prixUnitaire: number;
   quantite: number;
   sousTotal: number;

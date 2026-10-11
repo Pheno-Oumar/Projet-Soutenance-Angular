@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 490px;
+  min-height: 360px;
   padding: 38px 24px;
   overflow: hidden;
   color: #FFFFFF;
@@ -34,7 +34,7 @@
       rgba(74, 59, 50, 0.76) 50%,
       rgba(39, 27, 19, 0.58) 100%
     ),
-    url('/assets/immgsalon.png') center center / cover no-repeat;
+    url('/assets/realisation.jpg') center center / 100%  no-repeat;
 
   border-bottom: 1px solid rgba(200, 182, 166, 0.25);
 }
@@ -310,12 +310,13 @@
 
 /* CONTENU */
 .reels-content {
-  padding: 44px 24px;
+  padding: 24px 2%;
 }
 
 .content-container {
-  max-width: 1240px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
+  width: 100%;
 }
 
 /* CHARGEMENT */

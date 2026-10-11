@@ -23,8 +23,8 @@ import { firstValueFrom } from 'rxjs';
     FormsModule,
     MatIconModule,
     SafeMediaUrlPipe,
-    Tilt3dDirective,
-    RevealOnScrollDirective
+    // Tilt3dDirective,
+    // RevealOnScrollDirective
   ],
   templateUrl: './salon-categorie-produits.component.html',
   styleUrl: './salon-categorie-produits.component.css'
@@ -128,7 +128,7 @@ export class SalonCategorieProduitsComponent implements OnInit {
       1
     );
 
-    this.notificationService.success(`${p.nom} ajouté à votre panier Click & Collect !`);
+    this.notificationService.success(`${p.nom} ajouté à votre panier!`);
   }
 
   openCartDrawer(): void {
