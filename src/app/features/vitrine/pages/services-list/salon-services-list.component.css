@@ -319,15 +319,15 @@
   position: relative;
   z-index: 2;
   width: 100%;
-  padding: 22px 5.4%;
+  padding: 2rem 2%;
   background: var(--cream);
   border-bottom: 1px solid rgba(74, 59, 50, 0.06);
 }
 
 .categories-container {
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 .categories-filter-bar {
@@ -391,15 +391,14 @@
    ========================================================= */
 
 .services-content {
-  width: 100%;
-  padding: 37px 5.4% 60px;
+  padding: 2rem 2%;
   background: var(--cream);
 }
 
 .content-container {
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 /* Titre et description du catalogue */

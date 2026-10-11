@@ -131,5 +131,6 @@ export class RoleSelectionComponent implements OnInit {
 
   logout(): void {
     this.authService.logout().subscribe();
+    
   }
 }

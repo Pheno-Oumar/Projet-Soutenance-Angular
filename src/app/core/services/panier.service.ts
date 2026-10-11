@@ -105,7 +105,8 @@ export class PanierService {
           quantite,
           sousTotal: quantite * produit.prixVente,
           stockDisponible: produit.quantiteDisponible || 99,
-          enAlerte: false
+          enAlerte: false,
+           imageUrl: produit.imageUrl
         };
         local.lignes.push(nouvelleLigne);
       }

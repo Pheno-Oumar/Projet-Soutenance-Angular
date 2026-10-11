@@ -1,80 +1,171 @@
+
 :host {
   display: block;
-  min-height: 100vh;
   width: 100%;
+  min-height: 100vh;
 }
+
+* {
+  box-sizing: border-box;
+}
+
+/* =========================
+   PAGE PRINCIPALE
+========================= */
 
 .selection-wrapper {
   position: relative;
+  isolation: isolate;
   min-height: 100vh;
-  /* 60% Arrière-plan : #F5F2EB */
-  background-color: #F5F2EB;
-  background-image: radial-gradient(circle at 50% 10%, #FFFDFC 0%, #F5F2EB 60%, #E9E3D6 100%);
-  color: #4A3B32;
-  overflow-x: hidden;
-  padding: 1.5rem 2rem 4rem 2rem;
+  padding: 2rem 2%;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 15%,
+      #fffdfa 0%,
+      transparent 45%
+    ),
+    linear-gradient(
+      135deg,
+      #faf6ef,
+      #f1e8dc
+    );
+
+  color: #4a3b32;
 }
 
 .ambient-orb {
   position: absolute;
+  z-index: -1;
   border-radius: 50%;
-  filter: blur(120px);
   pointer-events: none;
-  opacity: 0.55;
 }
 
 .orb-brown {
-  width: 500px;
-  height: 500px;
-  /* 30% Couleur Primaire : #4A3B32 */
-  background: radial-gradient(circle, rgba(74, 59, 50, 0.12) 0%, transparent 70%);
-  top: 10%;
-  left: 5%;
+  width: 320px;
+  height: 320px;
+  left: -190px;
+  top: 24%;
+  background: rgba(180, 139, 101, 0.2);
+  filter: blur(65px);
 }
 
 .orb-gold {
-  width: 480px;
-  height: 480px;
-  /* 10% Accents : #C8B6A6 */
-  background: radial-gradient(circle, rgba(200, 182, 166, 0.25) 0%, transparent 70%);
-  bottom: 5%;
-  right: 5%;
+  width: 420px;
+  height: 420px;
+  right: -230px;
+  bottom: -100px;
+  background: rgba(200, 182, 166, 0.42);
+  filter: blur(70px);
 }
 
-/* Top bar */
+/* =========================
+   EN-TÊTE
+========================= */
+
 .top-nav {
   position: relative;
-  z-index: 20;
+  z-index: 2;
+background:#ffffff ;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
-  margin: 0 auto 3rem auto;
-  padding: 0.75rem 1.25rem;
-  background: #FFFFFF;
-  border: 1px solid rgba(74, 59, 50, 0.12);
-  border-radius: 20px;
-  box-shadow: 0 10px 25px -5px rgba(74, 59, 50, 0.08);
+  gap: 1.5rem;
+  border: 1px solid rgba(74, 59, 50, 0.1);
+  max-width: 1250px;
+ padding: 0.80rem 1.30rem;
+  margin: 0 auto 4.5rem;
+ border-radius: 20px;
+ box-shadow: 0 8px 22px rgba(74, 59, 50, 0.05);
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-symbol {
+  display: grid;
+  place-items: center;
+
+  width: 54px;
+  height: 54px;
+
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    #76502f,
+    #3d281b
+  );
+
+  color: #fff8ed;
+}
+
+.brand-symbol mat-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 32px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.brand-name strong {
+  font-weight: 400;
+}
+
+.brand-subtitle {
+  margin-top: 0.35rem;
+  color: #866344;
+
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+}
+
+/* Utilisateur */
+
+.user-actions,
 .user-greeting {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+}
+
+.user-actions {
+  gap: 1.25rem;
+}
+
+.user-greeting {
+  gap: 0.8rem;
 }
 
 .avatar-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #4A3B32 0%, #33261F 100%);
-  border: 1px solid #C8B6A6;
-  color: #FFFDFC;
-  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 44px;
+  height: 44px;
+
+  border-radius: 50%;
+  background: #70472b;
+  color: #fffaf4;
+
   font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-weight: 700;
 }
 
 .user-info {
@@ -83,191 +174,329 @@
 }
 
 .user-name {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 700;
-  color: #4A3B32;
+  color: #4a3b32;
 }
 
 .user-salon {
-  font-size: 0.75rem;
-  color: #7A695F;
-  font-weight: 600;
+  margin-top: 0.25rem;
+  color: #817166;
+  font-size: 0.78rem;
 }
+
+/* Bouton déconnexion */
 
 .btn-logout {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 1rem;
-  border-radius: 10px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  color: #DC2626;
-  font-size: 0.82rem;
+  justify-content: center;
+  gap: 0.45rem;
+
+  padding: 0.65rem 0.9rem;
+
+  border: 1px solid #e1d3c5;
+  border-radius: 12px;
+
+  background: rgba(255, 253, 249, 0.8);
+  color: rgb(240, 58, 58);
+
+  font-size: 0.8rem;
   font-weight: 600;
+
   cursor: pointer;
-  transition: all 0.15s ease;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn-logout mat-icon {
+  width: 19px;
+  height: 19px;
+  font-size: 19px;
+  color: rgb(240, 58, 58);
 }
 
 .btn-logout:hover {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.4);
+  background: #fff;
+  transform: translateY(-2px);
 }
 
-.btn-logout svg {
-  width: 16px;
-  height: 16px;
-}
+/* =========================
+   TITRE
+========================= */
 
-/* Content Container */
 .content-container {
   position: relative;
-  z-index: 10;
-  max-width: 1200px;
-  margin: 0 auto;
+  z-index: 1;
+width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .hero-header {
+  margin-bottom: 2.7rem;
   text-align: center;
-  margin-bottom: 3.5rem;
 }
 
-.badge-selection {
-  display: inline-block;
-  padding: 0.3rem 0.95rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: rgba(200, 182, 166, 0.22);
-  color: #4A3B32;
-  border: 1px solid rgba(200, 182, 166, 0.5);
-  margin-bottom: 0.85rem;
+.title-decoration {
+  display: block;
+
+  width: 60px;
+  height: 4px;
+
+  margin: 0 auto 1.4rem;
+
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    #a9763f,
+    #d8b77c
+  );
 }
 
 .hero-title {
-  font-size: 2.4rem;
-  font-weight: 800;
-  color: #4A3B32;
-  letter-spacing: -0.02em;
-  margin: 0 0 0.65rem 0;
+  margin: 0 0 0.8rem;
+
+  color: #382518;
+
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
 .hero-subtitle {
+  max-width: 620px;
+  margin: 0 auto;
+
+  color: #76685d;
+
   font-size: 1.05rem;
-  color: #7A695F;
-  margin: 0;
-  max-width: 600px;
-  margin-inline: auto;
+  line-height: 1.7;
 }
 
-/* Roles Grid */
+/* =========================
+   GRILLE DES CARTES
+========================= */
+
 .roles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 2rem;
-  perspective: 1000px;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 1.7rem;
 }
 
-.role-card-3d {
+/* Carte */
+
+.role-card {
   position: relative;
+
   display: flex;
   flex-direction: column;
-  height: 100%;
-  padding: 2.25rem 2rem;
-  background: #FFFFFF;
-  border: 1px solid rgba(74, 59, 50, 0.12);
-  border-radius: 24px;
-  box-shadow: 0 12px 28px -6px rgba(74, 59, 50, 0.08);
+
+  min-width: 0;
+  min-height: 455px;
+  padding: 0 0 1.5rem;
+
+  border: 1px solid rgba(112, 71, 43, 0.08);
+  border-radius: 22px;
+
+  background: rgba(255, 253, 249, 0.94);
+
+  box-shadow: 0 15px 35px rgba(89, 59, 36, 0.08);
+
   cursor: pointer;
-  transform-style: preserve-3d;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.2s ease;
   overflow: hidden;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 
-.role-card-3d:hover {
-  transform: translateY(-8px) scale(1.02);
-  border-color: #C8B6A6;
-  box-shadow: 0 24px 48px -12px rgba(74, 59, 50, 0.15),
-              0 0 25px rgba(200, 182, 166, 0.25);
+.role-card:hover,
+.role-card:focus-visible {
+  transform: translateY(-7px);
+
+  border-color: #a9805b;
+
+  box-shadow: 0 24px 45px rgba(89, 59, 36, 0.15);
+
+  outline: none;
 }
 
-.card-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  opacity: 0.85;
+.role-card:focus-visible {
+  outline: 3px solid #b98b52;
+  outline-offset: 4px;
 }
 
-.card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
+/* =========================
+   ZONE VISUELLE ET ICÔNES
+========================= */
 
-.role-icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+.card-visual {
+  position: relative;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FAF8F5;
-  border: 1px solid rgba(74, 59, 50, 0.15);
-  box-shadow: 0 6px 15px -3px rgba(74, 59, 50, 0.08);
-  transition: transform 0.2s ease;
-  color: #4A3B32;
+
+  min-height: 175px;
+  flex-shrink: 0;
+
+  margin: 0.75rem 0.75rem 0;
+
+  border-radius: 17px;
+  overflow: hidden;
+
+  background: linear-gradient(
+    135deg,
+    #f4e8d9,
+    #e8d5bf
+  );
 }
 
-.role-card-3d:hover .role-icon-box {
-  transform: scale(1.08) rotate(3deg);
-  border-color: #C8B6A6;
+/* Couleurs différentes par carte */
+
+.role-card:nth-child(2) .card-visual {
+  background: linear-gradient(
+    135deg,
+    #e9ded1,
+    #d8bda0
+  );
 }
 
-.role-icon-box svg {
-  width: 28px;
-  height: 28px;
+.role-card:nth-child(3) .card-visual {
+  background: linear-gradient(
+    135deg,
+    #eee9e1,
+    #dcd0c1
+  );
 }
+
+/* Icône principale */
+
+.role-icon-circle {
+  position: relative;
+  z-index: 2;
+
+  display: grid;
+  place-items: center;
+
+  width: 88px;
+  height: 88px;
+
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 26px;
+
+  background: #5C3826;
+  color: #fffaf4;
+
+  box-shadow: 0 12px 28px rgba(74, 48, 30, 0.18);
+
+  transition: transform 0.25s ease;
+}
+
+.role-icon-circle mat-icon {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  font-size: 42px;
+  line-height: 42px;
+}
+
+.role-card:hover .role-icon-circle {
+  transform: translateY(-4px) scale(1.06);
+}
+
+/* Badge */
 
 .card-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  position: absolute;
+  z-index: 3;
+
+  top: 12px;
+  left: 12px;
+
+  padding: 0.4rem 0.75rem;
+
+  border: 1px solid rgba(112, 71, 43, 0.12);
+  border-radius: 30px;
+
+  background: rgba(255, 251, 245, 0.92);
+  color: var(--role-accent, #70472b);
+
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  background: #FAF8F5;
-  border: 1px solid rgba(74, 59, 50, 0.12);
 }
 
-.card-middle {
+/* Cercles décoratifs */
+
+.visual-decoration {
+  position: absolute;
+  border: 1px solid rgba(112, 71, 43, 0.12);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.decoration-one {
+  width: 150px;
+  height: 150px;
+
+  right: -45px;
+  bottom: -85px;
+}
+
+.decoration-two {
+  width: 95px;
+  height: 95px;
+
+  top: -45px;
+  left: 40%;
+}
+
+/* =========================
+   CONTENU DES CARTES
+========================= */
+
+.card-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 2rem;
+
+  padding: 1.25rem 1.4rem 1rem;
+
+  text-align: center;
 }
 
 .role-title {
-  font-size: 1.45rem;
-  font-weight: 800;
-  color: #4A3B32;
-  margin: 0 0 0.65rem 0;
+  margin: 0 0 0.8rem;
+
+  color: #432d1d;
+
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .role-description {
-  font-size: 0.88rem;
-  line-height: 1.55;
-  color: #7A695F;
   margin: 0;
+
+  color: #87776b;
+
+  font-size: 0.91rem;
+  line-height: 1.75;
 }
 
-/* 10% CTA Bouton : #1A1A1A (Noir Mat) */
+/* =========================
+   BOUTON D'ACCÈS
+========================= */
+
 .card-bottom {
+  padding: 0 1.4rem;
   margin-top: auto;
 }
 
@@ -275,41 +504,193 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.6rem;
+
   width: 100%;
-  padding: 0.85rem 1.25rem;
+  padding: 0.85rem 1rem;
+
+  border: 1px solid #70472b;
   border-radius: 12px;
-  background: #1A1A1A;
-  border: 1px solid rgba(200, 182, 166, 0.35);
-  color: #FFFDFC;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 6px 16px -3px rgba(26, 26, 26, 0.3);
+
+  background: #5C3826;
+  color: #fffaf4;
+
+  font-size: 0.85rem;
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
-.role-card-3d:hover .btn-enter {
-  background: #2D2D2D;
-  border-color: #C8B6A6;
-  box-shadow: 0 10px 20px -3px rgba(26, 26, 26, 0.4), 0 0 15px rgba(200, 182, 166, 0.25);
-}
+.btn-enter mat-icon {
+  flex-shrink: 0;
 
-.btn-enter svg {
-  width: 18px;
-  height: 18px;
-  color: #C8B6A6;
+  width: 20px;
+  height: 20px;
+
+  font-size: 20px;
+
   transition: transform 0.2s ease;
 }
 
-.role-card-3d:hover .btn-enter svg {
-  transform: translateX(5px);
+.role-card:hover .btn-enter {
+  background: #4a3020;
+  border-color: #4a3020;
 }
 
-@media (max-width: 768px) {
+.role-card:hover .btn-enter mat-icon {
+  transform: translateX(4px);
+}
+
+/* =========================
+   PIED DE PAGE
+========================= */
+
+.selection-footer {
+  margin-top: 3.5rem;
+  text-align: center;
+}
+
+.footer-line {
+  display: block;
+
+  width: 65px;
+  height: 2px;
+
+  margin: 0 auto 0.9rem;
+
+  background: #b98b52;
+}
+
+.selection-footer p {
+  margin: 0;
+
+  color: #70472b;
+
+  font-family: Georgia, serif;
+  font-size: 1.2rem;
+  font-style: italic;
+}
+
+.footer-caption {
+  display: block;
+
+  margin-top: 0.5rem;
+
+  color: #a18b77;
+
+  font-size: 0.62rem;
+  letter-spacing: 0.25em;
+}
+
+/* =========================
+   TABLETTES
+========================= */
+
+@media (max-width: 900px) {
   .selection-wrapper {
-    padding: 1rem 1rem 3rem 1rem;
+    padding: 1.5rem 4%;
   }
+
+  .top-nav {
+    margin-bottom: 3.5rem;
+  }
+
+  .roles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .role-card {
+    min-height: 430px;
+  }
+
+  .card-visual {
+    min-height: 165px;
+  }
+}
+
+/* =========================
+   MOBILES
+========================= */
+
+@media (max-width: 600px) {
+  .selection-wrapper {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+
+  .top-nav {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.25rem;
+
+    margin-bottom: 3rem;
+  }
+
+  .brand-name {
+    font-size: 1.7rem;
+  }
+
+  .user-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+  }
+
+  .user-greeting {
+    min-width: 0;
+  }
+
+  .user-salon {
+    max-width: 210px;
+    line-height: 1.4;
+  }
+
+  .btn-logout {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .hero-header {
+    margin-bottom: 2rem;
+  }
+
   .hero-title {
-    font-size: 1.85rem;
+    font-size: 1.8rem;
+    line-height: 1.25;
+  }
+
+  .hero-subtitle {
+    font-size: 0.93rem;
+  }
+
+  .roles-grid {
+    grid-template-columns: 1fr;
+    max-width: 390px;
+    margin: 0 auto;
+  }
+
+  .role-card {
+    min-height: 420px;
+  }
+
+  .card-visual {
+    min-height: 180px;
+  }
+
+  .selection-footer {
+    margin-top: 2.5rem;
+  }
+}
+
+/* Respecter les préférences d'accessibilité */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -123,10 +123,26 @@ export class SalonNavbarComponent {
     }, 50);
   }
 
+  // logout(): void {
+  //   this.closeClientDropdown();
+  //   this.closeMobileMenu();
+  //   this.authService.logout();
+  //   this.router.navigate(['/' + this.slugSalon + '/login']);
+  // }
+
   logout(): void {
     this.closeClientDropdown();
-    this.closeMobileMenu();
-    this.authService.logout();
-    this.router.navigate(['/' + this.slugSalon + '/login']);
+   this.closeMobileMenu();
+   
+ const slug = this.slugSalon;
+
+  this.authService.logout().subscribe({
+    next: () => {
+      this.router.navigate(['/', slug, 'auth', 'login']);
+    },
+    error: () => {
+      this.router.navigate(['/', slug, 'auth', 'login']);
+    }
+  });
   }
 }

@@ -1,32 +1,41 @@
+
 <div class="boutique-page">
+
   <!-- EN-TÊTE DE LA BOUTIQUE -->
   <header class="boutique-header">
     <div class="header-container">
+
       <nav class="breadcrumb-nav">
         <a [routerLink]="['/' + slugSalon]">Accueil</a>
         <mat-icon class="icon-xs">chevron_right</mat-icon>
-        <span>Boutique Officielle</span>
+        <span class="active-crumb">Boutique</span>
       </nav>
 
-      <span class="sub-badge">Click & Collect Exclusif en Salon</span>
-      <h1 class="page-title">L’Écrin des Soins Capillaires</h1>
+      <h1 class="page-title">
+        Nos produits pour prendre soin de vous
+      </h1>
+
       <p class="page-desc">
-        Prolongez les bienfaits de vos rituels en salon grâce à notre sélection de soins professionnels certifiés chez <strong>{{ salonNom }}</strong>.
-        Commandez en ligne et retirez vos produits sans attente au comptoir du salon.
+        Découvrez notre sélection de produits professionnels chez
+        <strong>{{ salonNom }}</strong> et prolongez les bienfaits
+        de vos soins à la maison.
       </p>
 
-      <!-- Barre de recherche des univers -->
+      <!-- RECHERCHE -->
       <div class="search-bar-wrap">
         <mat-icon class="search-icon">search</mat-icon>
+
         <input
           type="text"
           class="search-input"
-          placeholder="Rechercher une gamme (ex: Shampoings, Huiles, Soins Kératine, Masques...)"
+          placeholder="Rechercher une catégorie de produits..."
           [ngModel]="searchQuery()"
           (ngModelChange)="searchQuery.set($event)"
         />
+
         <button
           *ngIf="searchQuery()"
+          type="button"
           (click)="searchQuery.set('')"
           class="clear-btn"
           aria-label="Effacer la recherche"
@@ -35,57 +44,76 @@
         </button>
       </div>
 
-      <!-- Piliers d'engagement qualité -->
-      <div class="boutique-commitments">
+      <!-- AVANTAGES DE LA BOUTIQUE -->
+      <!-- <div class="boutique-commitments">
+
         <div class="commitment-item">
           <mat-icon class="icon-sm">verified</mat-icon>
-          <span>Formules 100% Professionnelles & Certifiées</span>
+          <span>Produits professionnels</span>
         </div>
+
         <div class="commitment-item">
           <mat-icon class="icon-sm">storefront</mat-icon>
-          <span>Retrait Gratuit & Immédiat au Comptoir</span>
+          <span>Retrait au salon</span>
         </div>
+
         <div class="commitment-item">
           <mat-icon class="icon-sm">support_agent</mat-icon>
-          <span>Conseils d'Application Personnalisés</span>
+          <span>Conseils personnalisés</span>
         </div>
-      </div>
+
+      </div> -->
     </div>
   </header>
 
   <!-- CONTENU DE LA BOUTIQUE -->
   <main class="boutique-content">
     <div class="content-container">
-      <div class="section-title-wrap" appRevealOnScroll>
-        <span class="sub-label">Nos Univers de Soins</span>
-        <h2>Explorez nos collections</h2>
-        <p>Sélectionnez un univers pour découvrir tous les produits disponibles en stock au salon.</p>
-      </div>
 
-      <!-- État de chargement -->
+      <!-- TITRE DE LA SECTION -->
+       <div class="services-intro">
+        <div>
+          <span class="section-eyebrow">NOS PRODUITS</span>
+          <span class="title-underline"></span>
+        </div>
+
+       
+      </div>
+      <!-- CHARGEMENT -->
       <div *ngIf="isLoading()" class="loading-state">
         <div class="spinner-walnut"></div>
-        <p>Chargement des univers de soins...</p>
+        <p>Chargement des produits...</p>
       </div>
 
-      <!-- État vide -->
-      <div *ngIf="!isLoading() && filteredCategories().length === 0" class="empty-state">
+      <!-- AUCUN RÉSULTAT -->
+      <div
+        *ngIf="!isLoading() && filteredCategories().length === 0"
+        class="empty-state"
+      >
         <div class="empty-icon-box">
           <mat-icon class="empty-icon">shopping_bag</mat-icon>
         </div>
-        <h3>Aucun univers ne correspond à votre recherche</h3>
-        <p>Essayez avec d'autres termes ou réinitialisez la recherche.</p>
+
+        <h3>Aucune catégorie trouvée</h3>
+
+        <p>
+          Essayez un autre mot-clé pour trouver vos produits.
+        </p>
+
         <button
           type="button"
           (click)="searchQuery.set('')"
           class="btn-reset"
         >
-          Réinitialiser la recherche
+          Effacer la recherche
         </button>
       </div>
 
-      <!-- Grille des Catégories de la Boutique -->
-      <div *ngIf="!isLoading() && filteredCategories().length > 0" class="categories-grid">
+      <!-- GRILLE DES CATÉGORIES -->
+      <div
+        *ngIf="!isLoading() && filteredCategories().length > 0"
+        class="categories-grid"
+      >
         <a
           *ngFor="let c of filteredCategories(); let idx = index"
           [routerLink]="['/' + slugSalon + '/boutique', c.id]"
@@ -96,6 +124,7 @@
           [revealDelay]="idx * 40"
         >
           <div class="tile-img-box">
+
             <img
               *ngIf="c.imageUrl"
               [src]="c.imageUrl | safeMedia"
@@ -103,54 +132,98 @@
               class="tile-img"
               loading="lazy"
             />
-            <div *ngIf="!c.imageUrl" class="tile-placeholder">
+
+            <div
+              *ngIf="!c.imageUrl"
+              class="tile-placeholder"
+            >
               <mat-icon class="placeholder-icon">spa</mat-icon>
             </div>
+
             <div class="tile-overlay"></div>
 
             <span class="tile-count">
-              {{ c.nombreProduits || c.produits?.length || 0 }} soin{{ (c.nombreProduits || c.produits?.length || 0) > 1 ? 's' : '' }}
+              {{
+                c.nombreProduits || c.produits?.length || 0
+              }}
+              produit{{
+                (c.nombreProduits || c.produits?.length || 0) > 1
+                  ? 's'
+                  : ''
+              }}
             </span>
           </div>
 
           <div class="tile-body">
-            <h2 class="tile-title">{{ c.nom }}</h2>
+
+            <h3 class="tile-title">{{ c.nom }}</h3>
+
             <p class="tile-desc">
-              {{ c.description || 'Découvrez la sélection experte de soins et protocoles capillaires dédiés.' }}
+              {{
+                c.description ||
+                'Découvrez notre sélection de produits pour prendre soin de vos cheveux et de votre beauté.'
+              }}
             </p>
 
             <span class="tile-cta-link">
-              <span>Découvrir la collection</span>
+              <span>Découvrir les produits</span>
               <mat-icon class="icon-xs">arrow_forward</mat-icon>
             </span>
+
           </div>
         </a>
       </div>
+
     </div>
   </main>
 
-  <!-- BARRE FLOTTANTE PANIER EN COURS (SI PANIER NON VIDE) -->
-  <aside class="cart-floating-bar" *ngIf="cartStore.hasItems()" appRevealOnScroll>
+  <!-- PANIER FLOTTANT -->
+  <aside
+    class="cart-floating-bar"
+    *ngIf="cartStore.hasItems()"
+    appRevealOnScroll
+  >
     <div class="floating-bar-inner">
+
       <div class="floating-left">
+
         <div class="floating-badge">
           <mat-icon class="icon-xs">shopping_bag</mat-icon>
-          <span>{{ cartStore.nombreArticles() }} article{{ cartStore.nombreArticles() > 1 ? 's' : '' }}</span>
+          <span>
+            {{ cartStore.nombreArticles() }}
+            article{{ cartStore.nombreArticles() > 1 ? 's' : '' }}
+          </span>
         </div>
+
         <span class="floating-total">
-          Total Panier : <strong>{{ cartStore.montantTotal() | number:'1.0-0' }} FCFA</strong>
+          Total :
+          <strong>
+            {{ cartStore.montantTotal() | number:'1.0-0' }} FCFA
+          </strong>
         </span>
+
       </div>
 
       <div class="floating-actions">
-        <button type="button" class="btn-floating-view" (click)="openCartDrawer()">
+
+        <button
+          type="button"
+          class="btn-floating-view"
+          (click)="openCartDrawer()"
+        >
           Voir le panier
         </button>
-        <a [routerLink]="['/' + slugSalon + '/panier']" class="btn-floating-confirm">
-          <span>Finaliser ma commande</span>
+
+        <a
+          [routerLink]="['/' + slugSalon + '/panier']"
+          class="btn-floating-confirm"
+        >
+          <span>Commander</span>
           <mat-icon class="icon-xs">arrow_forward</mat-icon>
         </a>
+
       </div>
     </div>
   </aside>
+
 </div>
