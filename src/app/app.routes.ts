@@ -10,7 +10,7 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () =>
       import('./features/auth/pages/login/login.component').then((m) => m.LoginComponent),
-    title: 'Connexion Plateforme | AON'
+    title: 'Connexion Plateforme | Hair Style'
   },
   {
     path: 'auth/login',

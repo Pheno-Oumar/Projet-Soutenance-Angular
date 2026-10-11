@@ -8,7 +8,7 @@ import { SalonBookingStore } from '../../state/salon-booking.store';
 import { PrestationCatalogue } from '../../../../shared/models';
 import { MatIconModule } from '@angular/material/icon';
 import { SafeMediaUrlPipe } from '../../../../shared/pipes/safe-media-url.pipe';
-import { Tilt3dDirective } from '../../interactions/tilt-3d.directive';
+// import { Tilt3dDirective } from '../../interactions/tilt-3d.directive';
 import { RevealOnScrollDirective } from '../../interactions/reveal-on-scroll.directive';
 import { firstValueFrom } from 'rxjs';
 
@@ -21,7 +21,7 @@ import { firstValueFrom } from 'rxjs';
     FormsModule,
     MatIconModule,
     SafeMediaUrlPipe,
-    Tilt3dDirective,
+    // Tilt3dDirective,
     RevealOnScrollDirective
   ],
   templateUrl: './salon-services-list.component.html',
