@@ -1,0 +1,179 @@
+<div class="dashboard-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des données comptables...</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerDonnees()">Réessayer</button>
+  </div>
+
+  <div *ngIf="!isLoading()" class="dashboard-content">
+    <!-- Header Banner -->
+    <div class="hero-banner">
+      <div class="hero-info">
+        <span class="role-badge">Espace Comptabilité & Trésorerie</span>
+        <h1 class="hero-title">Tableau de Bord Financier</h1>
+        <p class="hero-subtitle">
+          Supervision des encaissements, des sessions de caisse et du contrôle budgétaire du salon
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a [routerLink]="['caisse/courante']" class="btn-primary">
+          <mat-icon class="icon-sm">point_of_sale</mat-icon> Caisse en direct
+        </a>
+        <a [routerLink]="['depenses']" class="btn-outline">
+          <mat-icon class="icon-sm">add</mat-icon> Enregistrer une dépense
+        </a>
+        <a [routerLink]="['rapports']" class="btn-outline">
+          <mat-icon class="icon-sm">analytics</mat-icon> Générer un rapport
+        </a>
+      </div>
+    </div>
+
+    <!-- Caisse Status Alert Banner -->
+    <div class="caisse-status-banner" [ngClass]="kpi()?.sessionCaisseOuverte ? 'status-open' : 'status-closed'">
+      <div class="status-icon">
+        <mat-icon class="icon-md" [style.color]="kpi()?.sessionCaisseOuverte ? '#22c55e' : '#ef4444'">
+          {{ kpi()?.sessionCaisseOuverte ? 'lock_open' : 'lock' }}
+        </mat-icon>
+      </div>
+      <div class="status-body">
+        <div class="status-heading">
+          <strong>Caisse Quotidienne : {{ kpi()?.sessionCaisseOuverte ? 'SESSION ACTIVE OUVERTE' : 'AUCUNE SESSION OUVERTE' }}</strong>
+          <span *ngIf="kpi()?.sessionCaisseOuverte" class="solde-theorique">
+            Solde théorique en caisse : <strong>{{ (kpi()?.soldeTheoriqueCaisseActive || 0) | number:'1.0-0' }} FCFA</strong>
+          </span>
+        </div>
+        <p *ngIf="kpi()?.sessionCaisseOuverte">
+          Ouverte par {{ sessionCourante()?.comptablePrenom }} {{ sessionCourante()?.comptableNom }} le {{ sessionCourante()?.dateOuverture | date:'dd/MM/yyyy à HH:mm' }}.
+        </p>
+        <p *ngIf="!kpi()?.sessionCaisseOuverte">
+          Aucune session de caisse n'est active actuellement. Veuillez ouvrir la caisse avant d'encaisser les règlements en espèces.
+        </p>
+      </div>
+      <div class="status-action">
+        <a [routerLink]="['caisse/courante']" class="btn-status-action">
+          {{ kpi()?.sessionCaisseOuverte ? 'Gérer / Clôturer' : 'Ouvrir la session' }} →
+        </a>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card card-income">
+        <div class="kpi-icon">
+          <mat-icon class="icon-md">payments</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Revenus ce mois-ci</span>
+          <span class="kpi-value">{{ (kpi()?.revenusMoisEnCours || 0) | number:'1.0-0' }} FCFA</span>
+          <span class="kpi-sub">Aujourd'hui : {{ (kpi()?.revenusAujourdhui || 0) | number:'1.0-0' }} FCFA</span>
+        </div>
+      </div>
+
+      <div class="kpi-card card-expense">
+        <div class="kpi-icon">
+          <mat-icon class="icon-md">receipt_long</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Dépenses ce mois-ci</span>
+          <span class="kpi-value">{{ (kpi()?.depensesMoisEnCours || 0) | number:'1.0-0' }} FCFA</span>
+          <span class="kpi-sub">Aujourd'hui : {{ (kpi()?.depensesAujourdhui || 0) | number:'1.0-0' }} FCFA</span>
+        </div>
+      </div>
+
+      <div class="kpi-card card-benefit">
+        <div class="kpi-icon">
+          <mat-icon class="icon-md">trending_up</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Bénéfice Net ce mois-ci</span>
+          <span class="kpi-value" [ngClass]="(kpi()?.beneficeNetMoisEnCours || 0) >= 0 ? 'text-positive' : 'text-negative'">
+            {{ (kpi()?.beneficeNetMoisEnCours || 0) | number:'1.0-0' }} FCFA
+          </span>
+          <span class="kpi-sub">Aujourd'hui : {{ (kpi()?.beneficeNetAujourdhui || 0) | number:'1.0-0' }} FCFA</span>
+        </div>
+      </div>
+
+      <div class="kpi-card card-global">
+        <div class="kpi-icon">
+          <mat-icon class="icon-md">account_balance</mat-icon>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-label">Chiffre d'Affaires Global</span>
+          <span class="kpi-value">{{ (kpi()?.chiffreAffairesTotal || 0) | number:'1.0-0' }} FCFA</span>
+          <span class="kpi-sub">Cumul historique salon</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workspace 2-Columns: Recent Expenses & Category Breakdown -->
+    <div class="workspace-grid">
+      <!-- Left: Recent Expenses -->
+      <div class="card-section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Dernières Dépenses Enregistrées</h2>
+            <p class="section-subtitle">Dépenses opérationnelles et sorties de caisse récentes</p>
+          </div>
+          <a [routerLink]="['depenses']" class="link-action">Voir tout le registre →</a>
+        </div>
+
+        <div *ngIf="recentDepenses().length === 0" class="empty-sub">
+          <p>Aucune dépense enregistrée récemment.</p>
+        </div>
+
+        <div *ngIf="recentDepenses().length > 0" class="depenses-list">
+          <div *ngFor="let d of recentDepenses()" class="depense-item">
+            <div class="depense-left">
+              <span class="category-badge">{{ d.categorie }}</span>
+              <p class="depense-desc">{{ d.description || 'Dépense opérationnelle' }}</p>
+              <span class="depense-date">{{ d.dateDepense | date:'dd/MM/yyyy HH:mm' }} • Par {{ d.comptableNomComplet || 'Comptable' }}</span>
+            </div>
+            <div class="depense-right">
+              <span class="depense-amount">- {{ d.montant | number:'1.0-0' }} FCFA</span>
+              <span *ngIf="d.statut" class="badge-active">Validée</span>
+              <span *ngIf="!d.statut" class="badge-cancelled">Annulée</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Expenses by Category breakdown -->
+      <div class="card-section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Répartition des Charges</h2>
+            <p class="section-subtitle">Ventilation par catégorie de dépense</p>
+          </div>
+        </div>
+
+        <div *ngIf="!kpi()?.depensesParCategorie || getCategoriesKeys(kpi()?.depensesParCategorie).length === 0" class="empty-sub">
+          <p>Aucune charge enregistrée ce mois-ci.</p>
+        </div>
+
+        <div *ngIf="kpi()?.depensesParCategorie && getCategoriesKeys(kpi()?.depensesParCategorie).length > 0" class="categories-list">
+          <div *ngFor="let item of getCategoriesKeys(kpi()?.depensesParCategorie)" class="category-row">
+            <span class="cat-name">{{ item.key }}</span>
+            <span class="cat-amount">{{ item.val | number:'1.0-0' }} FCFA</span>
+          </div>
+        </div>
+
+        <!-- Quick Summary Box -->
+        <div class="quick-summary-box">
+          <h4>
+            <mat-icon class="icon-xs">lightbulb</mat-icon> Guide Contrôle Comptable
+          </h4>
+          <p>
+            Chaque sortie de dépense est automatiquement déduite de la session de caisse courante si celle-ci est ouverte.
+            Pensez à clôturer la session en fin de journée en saisissant le montant réel compté.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

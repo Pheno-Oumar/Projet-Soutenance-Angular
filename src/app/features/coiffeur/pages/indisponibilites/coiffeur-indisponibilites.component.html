@@ -1,0 +1,91 @@
+<div class="page-container">
+  <!-- Header with title -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mes Congés & Indisponibilités</h1>
+      <p class="page-subtitle">Consultez vos périodes d'absence et congés validés par le salon</p>
+    </div>
+  </div>
+
+  <!-- Success Toast -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+    <button class="btn-retry" (click)="chargerIndisponibilites()">Réessayer</button>
+  </div>
+
+  <!-- Filter tabs -->
+  <div class="filter-tabs">
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'all'"
+      (click)="filterMode = 'all'"
+    >
+      Toutes ({{ indisponibilites().length }})
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'upcoming'"
+      (click)="filterMode = 'upcoming'"
+    >
+      À venir
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="filterMode === 'past'"
+      (click)="filterMode = 'past'"
+    >
+      Passées
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement de vos indisponibilités...</p>
+  </div>
+
+  <!-- Empty list -->
+  <div *ngIf="!isLoading() && filteredIndisponibilites.length === 0" class="empty-state">
+    <mat-icon class="icon-xl">calendar_month</mat-icon>
+    <h3>Aucune indisponibilité</h3>
+    <p>Aucun créneau d'indisponibilité trouvé pour ce filtre.</p>
+  </div>
+
+  <!-- Indisponibilités Grid/Cards -->
+  <div *ngIf="!isLoading() && filteredIndisponibilites.length > 0" class="indispos-grid">
+    <div *ngFor="let ind of filteredIndisponibilites" class="indispo-card">
+      <div class="card-top">
+        <span class="motif-tag" [ngClass]="'motif-' + (ind.motif || 'conge').toLowerCase()">
+          {{ ind.motif || 'CONGÉ' }}
+        </span>
+        <span *ngIf="estFutur(ind.dateDebut)" class="status-upcoming">À venir</span>
+        <span *ngIf="!estFutur(ind.dateDebut)" class="status-past">Passée / En cours</span>
+      </div>
+
+      <div class="period-box">
+        <div class="period-date">
+          <span class="lbl">Début :</span>
+          <strong>{{ ind.dateDebut | date:'dd MMM yyyy, HH:mm' }}</strong>
+        </div>
+        <div class="period-arrow">↓</div>
+        <div class="period-date">
+          <span class="lbl">Fin :</span>
+          <strong>{{ ind.dateFin | date:'dd MMM yyyy, HH:mm' }}</strong>
+        </div>
+      </div>
+
+      <p class="comment-text" *ngIf="ind.commentaire">
+        <mat-icon class="icon-xs">chat</mat-icon> {{ ind.commentaire }}
+      </p>
+
+      <div class="card-footer">
+        <span class="date-created">Enregistré le {{ ind.dateCreation | date:'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+  </div>
+</div>

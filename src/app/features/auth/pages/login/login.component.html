@@ -1,0 +1,194 @@
+<main class="login-wrapper" [style.background-image]="'url(' + bgImageUrl() + ')'">
+  <!-- Voile protecteur sombre sur l'image de fond -->
+  <div class="background-overlay" aria-hidden="true"></div>
+
+  <!-- Carte de connexion centrée "Modern Chic" -->
+  <div class="login-card">
+
+    <!-- ═══ BANDEAU D'EN-TÊTE ÉQUILIBRÉ (Coins remplis & Titre Connexion) ═══ -->
+    <header class="card-header-banner">
+      <!-- Rangée supérieure : Logo & Nom à gauche / Badge à droite -->
+      <div class="header-top-row">
+        <div class="header-brand-left">
+          <div class="brand-medallion">
+            @if (isSalonMode()) {
+              @if (logoUrl()) {
+                <img
+                  [src]="logoUrl()! | safeMedia"
+                  [alt]="nomSalon()"
+                  referrerpolicy="no-referrer"
+                  class="medallion-img"
+                />
+              } @else {
+                <span class="medallion-initial">{{ nomSalon()?.charAt(0)?.toUpperCase() || 'S' }}</span>
+              }
+            } @else {
+              <img src="/assets/imaglogo.png" alt="Hair Style" class="medallion-img platform-img" (error)="onLogoError($event)" />
+            }
+          </div>
+          <div class="brand-meta">
+            <span class="brand-name">{{ isSalonMode() ? (nomSalon() | titlecase) : 'Hair Style' }}</span>
+            <span class="brand-sub">{{ isSalonMode() ? 'Salon Partenaire' : 'Plateforme Beauté' }}</span>
+          </div>
+        </div>
+
+        <span class="header-badge" [class.badge-admin]="!isSalonMode()">
+          {{ isSalonMode() ? 'Espace Salon' : 'Administration' }}
+        </span>
+      </div>
+
+      <!-- Titre principal : Connexion -->
+      <div class="header-main-title">
+        <h1 class="header-title">Connexion</h1>
+        <p class="header-subtitle">
+          {{ isSalonMode() ? 'Accédez à vos plannings, rituels et prestations' : 'Connectez-vous à votre espace de gestion sécurisé' }}
+        </p>
+      </div>
+    </header>
+
+    <!-- ═══ CORPS DU FORMULAIRE ═══ -->
+    <div class="card-body">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form" novalidate>
+
+        <!-- Capsule Segmentée Téléphone / Email (Style iOS) -->
+        <div class="segmented-control" role="tablist">
+          <button
+            type="button"
+            class="segment-btn"
+            [class.is-active]="authMethod() === 'phone'"
+            (click)="setAuthMethod('phone')"
+            role="tab"
+            [attr.aria-selected]="authMethod() === 'phone'"
+          >
+            <mat-icon class="segment-icon">phone</mat-icon>
+            <span>Téléphone</span>
+          </button>
+          <button
+            type="button"
+            class="segment-btn"
+            [class.is-active]="authMethod() === 'email'"
+            (click)="setAuthMethod('email')"
+            role="tab"
+            [attr.aria-selected]="authMethod() === 'email'"
+          >
+            <mat-icon class="segment-icon">mail_outline</mat-icon>
+            <span>Email</span>
+          </button>
+        </div>
+
+        <!-- Champ Téléphone avec indicatif et drapeau -->
+        @if (authMethod() === 'phone') {
+          <div class="field-block">
+            <label for="telephone" class="field-label">Numéro de téléphone</label>
+            <app-phone-input
+              id="telephone"
+              formControlName="telephone"
+              [country]="selectedCountry()"
+              (countryChange)="selectedCountry.set($event)"
+            ></app-phone-input>
+            @if (loginForm.get('telephone')?.touched && loginForm.get('telephone')?.errors?.['required']) {
+              <span class="field-error">Le numéro de téléphone est requis</span>
+            }
+          </div>
+        } @else {
+          <!-- Champ Email -->
+          <div class="field-block">
+            <label for="email" class="field-label">Adresse email</label>
+            <div class="input-container" [class.has-error]="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+              <mat-icon class="input-leading-icon">mail_outline</mat-icon>
+              <input
+                id="email"
+                type="email"
+                formControlName="email"
+                class="native-input"
+                placeholder="exemple@hairstyle.com"
+                autocomplete="email"
+              />
+            </div>
+            @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']) {
+              <span class="field-error">L'adresse email est requise</span>
+            }
+            @if (loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']) {
+              <span class="field-error">Format d'adresse email invalide</span>
+            }
+          </div>
+        }
+
+        <!-- Champ Mot de passe -->
+        <div class="field-block">
+          <label for="password" class="field-label">Mot de passe</label>
+          <div class="input-container" [class.has-error]="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+            <mat-icon class="input-leading-icon">lock_outline</mat-icon>
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              class="native-input"
+              placeholder="••••••••••••"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="toggle-eye-btn"
+              (click)="togglePasswordVisibility()"
+              aria-label="Afficher ou masquer le mot de passe"
+            >
+              <mat-icon class="eye-icon">{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+          </div>
+          @if (loginForm.get('password')?.touched && loginForm.get('password')?.errors?.['required']) {
+            <span class="field-error">Le mot de passe est obligatoire</span>
+          }
+        </div>
+
+        <!-- Rangée Options : Mémoriser & Mot de passe oublié -->
+        <div class="field-auxiliary-row">
+          <label class="remember-checkbox-label">
+            <input type="checkbox" formControlName="rememberMe" class="custom-checkbox-input" />
+            <span>Mémoriser ma session</span>
+          </label>
+          <button type="button" (click)="onForgotPassword()" class="forgot-pass-btn">
+            Mot de passe oublié ?
+          </button>
+        </div>
+
+        <!-- Bouton Brun Chocolat (#5b453b) -->
+        <button
+          type="submit"
+          class="primary-submit-btn"
+          [disabled]="loginForm.invalid || isSubmitting()"
+          id="btn-login-submit"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner-dot" aria-hidden="true"></span>
+            <span>Connexion en cours...</span>
+          } @else {
+            <span>Accéder à mon espace</span>
+            <mat-icon class="submit-arrow-icon">arrow_forward</mat-icon>
+          }
+        </button>
+
+        <!-- Lien de retour -->
+        <div class="back-link-wrapper">
+          <a [routerLink]="isSalonMode() ? ['/' + slugSalon() + '/vitrine'] : ['/explore']" class="back-link">
+            <mat-icon class="back-icon">arrow_back</mat-icon>
+            <span>{{ isSalonMode() ? 'Retourner à la vitrine du salon' : 'Retourner à l\'accueil' }}</span>
+          </a>
+        </div>
+      </form>
+
+      <!-- Inscription client salon -->
+      @if (isSalonMode()) {
+        <footer class="card-bottom-footer">
+          <p class="register-text">
+            Nouveau client dans ce salon ?
+            <a [routerLink]="['/' + slugSalon() + '/register']" class="register-action-link">
+              Créer un compte
+            </a>
+          </p>
+        </footer>
+      }
+    </div>
+
+  </div>
+</main>

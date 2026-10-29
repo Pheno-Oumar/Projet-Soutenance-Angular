@@ -1,0 +1,510 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Planning & Rendez-vous du Salon</h1>
+      <p class="page-subtitle">Visualisation chronologique des réservations, accueil des clients et gestion des créneaux</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="ouvrirModalNouveauRdv()">
+        <mat-icon class="icon-sm">event</mat-icon> Nouveau Rendez-vous
+      </button>
+      <button class="btn-secondary" (click)="ouvrirModalDisponibilites()">
+        <mat-icon class="icon-sm">event_available</mat-icon> Calculer Disponibilités
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages inline (en plus des notifications toasts) -->
+  <div *ngIf="successMessage()" class="alert-success">
+    <mat-icon class="icon-sm">check_circle</mat-icon> {{ successMessage() }}
+  </div>
+
+  <div *ngIf="errorMessage()" class="alert-error">
+    <mat-icon class="icon-sm">warning</mat-icon> {{ errorMessage() }}
+  </div>
+
+  <!-- Barre de filtrage & Navigation par date -->
+  <div class="filter-bar">
+    <div class="date-navigator">
+      <button class="nav-btn" (click)="changerDate(-1)">
+        <mat-icon class="icon-xs">chevron_left</mat-icon> Jour précédent
+      </button>
+      <input
+        type="date"
+        [(ngModel)]="selectedDate"
+        (change)="chargerPlanning()"
+        class="date-input"
+      />
+      <button class="nav-btn" (click)="changerDate(1)">
+        Jour suivant <mat-icon class="icon-xs">chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <!-- Filtre par Coiffeur -->
+    <div class="coiffeur-filter">
+      <select
+        [(ngModel)]="selectedCoiffeurId"
+        (change)="filtrerParCoiffeur()"
+        class="filter-select"
+      >
+        <option [ngValue]="null">Tous les coiffeurs du salon</option>
+        <option *ngFor="let c of coiffeurs()" [ngValue]="c.affectationId">
+          {{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-actions">
+      <button
+        class="today-btn"
+        (click)="allerAujourdhui()"
+      >
+        Aujourd'hui
+      </button>
+    </div>
+  </div>
+
+  <!-- État de chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des rendez-vous pour le {{ selectedDate | date:'fullDate' }}...</p>
+  </div>
+
+  <!-- Contenu Planning -->
+  <div *ngIf="!isLoading()" class="planning-content">
+    <div *ngIf="planning().length === 0" class="empty-state">
+      <div class="empty-icon"><mat-icon class="icon-xl">calendar_today</mat-icon></div>
+      <h3>Aucun rendez-vous pour cette date</h3>
+      <p>Aucune réservation n'a été trouvée pour le {{ selectedDate | date:'longDate' }}.</p>
+    </div>
+
+    <div *ngIf="planning().length > 0" class="rdv-grid">
+      <div *ngFor="let rdv of planning()" class="rdv-card" [ngClass]="'status-' + rdv.statut.toLowerCase()">
+        <div class="rdv-card-header">
+          <div class="time-badge">
+            <span class="start-time">{{ rdv.dateHeureDebut | date:'HH:mm' }}</span>
+            <span class="end-time">à {{ rdv.dateHeureFin | date:'HH:mm' }}</span>
+          </div>
+          <span class="badge" [ngClass]="getStatutBadgeClass(rdv.statut)">
+            {{ rdv.statut }}
+          </span>
+        </div>
+
+        <div class="rdv-card-body">
+          <div class="client-block">
+            <span class="client-fullname">
+              <mat-icon class="icon-xs">person</mat-icon> {{ rdv.prenomClient }} {{ rdv.nomClient }}
+            </span>
+            <span class="client-phone" *ngIf="rdv.telephoneClient">
+              <mat-icon class="icon-xs">call</mat-icon> {{ rdv.telephoneClient }}
+            </span>
+          </div>
+
+          <div class="coiffeur-block">
+            <span class="label">Coiffeur assigné :</span>
+            <span class="coiffeur-name">
+              <mat-icon class="icon-xs">person</mat-icon> {{ rdv.coiffeurPrenom }} {{ rdv.coiffeurNom || 'Non assigné' }}
+            </span>
+          </div>
+
+          <div class="prestations-block" *ngIf="rdv.prestations && rdv.prestations.length > 0">
+            <span class="label">Prestations réservées :</span>
+            <div class="pills-container">
+              <span *ngFor="let p of rdv.prestations" class="prestation-pill">
+                {{ p.varianteNom }} • {{ p.prix | number }} FCFA ({{ p.duree }} min)
+              </span>
+            </div>
+          </div>
+
+          <div class="montant-row">
+            <span>Montant estimé :</span>
+            <strong class="montant-val">{{ rdv.montantEstime | number }} FCFA</strong>
+          </div>
+        </div>
+
+        <div class="rdv-card-footer">
+          <button
+            *ngIf="rdv.statut === 'CONFIRME'"
+            class="btn-start"
+            (click)="ouvrirModalDemarrer(rdv)"
+            title="Accueillir le client et ouvrir sa prestation"
+          >
+            <mat-icon class="icon-xs">chair</mat-icon> Accueillir & Démarrer
+          </button>
+          <button
+            *ngIf="rdv.statut === 'CONFIRME'"
+            class="btn-cancel"
+            (click)="ouvrirModalAnnulation(rdv)"
+          >
+            <mat-icon class="icon-xs">cancel</mat-icon> Annuler
+          </button>
+          <a
+            *ngIf="rdv.statut === 'TERMINE'"
+            [routerLink]="['../caisse']"
+            class="btn-caisse-goto"
+          >
+            <mat-icon class="icon-xs">payments</mat-icon> Prestation & Facture →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Annulation Rendez-vous -->
+  <div *ngIf="isCancelModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Annuler un Rendez-vous</h2>
+        <button class="modal-close" (click)="fermerModalAnnulation()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Êtes-vous sûr de vouloir annuler le rendez-vous de 
+          <strong>{{ selectedRdvToCancel?.prenomClient }} {{ selectedRdvToCancel?.nomClient }}</strong> prévu à 
+          <strong>{{ selectedRdvToCancel?.dateHeureDebut | date:'HH:mm' }}</strong> ?
+          Le créneau horaire sera immédiatement libéré pour d'autres clients.
+        </p>
+
+        <div class="form-group">
+          <label for="cancelMotif">Motif de l'annulation *</label>
+          <textarea
+            id="cancelMotif"
+            [(ngModel)]="cancelMotif"
+            class="form-input"
+            rows="3"
+            placeholder="Ex : Le client a appelé pour annuler, empêchement professionnel..."
+            required
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalAnnulation()">Fermer</button>
+        <button
+          type="button"
+          class="btn-danger"
+          [disabled]="isSubmittingCancel() || !cancelMotif.trim()"
+          (click)="validerAnnulation()"
+        >
+          {{ isSubmittingCancel() ? 'Annulation...' : 'Confirmer l’annulation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Démarrer Prestation -->
+  <div *ngIf="isDemarrerModalOpen()" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Démarrer la Prestation en Cabine</h2>
+        <button class="modal-close" (click)="fermerModalDemarrer()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Installer <strong>{{ selectedRdvToStart?.prenomClient }} {{ selectedRdvToStart?.nomClient }}</strong> 
+          au fauteuil avec le coiffeur 
+          <strong>{{ selectedRdvToStart?.coiffeurPrenom }} {{ selectedRdvToStart?.coiffeurNom }}</strong>.
+        </p>
+        <p class="modal-subtext">
+          Une prestation active au salon sera créée et une facture sera automatiquement ouverte pour l'encaissement.
+        </p>
+
+        <div class="recap-box">
+          <div *ngFor="let p of selectedRdvToStart?.prestations" class="recap-line">
+            <span>{{ p.varianteNom }}</span>
+            <strong>{{ p.prix | number }} FCFA</strong>
+          </div>
+          <div class="recap-total">
+            <span>Total estimé :</span>
+            <strong>{{ selectedRdvToStart?.montantEstime | number }} FCFA</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer modal-footer-actions">
+        <button type="button" class="btn-secondary" (click)="fermerModalDemarrer()">Annuler</button>
+        <button
+          type="button"
+          class="btn-lounge"
+          [disabled]="isStartingPrestation()"
+          (click)="validerDemarragePrestation('EN_ATTENTE')"
+        >
+          <mat-icon class="icon-xs">chair</mat-icon> Salle d'attente (En attente)
+        </button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isStartingPrestation()"
+          (click)="validerDemarragePrestation('EN_COURS')"
+        >
+          <mat-icon class="icon-xs">content_cut</mat-icon> Installer au Fauteuil (En cours)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calcul Disponibilités -->
+  <div *ngIf="isDispoModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title">Recherche de Disponibilités Coiffeurs</h2>
+        <button class="modal-close" (click)="fermerModalDisponibilites()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Calculez les créneaux libres en temps réel pour proposer un rendez-vous adapté à un client au téléphone ou au comptoir.
+        </p>
+
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="dispoDate">Date souhaitée *</label>
+            <input
+              type="date"
+              id="dispoDate"
+              [(ngModel)]="dispoDate"
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="form-group flex-1">
+            <label for="dispoCoiffeur">Coiffeur (Optionnel)</label>
+            <select
+              id="dispoCoiffeur"
+              [(ngModel)]="dispoCoiffeurId"
+              class="form-input"
+            >
+              <option [ngValue]="null">Tous les coiffeurs (disponibilité générale)</option>
+              <option *ngFor="let c of coiffeurs()" [ngValue]="c.affectationId">
+                {{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Prestations / Variantes souhaitées *</label>
+          <div class="input-with-button">
+            <select
+              [(ngModel)]="selectedVarianteToAdd"
+              class="form-input"
+            >
+              <option [ngValue]="null" disabled>Sélectionner une prestation / variante dans le catalogue...</option>
+              <option *ngFor="let v of allVariantes()" [ngValue]="v.id">
+                {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA • {{ v.dureeMinutes }} min)
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="!selectedVarianteToAdd"
+              (click)="ajouterVarianteDispo()"
+            >
+              + Ajouter
+            </button>
+          </div>
+
+          <div class="tags-container" *ngIf="selectedVariantesDispo().length > 0">
+            <span *ngFor="let v of selectedVariantesDispo()" class="tag-pill">
+              <mat-icon class="icon-xs">auto_awesome</mat-icon> {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA)
+              <button class="tag-remove" (click)="retirerVarianteDispo(v.id)">×</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="search-actions">
+          <button
+            type="button"
+            class="btn-primary"
+            [disabled]="isSearchingDispos()"
+            (click)="rechercherCreneaux()"
+          >
+            <mat-icon class="icon-xs">search</mat-icon> {{ isSearchingDispos() ? 'Calcul en cours...' : 'Lancer le calcul des créneaux' }}
+          </button>
+        </div>
+
+        <!-- Résultats des créneaux -->
+        <div class="results-box" *ngIf="creneauxTrouves().length > 0">
+          <h4 class="results-title">Créneaux libres trouvés ({{ creneauxTrouves().length }}) :</h4>
+          <div class="slots-grid">
+            <div *ngFor="let c of creneauxTrouves()" class="slot-card">
+              <div class="slot-info">
+                <span class="slot-time">{{ c.heureDebut }} - {{ c.heureFin }}</span>
+                <span class="slot-coiffeur">
+                  <mat-icon class="icon-xs">person</mat-icon> {{ c.coiffeurNom }}
+                </span>
+              </div>
+              <button
+                type="button"
+                class="btn-slot-book"
+                (click)="reserverCreneau(c)"
+              >
+                <mat-icon class="icon-xs">event</mat-icon> Réserver
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!isSearchingDispos() && creneauxTrouves().length === 0 && selectedVariantesDispo().length > 0" class="no-slots">
+          <p>Aucun créneau libre disponible pour ces critères à cette date.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalDisponibilites()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nouveau Rendez-vous (Comptoir / Téléphone) -->
+  <div *ngIf="isNouveauRdvModalOpen()" class="modal-backdrop">
+    <div class="modal-box modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title">Nouveau Rendez-vous (Comptoir / Téléphone)</h2>
+        <button class="modal-close" (click)="fermerModalNouveauRdv()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Enregistrez directement une réservation pour un client au salon ou par téléphone.
+        </p>
+
+        <!-- Coordonnées Client -->
+        <h4 class="form-section-title">1. Informations Client</h4>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="rdvPrenom">Prénom du client *</label>
+            <input
+              type="text"
+              id="rdvPrenom"
+              [(ngModel)]="nouveauRdvPrenom"
+              class="form-input"
+              placeholder="Ex: Fatou"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="rdvNom">Nom du client *</label>
+            <input
+              type="text"
+              id="rdvNom"
+              [(ngModel)]="nouveauRdvNom"
+              class="form-input"
+              placeholder="Ex: Ndiaye"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="rdvTel">Téléphone *</label>
+            <input
+              type="tel"
+              id="rdvTel"
+              [(ngModel)]="nouveauRdvTel"
+              class="form-input"
+              placeholder="Ex: 77 123 45 67"
+              required
+            />
+          </div>
+        </div>
+
+        <!-- Date, Heure & Coiffeur -->
+        <h4 class="form-section-title">2. Date, Créneau & Coiffeur</h4>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="rdvDate">Date *</label>
+            <input
+              type="date"
+              id="rdvDate"
+              [(ngModel)]="nouveauRdvDate"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="rdvHeure">Heure de début *</label>
+            <input
+              type="time"
+              id="rdvHeure"
+              [(ngModel)]="nouveauRdvHeure"
+              class="form-input"
+              required
+            />
+          </div>
+          <div class="form-group flex-1">
+            <label for="rdvCoiffeur">Coiffeur assigné *</label>
+            <select
+              id="rdvCoiffeur"
+              [(ngModel)]="nouveauRdvCoiffeurId"
+              class="form-input"
+              required
+            >
+              <option [ngValue]="null" disabled>Sélectionner un coiffeur...</option>
+              <option *ngFor="let c of coiffeurs()" [ngValue]="c.affectationId">
+                {{ c.coiffeurPrenom }} {{ c.coiffeurNom }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Prestations / Variantes -->
+        <h4 class="form-section-title">3. Prestations demandées</h4>
+        <div class="form-group">
+          <label>Ajouter une prestation du catalogue *</label>
+          <div class="input-with-button">
+            <select
+              [(ngModel)]="selectedVarianteToAddNouveauRdv"
+              class="form-input"
+            >
+              <option [ngValue]="null" disabled>Choisir un service...</option>
+              <option *ngFor="let v of allVariantes()" [ngValue]="v.id">
+                {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA • {{ v.dureeMinutes }} min)
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="!selectedVarianteToAddNouveauRdv"
+              (click)="ajouterVarianteNouveauRdv()"
+            >
+              + Ajouter
+            </button>
+          </div>
+
+          <div class="tags-container" *ngIf="selectedVariantesNouveauRdv().length > 0">
+            <span *ngFor="let v of selectedVariantesNouveauRdv()" class="tag-pill">
+              <mat-icon class="icon-xs">auto_awesome</mat-icon> {{ v.serviceNom }} — {{ v.nom }} ({{ v.prix | number }} FCFA)
+              <button class="tag-remove" (click)="retirerVarianteNouveauRdv(v.id)">×</button>
+            </span>
+          </div>
+        </div>
+
+        <!-- Commentaire -->
+        <div class="form-group">
+          <label for="rdvNotes">Note ou demande particulière (Optionnel)</label>
+          <textarea
+            id="rdvNotes"
+            [(ngModel)]="nouveauRdvCommentaire"
+            class="form-input"
+            rows="2"
+            placeholder="Ex : Préfère un shampoing doux, client pressé..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="fermerModalNouveauRdv()">Annuler</button>
+        <button
+          type="button"
+          class="btn-primary"
+          [disabled]="isSubmittingNouveauRdv() || !nouveauRdvCoiffeurId || !nouveauRdvNom.trim() || !nouveauRdvPrenom.trim() || !nouveauRdvTel.trim() || selectedVariantesNouveauRdv().length === 0"
+          (click)="validerCreationRdv()"
+        >
+          {{ isSubmittingNouveauRdv() ? 'Enregistrement...' : 'Confirmer la Réservation' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

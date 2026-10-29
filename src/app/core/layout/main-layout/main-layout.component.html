@@ -1,0 +1,76 @@
+<div class="layout-root" [class.layout-sidebar-compact]="isCompact()">
+  <!-- SIDEBAR -->
+  <app-sidebar
+    [activeRole]="activeRole()"
+    [slugSalon]="slugSalon()"
+    [nomSalon]="salonNom()"
+    [logoUrl]="salonLogoUrl()"
+    [isCompact]="isCompact()"
+    [isMobileOpen]="isMobileOpen()"
+    (closeMobileDrawer)="closeMobile()"
+    (toggleCompact)="toggleCompact()"
+  />
+
+  <!-- MOBILE OVERLAY BACKDROP -->
+  @if (isMobileOpen()) {
+    <div
+      class="mobile-backdrop"
+      (click)="closeMobile()"
+      aria-hidden="true"
+    ></div>
+  }
+
+  <!-- MAIN VIEWPORT -->
+  <div class="layout-main">
+    <!-- TOP HEADER -->
+    <header class="layout-header">
+      <div class="header-left">
+        <!-- Mobile hamburger toggle -->
+        <button
+          type="button"
+          class="header-toggle-btn mobile-hamburger"
+          (click)="toggleMobile()"
+          aria-label="Ouvrir le menu"
+        >
+          <mat-icon class="icon-sm">menu</mat-icon>
+        </button>
+
+        <!-- Desktop compact toggle -->
+        <button
+          type="button"
+          class="header-toggle-btn desktop-compact-btn"
+          (click)="toggleCompact()"
+          aria-label="Réduire ou étendre la barre latérale"
+        >
+          <mat-icon class="icon-sm">menu_open</mat-icon>
+        </button>
+
+        <!-- Context Badge -->
+        <div class="header-context">
+          @if (activeRole() === 'ADMIN_SYSTEME') {
+            <span class="context-tag platform-tag">Supervision Plateforme AON</span>
+          } @else {
+            <span class="context-tag salon-tag">
+              Salon • {{ slugSalon() | titlecase }}
+            </span>
+          }
+        </div>
+      </div>
+
+      <div class="header-right">
+        <!-- User Pill -->
+        <div class="header-user-pill">
+          <div class="user-pill-avatar">
+            {{ currentUser()?.prenom?.charAt(0) || 'U' }}
+          </div>
+          <span class="user-pill-name">{{ currentUser()?.prenom }} {{ currentUser()?.nom }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT OUTLET -->
+    <main class="layout-content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

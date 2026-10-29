@@ -1,0 +1,195 @@
+<div class="avis-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Modération des Avis & Retours d'Expérience</h1>
+      <p class="page-subtitle">Validation et publication des notes et commentaires laissés par vos clients</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="header-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'PRESTATIONS'"
+        (click)="activeTab = 'PRESTATIONS'; chargerAvis()"
+      >
+        Avis Prestations
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'SALON'"
+        (click)="activeTab = 'SALON'; chargerAvis()"
+      >
+        Avis Salon
+      </button>
+    </div>
+  </header>
+
+  <!-- FILTER PILLS -->
+  <div class="filter-bar">
+    <div class="filter-pills">
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === null"
+        (click)="filterStatut = null; chargerAvis()"
+      >
+        Tous
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === false"
+        (click)="filterStatut = false; chargerAvis()"
+      >
+        En attente de validation
+      </button>
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filterStatut === true"
+        (click)="filterStatut = true; chargerAvis()"
+      >
+        Validés & Publiés
+      </button>
+    </div>
+  </div>
+
+
+  <!-- TAB 1: AVIS PRESTATIONS -->
+  @if (activeTab === 'PRESTATIONS') {
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des avis prestations...</span>
+      </div>
+    } @else if (avisPrestations().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">star_border</mat-icon>
+        <h3>Aucun avis prestation trouvé</h3>
+        <p>Aucun retour client ne correspond à ce filtre.</p>
+      </div>
+    } @else {
+      <div class="avis-grid">
+        @for (a of avisPrestations(); track a.id) {
+          <div class="avis-card" [class.card-pending]="!a.statut">
+            <div class="avis-header">
+              <div class="stars-rating">
+                @for (star of getEtoilesArray(a.note); track $index) {
+                  <mat-icon class="star-filled">star</mat-icon>
+                }
+                <span class="rating-number">{{ a.note }}/5</span>
+              </div>
+              <span class="badge" [class.badge-active]="a.statut" [class.badge-pending]="!a.statut">
+                {{ a.statut ? 'Publié' : 'En attente' }}
+              </span>
+            </div>
+
+            <div class="avis-meta-target">
+              <strong class="target-title">{{ a.serviceNom }}</strong>
+              @if (a.varianteNom) {
+                <span class="target-variant">({{ a.varianteNom }})</span>
+              }
+              @if (a.coiffeurNomComplet) {
+                <span class="coiffeur-mention">avec {{ a.coiffeurNomComplet }}</span>
+              }
+            </div>
+
+            <p class="avis-comment">
+              "{{ a.commentaire || 'Aucun commentaire écrit.' }}"
+            </p>
+
+            <div class="avis-footer">
+              <div class="author-info">
+                <span class="author-name">{{ a.clientNomComplet || 'Client vérifié' }}</span>
+                <span class="author-date">{{ a.dateCreation | date:'dd MMM yyyy' }}</span>
+              </div>
+
+              <div class="moderation-actions">
+                @if (!a.statut) {
+                  <button type="button" class="btn-validate" (click)="modererAvisPrestation(a, true)">
+                    Valider & Publier
+                  </button>
+                  <button type="button" class="btn-reject" (click)="modererAvisPrestation(a, false)">
+                    Rejeter
+                  </button>
+                } @else {
+                  <button type="button" class="btn-unpublish" (click)="modererAvisPrestation(a, false)">
+                    Dépublier
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- TAB 2: AVIS SALON -->
+  @if (activeTab === 'SALON') {
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des avis salon...</span>
+      </div>
+    } @else if (avisSalon().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">star_border</mat-icon>
+        <h3>Aucun avis salon trouvé</h3>
+        <p>Aucun retour général n'a été posté pour le moment.</p>
+      </div>
+    } @else {
+      <div class="avis-grid">
+        @for (a of avisSalon(); track a.id) {
+          <div class="avis-card" [class.card-pending]="!a.statut">
+            <div class="avis-header">
+              <div class="stars-rating">
+                @for (star of getEtoilesArray(a.note); track $index) {
+                  <mat-icon class="star-filled">star</mat-icon>
+                }
+                <span class="rating-number">{{ a.note }}/5</span>
+              </div>
+              <span class="badge" [class.badge-active]="a.statut" [class.badge-pending]="!a.statut">
+                {{ a.statut ? 'Publié' : 'En attente' }}
+              </span>
+            </div>
+
+            <div class="avis-meta-target">
+              <strong class="target-title">Évaluation globale de l'établissement</strong>
+            </div>
+
+            <p class="avis-comment">
+              "{{ a.commentaire || 'Aucun commentaire écrit.' }}"
+            </p>
+
+            <div class="avis-footer">
+              <div class="author-info">
+                <span class="author-name">{{ a.clientNomComplet || 'Client vérifié' }}</span>
+                <span class="author-date">{{ a.dateCreation | date:'dd MMM yyyy' }}</span>
+              </div>
+
+              <div class="moderation-actions">
+                @if (!a.statut) {
+                  <button type="button" class="btn-validate" (click)="modererAvisSalon(a, true)">
+                    Valider & Publier
+                  </button>
+                  <button type="button" class="btn-reject" (click)="modererAvisSalon(a, false)">
+                    Rejeter
+                  </button>
+                } @else {
+                  <button type="button" class="btn-unpublish" (click)="modererAvisSalon(a, false)">
+                    Dépublier
+                  </button>
+                }
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

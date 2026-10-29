@@ -1,0 +1,482 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ==========================================================================
+   WRAPPER PLEIN ÉCRAN
+   ========================================================================== */
+.register-wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.25rem;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 0.4s ease-in-out;
+}
+
+/* Voile sombre d'ambiance avec filtre chaud */
+.background-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(30, 18, 14, 0.52) 0%,
+    rgba(14, 9, 6, 0.68) 100%
+  );
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 1;
+}
+
+/* ==========================================================================
+   CARTE D'INSCRIPTION : MODERN CHIC & GLASSMORPHISM
+   ========================================================================== */
+.register-card {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 520px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 24px 50px -10px rgba(22, 14, 10, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+}
+
+.register-card:hover {
+  box-shadow:
+    0 28px 60px -8px rgba(22, 14, 10, 0.42),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   BANDEAU D'EN-TÊTE ÉQUILIBRÉ
+   ========================================================================== */
+.card-header-banner {
+  padding: 1.35rem 1.7rem 1.15rem;
+  background: linear-gradient(180deg, rgba(200, 182, 166, 0.20) 0%, rgba(255, 255, 255, 0.5) 100%);
+  border-bottom: 1px solid rgba(200, 182, 166, 0.32);
+}
+
+.header-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.header-brand-left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.brand-medallion {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FAF7F2 0%, #FFFFFF 100%);
+  border: 1.5px solid rgba(200, 182, 166, 0.55);
+  box-shadow:
+    0 2px 8px rgba(91, 69, 59, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+
+.medallion-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.medallion-initial {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #5b453b;
+}
+
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  min-width: 0;
+}
+
+.brand-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #372820;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brand-sub {
+  font-size: 0.72rem;
+  color: #8a7970;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.header-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 0.24rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(91, 69, 59, 0.08);
+  color: #5b453b;
+  border: 1px solid rgba(91, 69, 59, 0.16);
+}
+
+.header-main-title {
+  text-align: left;
+}
+
+.header-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin: 0 0 0.15rem;
+  color: #372820;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.header-subtitle {
+  font-size: 0.81rem;
+  color: #7f6e64;
+  margin: 0;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
+/* ==========================================================================
+   CORPS DE CARTE & FORMULAIRE
+   ========================================================================== */
+.card-body {
+  padding: 1.35rem 1.7rem 1.6rem;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Lignes à 2 colonnes */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+/* Groupes de champs */
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #372820;
+}
+
+.required-star {
+  color: #dc2626;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.optional-label {
+  color: #8a7970;
+  font-size: 0.74rem;
+  font-weight: 400;
+  margin-left: 3px;
+}
+
+.input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-radius: 12px;
+  background: #FAF8F5;
+  border: 1.5px solid rgba(91, 69, 59, 0.18);
+  transition: all 0.2s ease;
+}
+
+.input-container:focus-within {
+  border-color: #5b453b;
+  box-shadow: 0 0 0 3px rgba(91, 69, 59, 0.14);
+  background: #FFFFFF;
+}
+
+.input-container.has-error {
+  border-color: #dc2626;
+}
+
+.input-leading-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #7f6e64;
+  margin-left: 0.8rem;
+  flex-shrink: 0;
+}
+
+.native-input {
+  width: 100%;
+  height: 100%;
+  padding: 0 0.85rem;
+  background: transparent;
+  border: none;
+  color: #372820;
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.native-input::placeholder {
+  color: rgba(127, 110, 100, 0.55);
+}
+
+.toggle-eye-btn {
+  background: transparent;
+  border: none;
+  padding: 0 0.75rem;
+  color: #7f6e64;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.toggle-eye-btn:hover {
+  color: #372820;
+}
+
+.eye-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.field-error {
+  font-size: 0.72rem;
+  color: #dc2626;
+  margin-top: 0.1rem;
+  font-weight: 500;
+}
+
+/* Jauge de solidité du mot de passe */
+.pwd-strength-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.strength-segment {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(91, 69, 59, 0.12);
+  transition: background-color 0.3s ease;
+}
+
+.strength-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-left: 6px;
+}
+
+.strength-1 .strength-segment:nth-child(1) { background: #ef4444; }
+.strength-1 .strength-label { color: #ef4444; }
+
+.strength-2 .strength-segment:nth-child(1),
+.strength-2 .strength-segment:nth-child(2) { background: #f59e0b; }
+.strength-2 .strength-label { color: #f59e0b; }
+
+.strength-3 .strength-segment { background: #10b981; }
+.strength-3 .strength-label { color: #10b981; }
+
+/* ==========================================================================
+   BOUTON DE SOUMISSION : BRUN CHOCOLAT (#5b453b)
+   ========================================================================== */
+.primary-submit-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  background: #5b453b;
+  border: 1px solid rgba(200, 182, 166, 0.35);
+  color: #FFFFFF;
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 6px 18px rgba(91, 69, 59, 0.26);
+  margin-top: 0.5rem;
+}
+
+.primary-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(91, 69, 59, 0.35);
+  background: #49362f;
+}
+
+.primary-submit-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.primary-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.submit-arrow-icon {
+  width: 18px;
+  height: 18px;
+  font-size: 18px;
+  color: #f7ede6;
+  transition: transform 0.2s ease;
+}
+
+.primary-submit-btn:hover:not(:disabled) .submit-arrow-icon {
+  transform: translateX(4px);
+}
+
+.spinner-dot {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   LIEN DE RETOUR & PIED DE PAGE
+   ========================================================================== */
+.back-link-wrapper {
+  margin-top: 1.1rem;
+  text-align: center;
+}
+
+.back-link {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5b453b;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s ease;
+}
+
+.back-link:hover {
+  color: #372820;
+  text-decoration: underline;
+  transform: translateX(-2px);
+}
+
+.back-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.card-bottom-footer {
+  margin-top: 1.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(91, 69, 59, 0.1);
+  text-align: center;
+}
+
+.login-text {
+  font-size: 0.82rem;
+  color: #7f6e64;
+  margin: 0;
+}
+
+.login-action-link {
+  color: #5b453b;
+  font-weight: 800;
+  text-decoration: underline;
+  margin-left: 0.25rem;
+  transition: color 0.15s ease;
+}
+
+.login-action-link:hover {
+  color: #372820;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 560px) {
+  .register-wrapper {
+    padding: 1rem 0.75rem;
+  }
+
+  .register-card {
+    max-width: 100%;
+    border-radius: 18px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .card-header-banner {
+    padding: 1.2rem 1.2rem 1rem;
+  }
+
+  .header-title {
+    font-size: 1.4rem;
+  }
+
+  .card-body {
+    padding: 1.2rem 1.2rem 1.4rem;
+  }
+}

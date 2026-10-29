@@ -1,0 +1,937 @@
+<div class="prestations-page">
+
+  <!-- ========================================== -->
+  <!-- VUE 1 : CATALOGUE DES SERVICES             -->
+  <!-- ========================================== -->
+  @if (vueActive === 'catalogue') {
+
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-badge-row">
+        <span class="badge-pill">Gestion de l'offre</span>
+        <span class="badge-subtle">{{ stats().totalServices }} service(s) • {{ stats().totalVariantes }}
+          déclinaison(s)</span>
+      </div>
+      <h1 class="page-title">Offre & Prestations du Salon</h1>
+      <p class="page-subtitle">Configurez le catalogue complet de vos prestations, tarifs, temps de pose et galeries
+        photos haute définition.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-primary btn-add-main" (click)="openCreateServiceModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Nouveau Service
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI STATS STRIP -->
+  <section class="kpi-strip">
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-blue">
+        <mat-icon>spa</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Total Services</span>
+        <span class="kpi-value">{{ stats().totalServices }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-green">
+        <mat-icon>check_circle</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Services Actifs</span>
+        <span class="kpi-value">{{ stats().servicesActifs }} <span class="kpi-sub">/ {{ stats().totalServices
+            }}</span></span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-purple">
+        <mat-icon>style</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Déclinaisons</span>
+        <span class="kpi-value">{{ stats().totalVariantes }}</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap kpi-amber">
+        <mat-icon>photo_camera</mat-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Photos HD</span>
+        <span class="kpi-value">{{ stats().totalPhotos }}</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLBAR : RECHERCHE & FILTRES -->
+  <div class="toolbar-box">
+    <div class="search-wrap">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input type="text" class="search-input" placeholder="Rechercher un service, une déclinaison, un mot-clé..."
+        [(ngModel)]="searchQuery" />
+      @if (searchQuery) {
+      <button type="button" class="btn-clear-search" (click)="searchQuery = ''">
+        <mat-icon>close</mat-icon>
+      </button>
+      }
+    </div>
+
+    <div class="filter-tabs">
+      <button type="button" class="filter-tab" [class.tab-active]="filtreStatut === 'TOUS'"
+        (click)="filtreStatut = 'TOUS'">
+        Tous ({{ services().length }})
+      </button>
+      <button type="button" class="filter-tab" [class.tab-active]="filtreStatut === 'ACTIF'"
+        (click)="filtreStatut = 'ACTIF'">
+        Actifs ({{ stats().servicesActifs }})
+      </button>
+      <button type="button" class="filter-tab" [class.tab-active]="filtreStatut === 'INACTIF'"
+        (click)="filtreStatut = 'INACTIF'">
+        Inactifs ({{ stats().totalServices - stats().servicesActifs }})
+      </button>
+
+      <label class="toggle-inactifs-label">
+        <input type="checkbox" [(ngModel)]="inclureInactifs" (change)="chargerServices()" />
+        <span>Afficher les inactifs</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+  <div class="alert-box alert-error">
+    <mat-icon class="alert-icon">error_outline</mat-icon>
+    <span>{{ errorMessage() }}</span>
+  </div>
+  }
+
+  <!-- SERVICES LIST CONTAINER -->
+  <div class="services-container">
+    @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement du catalogue des prestations...</span>
+    </div>
+    } @else if (servicesFiltres().length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">content_cut</mat-icon>
+      <h3>Aucun service trouvé</h3>
+      <p>
+        @if (searchQuery) {
+        Aucun résultat pour la recherche "{{ searchQuery }}". Essayez un autre terme.
+        } @else {
+        Votre salon ne dispose pas encore de service dans cette vue. Créez votre premier service pour commencer à
+        recevoir des rendez-vous.
+        }
+      </p>
+      <button type="button" class="btn-primary" (click)="openCreateServiceModal()">Créer un service</button>
+    </div>
+    } @else {
+    <!-- GRILLE DES SERVICES -->
+    <div class="services-grid">
+      @for (s of servicesFiltres(); track s.id) {
+      <div class="service-card" [class.card-inactive]="!s.statut">
+
+        <!-- COVER IMAGE -->
+        <div class="service-card-cover">
+          @if (s.imageUrl) {
+          <img [src]="s.imageUrl" [alt]="s.nom" class="card-cover-img" loading="lazy" />
+          } @else {
+          <div class="card-cover-placeholder">
+            <mat-icon>spa</mat-icon>
+            <span>Aucune photo</span>
+          </div>
+          }
+
+          <div class="cover-top-badges">
+            <span class="badge" [class.badge-active]="s.statut" [class.badge-inactive]="!s.statut">
+              {{ s.statut ? 'Actif' : 'Inactif' }}
+            </span>
+            <span class="badge-count">
+              <mat-icon class="mini-icon">layers</mat-icon>
+              {{ s.variantes?.length || 0 }} déclinaison(s)
+            </span>
+          </div>
+
+          <button type="button" class="btn-cover-camera" (click)="openImageServiceModal(s); $event.stopPropagation()"
+            title="Changer la photo de couverture">
+            <mat-icon>photo_camera</mat-icon>
+          </button>
+        </div>
+
+        <!-- CARD BODY -->
+        <div class="service-card-body">
+          <h2 class="card-service-title" (click)="ouvrirEspaceService(s)">{{ s.nom }}</h2>
+          <p class="card-service-desc">
+            {{ s.description || 'Aucune description détaillée renseignée pour cette prestation.' }}
+          </p>
+
+          <!-- SPECS PILLS -->
+          <div class="card-specs-row">
+            <div class="spec-pill">
+              <mat-icon class="spec-icon">payments</mat-icon>
+              <span>{{ getFourchettePrix(s) }}</span>
+            </div>
+            <div class="spec-pill">
+              <mat-icon class="spec-icon">schedule</mat-icon>
+              <span>{{ getFourchetteDuree(s) }}</span>
+            </div>
+          </div>
+
+          <!-- PREVIEW VARIANTES STRIP -->
+          @if (s.variantes && s.variantes.length > 0) {
+          <div class="mini-variantes-strip">
+            @for (v of s.variantes.slice(0, 3); track v.id) {
+            <span class="mini-var-tag" [class.mini-tag-inactive]="!v.statut">
+              {{ v.nom }} • {{ formatDevise(v.prix) }}
+            </span>
+            }
+            @if (s.variantes.length > 3) {
+            <span class="mini-var-more">+{{ s.variantes.length - 3 }} autre(s)</span>
+            }
+          </div>
+          }
+        </div>
+
+        <!-- CARD FOOTER ACTIONS -->
+        <footer class="service-card-footer">
+          <div class="footer-quick-actions">
+            <button type="button" class="btn-icon-subtle" (click)="openEditServiceModal(s)"
+              title="Modifier le nom ou la description">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button type="button" class="btn-icon-subtle" [class.text-danger]="s.statut"
+              (click)="basculerStatutService(s)" [title]="s.statut ? 'Désactiver le service' : 'Activer le service'">
+              <mat-icon>{{ s.statut ? 'pause_circle_outline' : 'play_circle_outline' }}</mat-icon>
+            </button>
+          </div>
+
+          <button type="button" class="btn-manage-service" (click)="ouvrirEspaceService(s)">
+            <span>Gérer les déclinaisons</span>
+            <mat-icon class="btn-arrow-icon">arrow_forward</mat-icon>
+          </button>
+        </footer>
+
+      </div>
+      }
+    </div>
+    }
+  </div>
+  }
+
+  <!-- ========================================== -->
+  <!-- VUE 2 : ESPACE GESTION DU SERVICE ACTIF    -->
+  <!-- ========================================== -->
+  @if (vueActive === 'espace-service' && serviceActif) {
+  <div class="service-workspace-view">
+
+    <!-- WORKSPACE NAV BREADCRUMB -->
+    <nav class="workspace-breadcrumb">
+      <button type="button" class="btn-back-catalog" (click)="fermerEspaceService()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Retour au catalogue</span>
+      </button>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current">{{ serviceActif.nom }}</span>
+    </nav>
+
+    <!-- WORKSPACE HERO BANNER -->
+    <header class="workspace-hero-card">
+      <div class="hero-cover-container">
+        @if (serviceActif.imageUrl) {
+        <img [src]="serviceActif.imageUrl" [alt]="serviceActif.nom" class="hero-cover-img" />
+        } @else {
+        <div class="hero-cover-empty">
+          <mat-icon>spa</mat-icon>
+          <span>Aucune photo de couverture</span>
+        </div>
+        }
+        <button type="button" class="btn-hero-change-photo" (click)="openImageServiceModal(serviceActif)">
+          <mat-icon>photo_camera</mat-icon>
+          <span>Changer la couverture</span>
+        </button>
+      </div>
+
+      <div class="hero-content">
+        <div class="hero-title-row">
+          <div class="hero-title-wrap">
+            <span class="badge" [class.badge-active]="serviceActif.statut"
+              [class.badge-inactive]="!serviceActif.statut">
+              {{ serviceActif.statut ? 'Service Actif' : 'Service Inactif' }}
+            </span>
+            <h1 class="hero-service-title">{{ serviceActif.nom }}</h1>
+          </div>
+
+          <div class="hero-actions">
+            <button type="button" class="btn-secondary" (click)="openEditServiceModal(serviceActif)">
+              <mat-icon class="btn-icon">edit</mat-icon>
+              Modifier infos
+            </button>
+            <button type="button" class="btn-secondary" [class.btn-danger-outline]="serviceActif.statut"
+              (click)="basculerStatutService(serviceActif)">
+              <mat-icon class="btn-icon">{{ serviceActif.statut ? 'block' : 'check' }}</mat-icon>
+              {{ serviceActif.statut ? 'Désactiver' : 'Activer' }}
+            </button>
+          </div>
+        </div>
+
+        <p class="hero-service-desc">
+          {{ serviceActif.description || 'Aucune description détaillée renseignée pour ce service. Cliquez sur "Modifier
+          infos" pour enrichir les informations présentées aux clients.' }}
+        </p>
+
+        <div class="hero-stats-row">
+          <div class="hero-stat-item">
+            <span class="hero-stat-label">Déclinaisons</span>
+            <span class="hero-stat-val">{{ serviceActif.variantes?.length || 0 }}</span>
+          </div>
+          <div class="hero-stat-sep"></div>
+          <div class="hero-stat-item">
+            <span class="hero-stat-label">Tarifs</span>
+            <span class="hero-stat-val">{{ getFourchettePrix(serviceActif) }}</span>
+          </div>
+          <div class="hero-stat-sep"></div>
+          <div class="hero-stat-item">
+            <span class="hero-stat-label">Durée moyenne</span>
+            <span class="hero-stat-val">{{ getFourchetteDuree(serviceActif) }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION DÉCLINAISONS / VARIANTES -->
+    <section class="workspace-variantes-section">
+      <div class="variantes-section-header">
+        <div class="var-header-text">
+          <h2 class="var-section-title">Déclinaisons & Options du Service</h2>
+          <p class="var-section-subtitle">Chaque déclinaison possède ses propres tarifs, temps de pose et sa propre
+            galerie photographique dédiée.</p>
+        </div>
+
+        <button type="button" class="btn-primary" (click)="openAddVarianteModal(serviceActif)">
+          <mat-icon class="btn-icon">add</mat-icon>
+          Ajouter une déclinaison
+        </button>
+      </div>
+
+      @if (!serviceActif.variantes || serviceActif.variantes.length === 0) {
+      <div class="empty-variantes-box">
+        <mat-icon class="empty-var-icon">layers_clear</mat-icon>
+        <h3>Aucune déclinaison configurée</h3>
+        <p>Ajoutez une première déclinaison (ex: Cheveux Courts, Soin Complet, Pack Mariée...) pour activer la
+          réservation de cette prestation.</p>
+        <button type="button" class="btn-primary" (click)="openAddVarianteModal(serviceActif)">
+          + Créer la première déclinaison
+        </button>
+      </div>
+      } @else {
+      <div class="variantes-cards-list">
+        @for (v of serviceActif.variantes; track v.id) {
+        <div class="variante-card" [class.var-inactive]="!v.statut">
+
+          <!-- VARIANTE THUMBNAIL / STUDIO PREVIEW -->
+          <div class="var-media-box" (click)="ouvrirGalerieVariante(serviceActif, v)">
+            @if (v.imageUrl) {
+            <img [src]="v.imageUrl" [alt]="v.nom" class="var-main-thumbnail" />
+            } @else {
+            <div class="var-no-img">
+              <mat-icon>image</mat-icon>
+              <span>Sans photo</span>
+            </div>
+            }
+
+            <div class="var-media-overlay">
+              <mat-icon>photo_library</mat-icon>
+              <span>Gérer</span>
+            </div>
+
+            @if (getVarGalleryImages(v).length > 1) {
+            <span class="var-photos-count-badge" [title]="getVarGalleryImages(v).length + ' photos dans la galerie'">
+              <mat-icon class="tiny-icon">photo_library</mat-icon>
+              {{ getVarGalleryImages(v).length }}
+            </span>
+            }
+          </div>
+
+          <!-- VARIANTE DETAILS -->
+          <div class="var-details-box">
+            <div class="var-title-row">
+              <h3 class="var-name" (click)="openDetailVarianteModal(serviceActif, v)">{{ v.nom }}</h3>
+              <span class="badge" [class.badge-active]="v.statut" [class.badge-inactive]="!v.statut">
+                {{ v.statut ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+
+            @if (v.description) {
+            <p class="var-description-text">{{ v.description }}</p>
+            }
+
+            <div class="var-specs-group">
+              <div class="var-spec-chip">
+                <mat-icon class="spec-icon">schedule</mat-icon>
+                <span>{{ v.dureeMinutes }} minutes</span>
+              </div>
+              <div class="var-spec-chip var-price-chip">
+                <mat-icon class="spec-icon">payments</mat-icon>
+                <span>{{ formatDevise(v.prix) }}</span>
+              </div>
+            </div>
+
+            <!-- MINI GALLERY STRIP -->
+            @if (getVarGalleryImages(v).length > 0) {
+            <div class="var-mini-gallery-strip">
+              <span class="mini-gallery-label">Galerie :</span>
+              <div class="mini-gallery-thumbs">
+                @for (img of getVarGalleryImages(v).slice(0, 4); track img; let i = $index) {
+                <div class="mini-thumb-wrap" (click)="ouvrirGalerieVariante(serviceActif, v)"
+                  [title]="i === 0 ? 'Photo principale' : 'Photo de la galerie'">
+                  <img [src]="img" alt="Photo déclinaison" class="mini-thumb-img" />
+                  @if (i === 0) {
+                  <span class="star-pill">★</span>
+                  }
+                </div>
+                }
+                @if (getVarGalleryImages(v).length > 4) {
+                <button type="button" class="mini-more-btn" (click)="ouvrirGalerieVariante(serviceActif, v)">
+                  +{{ getVarGalleryImages(v).length - 4 }}
+                </button>
+                }
+              </div>
+            </div>
+            }
+          </div>
+
+          <!-- VARIANTE ACTIONS -->
+          <div class="var-actions-column">
+            <button type="button" class="btn-var-action btn-gallery-trigger"
+              (click)="ouvrirGalerieVariante(serviceActif, v)"
+              title="Ouvrir le studio photo pour ajouter, supprimer ou réordonner les photos">
+              <mat-icon class="btn-icon">photo_library</mat-icon>
+              <span>Galerie ({{ getVarGalleryImages(v).length }})</span>
+            </button>
+
+            <button type="button" class="btn-var-action" (click)="openEditVarianteModal(serviceActif, v)">
+              <mat-icon class="btn-icon">edit</mat-icon>
+              <span>Modifier</span>
+            </button>
+
+            <button type="button" class="btn-var-action" (click)="openDetailVarianteModal(serviceActif, v)"
+              title="Aperçu grand format">
+              <mat-icon class="btn-icon">visibility</mat-icon>
+              <span>Aperçu</span>
+            </button>
+
+            <button type="button" class="btn-var-action" [class.text-danger]="v.statut"
+              (click)="basculerStatutVariante(serviceActif, v)">
+              <mat-icon class="btn-icon">{{ v.statut ? 'pause' : 'play_arrow' }}</mat-icon>
+              <span>{{ v.statut ? 'Désactiver' : 'Activer' }}</span>
+            </button>
+          </div>
+
+        </div>
+        }
+      </div>
+      }
+    </section>
+
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 1 : CRÉER SERVICE                                        -->
+  <!-- ============================================================== -->
+  @if (showCreateServiceModal) {
+  <div class="modal-backdrop" (click)="showCreateServiceModal = false">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">spa</mat-icon>
+          <h2 class="modal-title">Nouveau Service</h2>
+        </div>
+        <button type="button" class="btn-close"
+          (click)="showCreateServiceModal = false"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <form (ngSubmit)="creerService()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="createNom" class="form-label">Nom du service *</label>
+            <input id="createNom" type="text" class="form-control" [(ngModel)]="newServiceData.nom" name="nom"
+              placeholder="Ex : Soin Botolash & Kératine, Tresses & Nattes..." required />
+          </div>
+
+          <div class="form-group">
+            <label for="createDesc" class="form-label">Description détaillée</label>
+            <textarea id="createDesc" class="form-control" [(ngModel)]="newServiceData.description" name="description"
+              rows="3" placeholder="Expliquez les bienfaits, étapes, produits utilisés ou indications..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Photo de couverture (Optionnel)</label>
+            <input type="file" accept="image/*" (change)="onNewServiceImageSelected($event)" class="form-control" />
+            @if (newServicePreviewUrl) {
+            <div class="modal-image-preview">
+              <img [src]="newServicePreviewUrl" alt="Aperçu image sélectionnée" />
+            </div>
+            }
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showCreateServiceModal = false">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isCreatingService">
+            {{ isCreatingService ? 'Création en cours...' : 'Créer le service' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 2 : MODIFIER INFORMATIONS SERVICE                        -->
+  <!-- ============================================================== -->
+  @if (showEditServiceModal) {
+  <div class="modal-backdrop" (click)="showEditServiceModal = false">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">edit_note</mat-icon>
+          <h2 class="modal-title">Modifier le Service</h2>
+        </div>
+        <button type="button" class="btn-close"
+          (click)="showEditServiceModal = false"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <form (ngSubmit)="modifierService()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editNom" class="form-label">Nom du service *</label>
+            <input id="editNom" type="text" class="form-control" [(ngModel)]="editServiceData.nom" name="nom"
+              required />
+          </div>
+
+          <div class="form-group">
+            <label for="editDesc" class="form-label">Description</label>
+            <textarea id="editDesc" class="form-control" [(ngModel)]="editServiceData.description" name="description"
+              rows="4"></textarea>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showEditServiceModal = false">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isUpdatingService">
+            {{ isUpdatingService ? 'Mise à jour...' : 'Sauvegarder les modifications' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 3 : COUVERTURE SERVICE                                   -->
+  <!-- ============================================================== -->
+  @if (showImageServiceModal) {
+  <div class="modal-backdrop" (click)="showImageServiceModal = false">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">photo_camera</mat-icon>
+          <h2 class="modal-title">Photo de couverture : {{ selectedServiceForImage?.nom }}</h2>
+        </div>
+        <button type="button" class="btn-close"
+          (click)="showImageServiceModal = false"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <div class="modal-body">
+        <p class="modal-desc">Sélectionnez une photo de qualité. Elle sera optimisée automatiquement en WebP.</p>
+
+        <input type="file" accept="image/*" (change)="onServiceImageSelected($event)" class="form-control" />
+
+        @if (serviceImagePreviewUrl) {
+        <div class="modal-image-preview">
+          <img [src]="serviceImagePreviewUrl" alt="Aperçu photo couverture" />
+        </div>
+        }
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="showImageServiceModal = false">Annuler</button>
+        <button type="button" class="btn-primary" (click)="uploadImageService()"
+          [disabled]="isUploadingServiceImage || !serviceImageFile">
+          {{ isUploadingServiceImage ? 'Téléversement...' : 'Mettre à jour la couverture' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 4 : AJOUTER UNE DÉCLINAISON (VARIANTE)                   -->
+  <!-- ============================================================== -->
+  @if (showAddVarianteModal) {
+  <div class="modal-backdrop" (click)="closeAddVarianteModal()">
+    <div class="modal-dialog modal-dialog-md" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">add_circle_outline</mat-icon>
+          <h2 class="modal-title">Nouvelle Déclinaison</h2>
+        </div>
+        <button type="button" class="btn-close"
+          (click)="closeAddVarianteModal()"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <form (ngSubmit)="ajouterVariante()">
+        <div class="modal-body">
+          <div class="service-pill-info">
+            <mat-icon>spa</mat-icon>
+            <span>Service parent : <strong>{{ parentServiceForVariante?.nom }}</strong></span>
+          </div>
+
+          <div class="form-group">
+            <label for="addVarNom" class="form-label">Nom de la déclinaison *</label>
+            <input id="addVarNom" type="text" class="form-control" [(ngModel)]="newVarianteData.nom" name="nom"
+              placeholder="Ex : Cheveux Longs, Pack Premium, Avec Pose..." required />
+          </div>
+
+          <div class="form-group">
+            <label for="addVarDesc" class="form-label">Description de la déclinaison (Optionnel)</label>
+            <textarea id="addVarDesc" class="form-control" [(ngModel)]="newVarianteData.description" name="description"
+              rows="2" placeholder="Ex : Convient aux cheveux épais, inclut shampoing traitant..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="addVarDuree" class="form-label">Durée (minutes) *</label>
+              <input id="addVarDuree" type="number" class="form-control" [(ngModel)]="newVarianteData.dureeMinutes"
+                name="dureeMinutes" min="5" step="5" required />
+            </div>
+
+            <div class="form-group col-half">
+              <label for="addVarPrix" class="form-label">Tarif (FCFA) *</label>
+              <input id="addVarPrix" type="number" class="form-control" [(ngModel)]="newVarianteData.prix" name="prix"
+                min="0" step="500" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Photographies de cette déclinaison (Optionnel, sélection multiple)</label>
+            <input type="file" accept="image/*" multiple (change)="onNewVarianteFilesSelected($event)"
+              class="form-control" />
+
+            @if (newVariantePreviewUrls.length > 0) {
+            <div class="pending-thumbs-strip">
+              <span class="pending-count">{{ newVariantePreviewUrls.length }} photo(s) prête(s)</span>
+              <div class="pending-thumbs-grid">
+                @for (prev of newVariantePreviewUrls; track prev; let i = $index) {
+                <div class="pending-thumb-item">
+                  <img [src]="prev" alt="Aperçu photo" class="pending-thumb-img" />
+                  <button type="button" class="btn-remove-pending" (click)="removeNewVariantePendingFile(i)">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+                }
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeAddVarianteModal()">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isAddingVariante">
+            {{ isAddingVariante ? 'Ajout en cours...' : 'Ajouter la déclinaison' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 5 : MODIFIER UNE DÉCLINAISON                             -->
+  <!-- ============================================================== -->
+  @if (showEditVarianteModal) {
+  <div class="modal-backdrop" (click)="showEditVarianteModal = false">
+    <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">tune</mat-icon>
+          <h2 class="modal-title">Modifier la Déclinaison</h2>
+        </div>
+        <button type="button" class="btn-close"
+          (click)="showEditVarianteModal = false"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <form (ngSubmit)="modifierVariante()">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editVarNom" class="form-label">Nom de la déclinaison *</label>
+            <input id="editVarNom" type="text" class="form-control" [(ngModel)]="editVarianteData.nom" name="nom"
+              required />
+          </div>
+
+          <div class="form-group">
+            <label for="editVarDesc" class="form-label">Description de la déclinaison (Optionnel)</label>
+            <textarea id="editVarDesc" class="form-control" [(ngModel)]="editVarianteData.description" name="description"
+              rows="2" placeholder="Description de la déclinaison..."></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="editVarDuree" class="form-label">Durée (minutes) *</label>
+              <input id="editVarDuree" type="number" class="form-control" [(ngModel)]="editVarianteData.dureeMinutes"
+                name="dureeMinutes" min="5" step="5" required />
+            </div>
+
+            <div class="form-group col-half">
+              <label for="editVarPrix" class="form-label">Tarif (FCFA) *</label>
+              <input id="editVarPrix" type="number" class="form-control" [(ngModel)]="editVarianteData.prix" name="prix"
+                min="0" step="500" required />
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="showEditVarianteModal = false">Annuler</button>
+          <button type="submit" class="btn-primary" [disabled]="isUpdatingVariante">
+            {{ isUpdatingVariante ? 'Mise à jour...' : 'Sauvegarder' }}
+          </button>
+        </footer>
+      </form>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 6 : STUDIO GALERIE PHOTOS VARIANTE (LE CŒUR DE LA REFONTE) -->
+  <!-- ============================================================== -->
+  @if (showVarGalleryModal && selectedVarianteForGallery) {
+  <div class="modal-backdrop" (click)="fermerGalerieVariante()">
+    <div class="modal-dialog modal-dialog-lg" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <mat-icon class="modal-icon">photo_library</mat-icon>
+          <div>
+            <h2 class="modal-title">Galerie Photos : {{ selectedVarianteForGallery.nom }}</h2>
+            <span class="modal-subtitle">Gérez la collection de clichés, ajoutez des photos sans écraser l'existant, et
+              définissez la photo principale.</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="fermerGalerieVariante()"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <div class="modal-body studio-modal-body">
+
+        <!-- SECTION 1 : AJOUT DE NOUVELLES PHOTOS -->
+        <div class="studio-upload-box">
+          <div class="studio-upload-header">
+            <mat-icon class="upload-box-icon">cloud_upload</mat-icon>
+            <div class="upload-header-text">
+              <h3 class="upload-title">Ajouter des photos à cette déclinaison</h3>
+              <p class="upload-desc">Sélectionnez une ou plusieurs photos. Elles seront ajoutées à la galerie sans
+                supprimer vos photos existantes.</p>
+            </div>
+          </div>
+
+          <div class="upload-controls-row">
+            <input type="file" accept="image/*" multiple (change)="onGalleryFilesSelected($event)"
+              class="form-control file-input-modern" />
+
+            <button type="button" class="btn-primary btn-upload-now"
+              [disabled]="isUploadingGallery || galleryNewFiles.length === 0" (click)="ajouterPhotosALaGalerie()">
+              <mat-icon class="btn-icon">add_photo_alternate</mat-icon>
+              <span>{{ isUploadingGallery ? 'Téléversement Cloudinary...' : 'Ajouter à la galerie' }}</span>
+            </button>
+          </div>
+
+          <!-- APERÇU DES NOUVELLES PHOTOS EN ATTENTE D'ENVOI -->
+          @if (galleryNewPreviews.length > 0) {
+          <div class="pending-uploads-wrap">
+            <div class="pending-header-info">
+              <span class="pending-badge">{{ galleryNewPreviews.length }} photo(s) prête(s) à être ajoutée(s)</span>
+              <span class="pending-help">Vérifiez les miniatures avant de lancer l'ajout</span>
+            </div>
+
+            <div class="pending-cards-grid">
+              @for (prev of galleryNewPreviews; track prev; let i = $index) {
+              <div class="pending-card">
+                <img [src]="prev" alt="Miniature sélectionnée" class="pending-card-img" />
+                <button type="button" class="btn-remove-pending-card" (click)="removePendingGalleryFile(i)"
+                  title="Retirer cette photo">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+
+        <!-- SECTION 2 : PHOTOS ACTUELLEMENT EN LIGNE -->
+        <div class="studio-existing-section">
+          <div class="existing-header-row">
+            <h3 class="existing-title">
+              Photos en ligne
+              <span class="count-tag">{{ getVarGalleryImages(selectedVarianteForGallery).length }}</span>
+            </h3>
+            <span class="existing-hint">La photo avec l'étoile est la photo principale affichée sur la vitrine
+              client.</span>
+          </div>
+
+          @if (getVarGalleryImages(selectedVarianteForGallery).length === 0) {
+          <div class="no-existing-photos">
+            <mat-icon class="no-photo-icon">image_not_supported</mat-icon>
+            <p>Aucune photo dans la galerie de cette déclinaison pour le moment.</p>
+            <span class="subtext">Utilisez le bouton ci-dessus pour téléverser votre premier cliché.</span>
+          </div>
+          } @else {
+          <div class="gallery-cards-grid">
+            @for (img of getVarGalleryImages(selectedVarianteForGallery); track img; let i = $index) {
+            <div class="gallery-card" [class.is-primary]="i === 0">
+              <div class="gallery-card-img-wrap">
+                <img [src]="img" alt="Photo déclinaison" class="gallery-card-img" loading="lazy" />
+
+                @if (i === 0) {
+                <span class="badge-primary-photo">
+                  <mat-icon class="star-icon">star</mat-icon>
+                  <span>Photo Principale</span>
+                </span>
+                }
+
+                @if (isProcessingPhoto && photoEnTraitementUrl === img) {
+                <div class="photo-processing-overlay">
+                  <div class="mini-spinner"></div>
+                  <span>Traitement...</span>
+                </div>
+                }
+              </div>
+
+              <div class="gallery-card-actions">
+                @if (i !== 0) {
+                <button type="button" class="btn-card-action btn-set-primary" [disabled]="isProcessingPhoto"
+                  (click)="definirCommePrincipale(img)" title="Mettre en photo principale (couverture)">
+                  <mat-icon>star_border</mat-icon>
+                  <span>Mettre en avant</span>
+                </button>
+                }
+
+                <button type="button" class="btn-card-action btn-delete-photo" [disabled]="isProcessingPhoto"
+                  (click)="supprimerPhotoExistante(img)" title="Supprimer définitivement cette photo">
+                  <mat-icon>delete_outline</mat-icon>
+                  <span>Supprimer</span>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+          }
+        </div>
+
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-primary" (click)="fermerGalerieVariante()">Terminer</button>
+      </footer>
+    </div>
+  </div>
+  }
+
+  <!-- ============================================================== -->
+  <!-- MODAL 7 : APERÇU / ZOOM GRAND FORMAT DE LA DÉCLINAISON         -->
+  <!-- ============================================================== -->
+  @if (showDetailVarianteModal && selectedVarianteForDetail) {
+  <div class="modal-backdrop" (click)="closeDetailVarianteModal()">
+    <div class="modal-dialog modal-dialog-lg var-detail-modal" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <div class="modal-header-title-wrap">
+          <span class="badge" [class.badge-active]="selectedVarianteForDetail.statut"
+            [class.badge-inactive]="!selectedVarianteForDetail.statut">
+            {{ selectedVarianteForDetail.statut ? 'Active' : 'Inactive' }}
+          </span>
+          <div>
+            <h2 class="modal-title">{{ selectedVarianteForDetail.nom }}</h2>
+            <span class="modal-subtitle">Prestation parente : {{ parentServiceForDetail?.nom }}</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" (click)="closeDetailVarianteModal()"><mat-icon>close</mat-icon></button>
+      </header>
+
+      <div class="modal-body var-detail-body">
+        <!-- HERO STAGE -->
+        <div class="var-detail-stage">
+          @if (activeDetailVarianteImg) {
+          <img [src]="activeDetailVarianteImg" [alt]="selectedVarianteForDetail.nom" class="var-detail-hero-img" />
+          } @else {
+          <div class="var-detail-hero-placeholder">
+            <mat-icon class="placeholder-icon">photo_library</mat-icon>
+            <span>Aucune photo pour cette déclinaison</span>
+          </div>
+          }
+
+          @if (getDetailVarianteImages().length > 1) {
+          <button type="button" class="stage-nav stage-nav-prev" (click)="prevDetailImg()" title="Photo précédente">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <button type="button" class="stage-nav stage-nav-next" (click)="nextDetailImg()" title="Photo suivante">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+          <div class="stage-counter">
+            {{ getCurrentImageIndex() + 1 }} / {{ getDetailVarianteImages().length }}
+          </div>
+          }
+        </div>
+
+        <!-- THUMBNAILS CAROUSEL -->
+        @if (getDetailVarianteImages().length > 1) {
+        <div class="var-detail-thumbs-scroll">
+          @for (img of getDetailVarianteImages(); track img; let i = $index) {
+          <button type="button" class="var-detail-thumb-btn" [class.thumb-active]="img === activeDetailVarianteImg"
+            (click)="setActiveDetailImg(img)">
+            <img [src]="img" [alt]="'Miniature ' + (i + 1)" class="var-detail-thumb-img" />
+          </button>
+          }
+        </div>
+        }
+
+        <!-- METRICS -->
+        @if (selectedVarianteForDetail.description) {
+        <p class="var-detail-desc">{{ selectedVarianteForDetail.description }}</p>
+        }
+
+        <div class="var-detail-metrics">
+          <div class="var-metric-card">
+            <span class="metric-label">Temps de réalisation</span>
+            <span class="metric-value">{{ selectedVarianteForDetail.dureeMinutes }} minutes</span>
+          </div>
+          <div class="var-metric-card">
+            <span class="metric-label">Tarif appliqué</span>
+            <span class="metric-value price-highlight">{{ formatDevise(selectedVarianteForDetail.prix) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal-footer">
+        <button type="button" class="btn-secondary" (click)="closeDetailVarianteModal()">Fermer</button>
+        @if (parentServiceForDetail) {
+        <button type="button" class="btn-primary"
+          (click)="closeDetailVarianteModal(); ouvrirGalerieVariante(parentServiceForDetail, selectedVarianteForDetail)">
+          <mat-icon class="btn-icon">photo_library</mat-icon>
+          Ouvrir le studio photo
+        </button>
+        }
+      </footer>
+    </div>
+  </div>
+  }
+
+</div>

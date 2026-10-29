@@ -1,0 +1,50 @@
+<aside class="toast-container" aria-live="polite" aria-label="Notifications système">
+  @for (toast of notifications; track toast.id) {
+    <div
+      class="toast-card"
+      [ngClass]="'toast-' + toast.type"
+      role="alert"
+    >
+      <div class="toast-glow"></div>
+      <div class="toast-icon-wrapper">
+        @switch (toast.type) {
+          @case ('success') {
+            <mat-icon class="toast-icon">check_circle</mat-icon>
+          }
+          @case ('error') {
+            <mat-icon class="toast-icon">error</mat-icon>
+          }
+          @case ('warning') {
+            <mat-icon class="toast-icon">warning</mat-icon>
+          }
+          @case ('info') {
+            <mat-icon class="toast-icon">info</mat-icon>
+          }
+        }
+      </div>
+
+      <div class="toast-body">
+        @if (toast.title) {
+          <h4 class="toast-title">{{ toast.title }}</h4>
+        }
+        <p class="toast-message">{{ toast.message }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="toast-close"
+        (click)="close(toast.id)"
+        aria-label="Fermer la notification"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+
+      @if (toast.duration > 0) {
+        <div
+          class="toast-progress-bar"
+          [style.animationDuration.ms]="toast.duration"
+        ></div>
+      }
+    </div>
+  }
+</aside>

@@ -1,0 +1,322 @@
+<div class="produits-container">
+  <!-- Toast Notification -->
+  <div *ngIf="toastMessage()" class="toast-notification">
+    <span>{{ toastMessage() }}</span>
+  </div>
+
+  <!-- En-tête de la page -->
+  <header class="page-header">
+    <div class="header-titles">
+      <div class="breadcrumbs">
+        <a routerLink="/admin-plateforme">Administration</a>
+        <span>/</span>
+        <span>Produits Conseils Capillaires</span>
+      </div>
+      <h1>Produits & Recommandations Capillaires</h1>
+      <p>Catalogue de référence utilisé pour alimenter le moteur de diagnostic et les routines de soins personnalisées.</p>
+    </div>
+    <div class="header-actions">
+      <button (click)="chargerDonnees()" [disabled]="isLoading()" class="btn-refresh" title="Actualiser la liste">
+        <mat-icon class="icon-sm" [class.spin]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+      <button (click)="ouvrirModalCreation()" class="btn-primary">
+        <span>+ Nouveau Produit</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Métriques / KPIs synthétiques (Fluides & Épurées) -->
+  <section class="kpis-bar" *ngIf="stats() as s">
+    <div class="kpi-item">
+      <span class="kpi-val">{{ s.total }}</span>
+      <span class="kpi-label">Total Produits</span>
+    </div>
+
+    <div class="kpi-separator"></div>
+
+    <div class="kpi-item">
+      <span class="kpi-val text-success">{{ s.actifs }}</span>
+      <span class="kpi-label">Actifs</span>
+    </div>
+
+    <div class="kpi-separator"></div>
+
+    <div class="kpi-item">
+      <span class="kpi-val text-muted">{{ s.inactifs }}</span>
+      <span class="kpi-label">Inactifs</span>
+    </div>
+
+    <div class="kpi-separator"></div>
+
+    <div class="kpi-routine-breakdown">
+      <span class="routine-mini-badge badge-lavage" title="Produits de lavage">
+        Lavage : <strong>{{ s.parEtape['LAVAGE'] || 0 }}</strong>
+      </span>
+      <span class="routine-mini-badge badge-soin" title="Soins profonds">
+        Soin : <strong>{{ s.parEtape['SOIN_PROFOND'] || 0 }}</strong>
+      </span>
+      <span class="routine-mini-badge badge-hydratation" title="Soins hydratants">
+        Hydratation : <strong>{{ s.parEtape['HYDRATATION'] || 0 }}</strong>
+      </span>
+      <span class="routine-mini-badge badge-finition" title="Produits de finition">
+        Finition : <strong>{{ s.parEtape['FINITION'] || 0 }}</strong>
+      </span>
+    </div>
+  </section>
+
+  <!-- Barre d'outils (Recherche & Filtres segmented) -->
+  <section class="toolbar-card card-3d">
+    <!-- Recherche textuelle -->
+    <div class="search-box">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Rechercher par nom, marque, mot-clé..."
+      />
+    </div>
+
+    <!-- Filtre Étape Routine (Pills fluides) -->
+    <div class="segmented-control routine-filter">
+      <button [class.active]="selectedEtape() === 'ALL'" (click)="selectedEtape.set('ALL')">
+        Toutes étapes
+      </button>
+      <button [class.active]="selectedEtape() === 'LAVAGE'" (click)="selectedEtape.set('LAVAGE')">
+        Lavage
+      </button>
+      <button [class.active]="selectedEtape() === 'SOIN_PROFOND'" (click)="selectedEtape.set('SOIN_PROFOND')">
+        Soin Profond
+      </button>
+      <button [class.active]="selectedEtape() === 'HYDRATATION'" (click)="selectedEtape.set('HYDRATATION')">
+        Hydratation
+      </button>
+      <button [class.active]="selectedEtape() === 'FINITION'" (click)="selectedEtape.set('FINITION')">
+        Finition
+      </button>
+    </div>
+
+    <!-- Filtre Statut & Mode d'affichage -->
+    <div class="toolbar-right-group">
+      <div class="segmented-control">
+        <button [class.active]="selectedStatut() === 'ALL'" (click)="selectedStatut.set('ALL')">
+          Tous
+        </button>
+        <button [class.active]="selectedStatut() === 'ACTIVE'" (click)="selectedStatut.set('ACTIVE')">
+          Actifs
+        </button>
+        <button [class.active]="selectedStatut() === 'INACTIVE'" (click)="selectedStatut.set('INACTIVE')">
+          Inactifs
+        </button>
+      </div>
+
+      <div class="view-toggle">
+        <button
+          [class.active]="viewMode() === 'GRID'"
+          (click)="viewMode.set('GRID')"
+          title="Vue Grille"
+        >
+          Grille
+        </button>
+        <button
+          [class.active]="viewMode() === 'TABLE'"
+          (click)="viewMode.set('TABLE')"
+          title="Vue Tableau"
+        >
+          Tableau
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Message d'erreur -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <span>{{ errorMessage() }}</span>
+    <button (click)="chargerDonnees()" class="btn-retry">Réessayer</button>
+  </div>
+
+  <!-- État de chargement -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des produits de conseils...</p>
+  </div>
+
+  <!-- VUE GRILLE DE CARTES FLUIDES -->
+  <section *ngIf="!isLoading() && viewMode() === 'GRID'" class="products-grid">
+    <div
+      *ngFor="let p of filteredProduits()"
+      class="product-card card-3d"
+      [class.inactive-card]="!p.actif"
+      (click)="ouvrirModalDetail(p)"
+    >
+      <!-- Card Image Visual -->
+      <div class="card-visual">
+        <img
+          *ngIf="p.imageUrl"
+          [src]="p.imageUrl"
+          [alt]="p.nom"
+          class="card-img"
+          loading="lazy"
+        />
+        <div *ngIf="!p.imageUrl" class="card-img-placeholder">
+          <span>{{ p.nom.charAt(0) }}</span>
+        </div>
+
+        <span class="card-routine-tag" [ngClass]="getEtapeInfo(p.etapeRoutine).badgeClass">
+          {{ getEtapeInfo(p.etapeRoutine).label }}
+        </span>
+      </div>
+
+      <!-- Card Details -->
+      <div class="card-body">
+        <div class="card-brand" *ngIf="p.marque">{{ p.marque }}</div>
+        <h3 class="card-title">{{ p.nom }}</h3>
+
+        <p class="card-desc" *ngIf="p.description">
+          {{ p.description }}
+        </p>
+
+        <!-- Targeting Summary Pills -->
+        <div class="card-targets">
+          <span class="target-summary-label">Types de cheveux :</span>
+          <span class="target-summary-text">{{ getTypesSummary(p) }}</span>
+        </div>
+      </div>
+
+      <!-- Card Footer Actions -->
+      <div class="card-footer" (click)="$event.stopPropagation()">
+        <!-- Toggle Actif / Inactif -->
+        <label class="toggle-switch" title="Activer ou désactiver">
+          <input
+            type="checkbox"
+            [checked]="p.actif"
+            (change)="basculerStatut(p, $event)"
+          />
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-text">{{ p.actif ? 'Actif' : 'Inactif' }}</span>
+
+        <div class="action-buttons-group">
+          <button
+            class="btn-action edit"
+            (click)="ouvrirModalEdition(p)"
+            title="Modifier ce produit"
+          >
+            Modifier
+          </button>
+          <button
+            class="btn-action delete"
+            (click)="demanderSuppression(p, $event)"
+            title="Supprimer ce produit"
+          >
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VUE TABLEAU SYNTHÉTIQUE -->
+  <section *ngIf="!isLoading() && viewMode() === 'TABLE' && filteredProduits().length > 0" class="table-container card-3d">
+    <table class="products-table">
+      <thead>
+        <tr>
+          <th>Visuel</th>
+          <th>Nom & Marque</th>
+          <th>Étape Routine</th>
+          <th>Ciblage Capillaire</th>
+          <th>Statut</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of filteredProduits()" (click)="ouvrirModalDetail(p)">
+          <td class="col-visual" (click)="$event.stopPropagation()">
+            <img
+              *ngIf="p.imageUrl"
+              [src]="p.imageUrl"
+              [alt]="p.nom"
+              class="table-thumb"
+            />
+            <div *ngIf="!p.imageUrl" class="table-thumb-fallback">
+              {{ p.nom.charAt(0) }}
+            </div>
+          </td>
+          <td class="col-identity">
+            <span class="table-brand" *ngIf="p.marque">{{ p.marque }}</span>
+            <strong class="table-name">{{ p.nom }}</strong>
+          </td>
+          <td>
+            <span class="badge-routine" [ngClass]="getEtapeInfo(p.etapeRoutine).badgeClass">
+              {{ getEtapeInfo(p.etapeRoutine).label }}
+            </span>
+          </td>
+          <td class="col-targets">
+            <span>{{ getTypesSummary(p) }}</span>
+          </td>
+          <td (click)="$event.stopPropagation()">
+            <label class="toggle-switch">
+              <input
+                type="checkbox"
+                [checked]="p.actif"
+                (change)="basculerStatut(p, $event)"
+              />
+              <span class="toggle-slider"></span>
+            </label>
+          </td>
+          <td class="text-right" (click)="$event.stopPropagation()">
+            <button class="btn-table-action" (click)="ouvrirModalEdition(p)">Modifier</button>
+            <button class="btn-table-action text-danger" (click)="demanderSuppression(p, $event)">Supprimer</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- État vide (Aucun résultat) -->
+  <div *ngIf="!isLoading() && filteredProduits().length === 0" class="empty-state card-3d">
+    <h3>Aucun produit trouvé</h3>
+    <p>Aucun produit conseil capillaire ne correspond à vos critères de recherche ou de filtre.</p>
+    <button (click)="searchQuery = ''; selectedEtape.set('ALL'); selectedStatut.set('ALL')" class="btn-secondary">
+      Réinitialiser les filtres
+    </button>
+  </div>
+
+  <!-- MODAL FORMULAIRE DE CRÉATION / ÉDITION -->
+  <div *ngIf="isFormModalOpen()" class="modal-backdrop" (click)="fermerModalForm()">
+    <div class="modal-form-wrapper" (click)="$event.stopPropagation()">
+      <app-produits-conseils-form
+        [editProduit]="productToEdit()"
+        [isModalMode]="true"
+        (enregistre)="onProduitEnregistre($event)"
+        (annule)="fermerModalForm()"
+      ></app-produits-conseils-form>
+    </div>
+  </div>
+
+  <!-- MODAL DE DÉTAIL / FICHE PRODUIT -->
+  <app-produits-conseils-detail-modal
+    *ngIf="selectedProductForDetail()"
+    [produit]="selectedProductForDetail()!"
+    (fermer)="fermerModalDetail()"
+    (editer)="ouvrirModalEdition($event)"
+  ></app-produits-conseils-detail-modal>
+
+  <!-- DIALOGUE DE CONFIRMATION DE SUPPRESSION -->
+  <div *ngIf="productToDelete()" class="modal-backdrop" (click)="annulerSuppression()">
+    <div class="confirm-modal card-3d" (click)="$event.stopPropagation()">
+      <h3>Supprimer le produit ?</h3>
+      <p>
+        Êtes-vous certain de vouloir supprimer <strong>"{{ productToDelete()?.nom }}"</strong> ?
+        Cette action retirera ce produit du catalogue et de l'historique de recommandations.
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" (click)="annulerSuppression()" [disabled]="isDeleting()">
+          Annuler
+        </button>
+        <button class="btn-danger" (click)="confirmerSuppression()" [disabled]="isDeleting()">
+          {{ isDeleting() ? 'Suppression...' : 'Confirmer la suppression' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

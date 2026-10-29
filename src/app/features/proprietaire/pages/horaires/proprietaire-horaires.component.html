@@ -1,0 +1,220 @@
+<div class="horaires-page">
+  <!-- PAGE HEADER -->
+  <header class="luxury-page-header">
+    <div class="header-left">
+      <div class="header-badge">
+        <mat-icon class="badge-icon">schedule</mat-icon>
+        <span>Planning & Disponibilités</span>
+      </div>
+      <h1 class="page-title">Horaires d'Ouverture du Salon</h1>
+      <p class="page-subtitle">Configurez avec précision vos plages de travail, créneaux de pause déjeuner et fermetures hebdomadaires.</p>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="btn-save-all" (click)="enregistrerTout()" [disabled]="isSavingAll() || isLoading()">
+        <mat-icon class="btn-icon" *ngIf="!isSavingAll()">save_all</mat-icon>
+        <div class="micro-spinner" *ngIf="isSavingAll()"></div>
+        <span>{{ isSavingAll() ? 'Enregistrement en cours...' : 'Enregistrer toute la semaine' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- KPI SUMMARY & PRESETS TOOLBAR -->
+  <section class="kpi-preset-section">
+    <div class="kpi-cards-grid">
+      <div class="kpi-mini-card">
+        <div class="kpi-icon-wrap open-days">
+          <mat-icon>event_available</mat-icon>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Jours d'ouverture</span>
+          <strong class="kpi-value">{{ joursActifsCount() }} <span class="kpi-total">/ 7 jours</span></strong>
+        </div>
+      </div>
+
+      <div class="kpi-mini-card">
+        <div class="kpi-icon-wrap hours">
+          <mat-icon>timelapse</mat-icon>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Volume hebdomadaire</span>
+          <strong class="kpi-value">{{ heuresHebdo() }} <span class="kpi-total">d'accueil</span></strong>
+        </div>
+      </div>
+
+      <div class="kpi-mini-card">
+        <div class="kpi-icon-wrap pace">
+          <mat-icon>verified</mat-icon>
+        </div>
+        <div class="kpi-details">
+          <span class="kpi-label">Rythme salon</span>
+          <strong class="kpi-value">{{ joursActifsCount() >= 6 ? 'Service Intensif' : 'Rythme Standard' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESETS RAPIDES -->
+    <div class="presets-toolbar">
+      <span class="presets-title">
+        <mat-icon class="icon-inline">auto_fix_high</mat-icon>
+        Modèles rapides :
+      </span>
+      <div class="presets-buttons">
+        <button type="button" class="btn-preset" (click)="appliquerPresetStandard()">
+          <mat-icon class="preset-icon">schedule</mat-icon>
+          <span>Classique (09:00 - 19:00 + Pause)</span>
+        </button>
+        <button type="button" class="btn-preset" (click)="appliquerPresetContinu()">
+          <mat-icon class="preset-icon">flash_on</mat-icon>
+          <span>Journée continue (08:30 - 20:00)</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHEDULE DAYS LIST -->
+  <section class="schedule-container">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des horaires du salon...</p>
+      </div>
+    } @else {
+      <div class="schedule-days-list">
+        @for (h of horaires(); track h.jourSemaine) {
+          <div class="horaire-day-card" [class.is-closed]="!h.actif">
+            <!-- Day identity & Toggle -->
+            <div class="day-ident-col">
+              <div class="day-badge-wrap">
+                <span class="day-code">{{ h.jourSemaine.substring(0, 3) }}</span>
+                <span class="day-full-name">{{ h.label }}</span>
+              </div>
+
+              <div class="toggle-switch-wrapper">
+                <label class="ios-switch">
+                  <input type="checkbox" [(ngModel)]="h.actif" />
+                  <span class="ios-slider"></span>
+                </label>
+                <span class="status-pill" [class.status-open]="h.actif" [class.status-closed]="!h.actif">
+                  {{ h.actif ? 'Ouvert' : 'Fermé' }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Operational hours or closed message -->
+            <div class="day-config-col">
+              @if (h.actif) {
+                <div class="hours-blocks-row">
+                  <!-- Bloc Amplitude Principale -->
+                  <div class="time-block amplitude-block">
+                    <div class="block-label">
+                      <mat-icon class="block-icon">access_time</mat-icon>
+                      <span>Amplitude d'ouverture</span>
+                    </div>
+                    <div class="inputs-pairing">
+                      <div class="input-with-label">
+                        <span class="input-caption">Début</span>
+                        <input
+                          type="time"
+                          class="luxury-time-input"
+                          [(ngModel)]="h.heureOuverture"
+                          [required]="h.actif"
+                        />
+                      </div>
+                      <mat-icon class="range-arrow">arrow_forward</mat-icon>
+                      <div class="input-with-label">
+                        <span class="input-caption">Fin</span>
+                        <input
+                          type="time"
+                          class="luxury-time-input"
+                          [(ngModel)]="h.heureFermeture"
+                          [required]="h.actif"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Bloc Pause Déjeuner -->
+                  <div class="time-block pause-block">
+                    <div class="block-label">
+                      <mat-icon class="block-icon">restaurant</mat-icon>
+                      <span>Pause repas (optionnelle)</span>
+                    </div>
+                    <div class="inputs-pairing">
+                      <div class="input-with-label">
+                        <span class="input-caption">Début pause</span>
+                        <input
+                          type="time"
+                          class="luxury-time-input pause"
+                          [(ngModel)]="h.pauseDebut"
+                          placeholder="--:--"
+                        />
+                      </div>
+                      <span class="range-dash">—</span>
+                      <div class="input-with-label">
+                        <span class="input-caption">Fin pause</span>
+                        <input
+                          type="time"
+                          class="luxury-time-input pause"
+                          [(ngModel)]="h.pauseFin"
+                          placeholder="--:--"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              } @else {
+                <div class="day-closed-notice">
+                  <mat-icon class="closed-icon">bedtime</mat-icon>
+                  <div class="closed-texts">
+                    <strong>Jour de fermeture hebdomadaire</strong>
+                    <p>Aucun rendez-vous ne pourra être réservé par les clients ce jour-là.</p>
+                  </div>
+                  <button type="button" class="btn-reopen-day" (click)="h.actif = true">
+                    <mat-icon class="icon-xs">wb_sunny</mat-icon>
+                    Ouvrir ce jour
+                  </button>
+                </div>
+              }
+            </div>
+
+            <!-- Actions col -->
+            <div class="day-actions-col">
+              @if (h.actif) {
+                <button
+                  type="button"
+                  class="btn-duplicate-day"
+                  (click)="dupliquerVersTous(h)"
+                  title="Dupliquer ces horaires sur les autres jours"
+                >
+                  <mat-icon class="action-icon">content_copy</mat-icon>
+                  <span class="btn-text">Dupliquer</span>
+                </button>
+              }
+
+              <button
+                type="button"
+                class="btn-save-day"
+                (click)="enregistrerJour(h)"
+                [disabled]="h.isSaving"
+                [class.btn-is-saving]="h.isSaving"
+              >
+                <mat-icon class="action-icon" *ngIf="!h.isSaving">check</mat-icon>
+                <div class="micro-spinner" *ngIf="h.isSaving"></div>
+                <span class="btn-text">{{ h.isSaving ? '...' : 'Valider' }}</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </section>
+</div>

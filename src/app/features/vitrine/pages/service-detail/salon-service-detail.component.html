@@ -1,0 +1,303 @@
+<div class="service-detail-page">
+  <!-- CHARGEMENT -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner-walnut"></div>
+    <p>Chargement des formules...</p>
+  </div>
+
+  <!-- SERVICE INTROUVABLE -->
+  <div *ngIf="!isLoading() && !service()" class="empty-state">
+    <div class="empty-icon-box">
+      <mat-icon class="empty-icon">info</mat-icon>
+    </div>
+    <h3>Prestation indisponible</h3>
+    <p>Cette prestation n'est plus proposée ou ne possède pas encore de formule.</p>
+    <a [routerLink]="['/' + slugSalon + '/services']" class="btn-back">
+      <mat-icon class="icon-xs">arrow_back</mat-icon>
+      <span>Retour aux prestations</span>
+    </a>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && service() as s">
+    <!-- COUVERTURE -->
+    <header class="cover" [class.cover-no-img]="!s.imageUrl">
+      <img *ngIf="s.imageUrl" [src]="s.imageUrl | safeMedia" [alt]="s.nom" class="cover-img" />
+      <div class="cover-shade"></div>
+
+      <a
+        [routerLink]="['/' + slugSalon + '/services']"
+        class="cover-back"
+        aria-label="Retour aux prestations"
+        title="Retour aux prestations"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </a>
+
+      <div class="cover-content">
+        <span class="cover-eyebrow">{{ salonNom }}</span>
+        <h1 class="cover-title">{{ s.nom }}</h1>
+        <div class="cover-facts">
+          <span class="fact">
+            <mat-icon class="icon-xxs">layers</mat-icon>
+            {{ s.variantes!.length }} formule{{ s.variantes!.length > 1 ? 's' : '' }}
+          </span>
+          <span class="fact">
+            <mat-icon class="icon-xxs">schedule</mat-icon>
+            <ng-container *ngIf="minDuree !== maxDuree; else uneDuree">
+              {{ formatDuree(minDuree) }} – {{ formatDuree(maxDuree) }}
+            </ng-container>
+            <ng-template #uneDuree>{{ formatDuree(minDuree) }}</ng-template>
+          </span>
+          <span class="fact fact-price">
+            <ng-container *ngIf="minPrice !== maxPrice; else unPrix">
+              {{ minPrice | number:'1.0-0' }} – {{ maxPrice | number:'1.0-0' }} FCFA
+            </ng-container>
+            <ng-template #unPrix>{{ minPrice | number:'1.0-0' }} FCFA</ng-template>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <div class="detail-layout">
+      <main class="detail-main">
+        <p class="service-desc" *ngIf="s.description">{{ s.description }}</p>
+
+        <!-- AVEC QUI ? (avatars) -->
+        <section class="artisan-section" *ngIf="coiffeurs().length > 0" aria-label="Choix de l'artisan">
+          <h2 class="block-title">Avec qui ?</h2>
+          <div class="artisan-scroll">
+            <button
+              type="button"
+              class="artisan-item"
+              [class.is-active]="selectedCoiffeurId() === null"
+              (click)="setCoiffeurPreference(null)"
+            >
+              <span class="artisan-avatar artisan-any">
+                <mat-icon>bolt</mat-icon>
+              </span>
+              <span class="artisan-name">Peu importe</span>
+            </button>
+
+            <button
+              type="button"
+              class="artisan-item"
+              *ngFor="let c of coiffeurs()"
+              [class.is-active]="selectedCoiffeurId() === c.id"
+              (click)="setCoiffeurPreference(c.id, c.coiffeurPrenom + ' ' + c.coiffeurNom)"
+            >
+              <span class="artisan-avatar">
+                <img
+                  *ngIf="c.photoProfilUrl"
+                  [src]="c.photoProfilUrl | safeMedia"
+                  [alt]="c.coiffeurPrenom"
+                />
+                <span *ngIf="!c.photoProfilUrl" class="artisan-initials">{{ initialsOf(c) }}</span>
+              </span>
+              <span class="artisan-name">{{ c.coiffeurPrenom }}</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- FORMULES -->
+        <section class="formules-section" aria-label="Formules disponibles">
+          <div class="block-head">
+            <h2 class="block-title">Choisissez votre formule</h2>
+            <span class="block-hint" *ngIf="selectedCountInService() > 0">
+              {{ selectedCountInService() }} choisie{{ selectedCountInService() > 1 ? 's' : '' }}
+            </span>
+          </div>
+
+          <ul class="formules-list">
+            <li
+              *ngFor="let v of s.variantes"
+              class="formule-row"
+              [class.is-selected]="isVarianteSelected(v.id)"
+            >
+              <!-- Photo : ouvre la visionneuse -->
+              <button
+                type="button"
+                class="formule-thumb"
+                (click)="openLightbox(v, 0, $event)"
+                [attr.aria-label]="'Voir les photos de ' + v.nom"
+                [disabled]="!getCover(v)"
+              >
+                <img *ngIf="getCover(v)" [src]="getCover(v) | safeMedia" [alt]="v.nom" class="formule-thumb-img" />
+                <mat-icon *ngIf="!getCover(v)" class="formule-thumb-fallback">spa</mat-icon>
+                <span class="formule-photos-badge" *ngIf="getPhotosCount(v) > 1">
+                  <mat-icon class="icon-xxs">photo_library</mat-icon>
+                  {{ getPhotosCount(v) }}
+                </span>
+              </button>
+
+              <div class="formule-body">
+                <h3 class="formule-name">{{ v.nom }}</h3>
+                <p class="formule-desc" *ngIf="v.description">{{ v.description }}</p>
+                <div class="formule-meta">
+                  <span class="formule-duree">
+                    <mat-icon class="icon-xxs">schedule</mat-icon>
+                    {{ formatDuree(v.dureeMinutes) }}
+                  </span>
+                  <span class="formule-price">{{ v.prix | number:'1.0-0' }} <small>FCFA</small></span>
+                </div>
+
+                <!-- Miniatures cliquables -->
+                <div class="formule-thumbs" *ngIf="getPhotosCount(v) > 1">
+                  <button
+                    type="button"
+                    *ngFor="let img of getImages(v); let i = index"
+                    class="mini-thumb"
+                    (click)="openLightbox(v, i, $event)"
+                    [attr.aria-label]="'Photo ' + (i + 1) + ' de ' + v.nom"
+                  >
+                    <img [src]="img | safeMedia" [alt]="v.nom + ' ' + (i + 1)" />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn-toggle"
+                [class.is-on]="isVarianteSelected(v.id)"
+                (click)="onToggleVariante($event, v)"
+                [attr.aria-pressed]="isVarianteSelected(v.id)"
+                [attr.aria-label]="isVarianteSelected(v.id) ? 'Retirer ' + v.nom + ' du rendez-vous' : 'Ajouter ' + v.nom + ' au rendez-vous'"
+              >
+                <mat-icon>{{ isVarianteSelected(v.id) ? 'check' : 'add' }}</mat-icon>
+              </button>
+            </li>
+          </ul>
+        </section>
+      </main>
+
+      <!-- RÉCAPITULATIF (desktop) -->
+      <aside class="summary-panel" aria-label="Votre sélection">
+        <h2 class="summary-title">
+          <mat-icon class="icon-sm">event_note</mat-icon>
+          Votre rendez-vous
+        </h2>
+
+        <p class="summary-empty" *ngIf="bookingStore.count() === 0">
+          Ajoutez une formule avec le bouton <strong>+</strong> pour réserver.
+        </p>
+
+        <ul class="summary-items" *ngIf="bookingStore.count() > 0">
+          <li class="summary-item" *ngFor="let it of bookingStore.selectedVariantes()">
+            <div class="summary-item-text">
+              <span class="summary-item-name">{{ it.varianteNom }}</span>
+              <span class="summary-item-sub">{{ it.serviceNom }} · {{ formatDuree(it.dureeMinutes) }}</span>
+            </div>
+            <span class="summary-item-price">{{ it.prix | number:'1.0-0' }}</span>
+            <button
+              type="button"
+              class="summary-item-remove"
+              (click)="removeSelected(it.id)"
+              [attr.aria-label]="'Retirer ' + it.varianteNom"
+            >
+              <mat-icon class="icon-xs">close</mat-icon>
+            </button>
+          </li>
+        </ul>
+
+        <div class="summary-totals" *ngIf="bookingStore.count() > 0">
+          <div class="total-line">
+            <span>Durée</span>
+            <strong>{{ formatDuree(bookingStore.totalDureeMinutes()) }}</strong>
+          </div>
+          <div class="total-line total-main">
+            <span>Total</span>
+            <strong>{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-checkout"
+          [disabled]="bookingStore.count() === 0"
+          (click)="goToCheckout()"
+        >
+          <span>Choisir un créneau</span>
+          <mat-icon class="icon-sm">arrow_forward</mat-icon>
+        </button>
+        <p class="summary-note">Paiement au salon, après la prestation.</p>
+      </aside>
+    </div>
+  </ng-container>
+
+  <!-- BARRE RDV (mobile / tablette) -->
+  <div class="mobile-summary-bar" *ngIf="bookingStore.count() > 0">
+    <button type="button" class="msb-info" (click)="openBookingDrawer()" aria-label="Voir ma sélection">
+      <span class="msb-count">{{ bookingStore.count() }}</span>
+      <span class="msb-text">
+        <strong>{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+        <small>{{ formatDuree(bookingStore.totalDureeMinutes()) }}</small>
+      </span>
+    </button>
+    <button type="button" class="msb-cta" (click)="goToCheckout()">
+      <span>Choisir un créneau</span>
+      <mat-icon class="icon-sm">arrow_forward</mat-icon>
+    </button>
+  </div>
+
+  <!-- VISIONNEUSE PHOTOS -->
+  <div
+    class="lightbox"
+    *ngIf="lightboxVariante() as lv"
+    (click)="closeLightbox()"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Photos de ' + lv.nom"
+  >
+    <button type="button" class="lb-close" (click)="closeLightbox()" aria-label="Fermer">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <div class="lb-stage" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="lb-arrow lb-prev"
+        *ngIf="lightboxImages().length > 1"
+        (click)="prevPhoto($event)"
+        aria-label="Photo précédente"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <img
+        *ngIf="lightboxCurrent()"
+        [src]="lightboxCurrent() | safeMedia"
+        [alt]="lv.nom"
+        class="lb-img"
+      />
+
+      <button
+        type="button"
+        class="lb-arrow lb-next"
+        *ngIf="lightboxImages().length > 1"
+        (click)="nextPhoto($event)"
+        aria-label="Photo suivante"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+    </div>
+
+    <div class="lb-footer" (click)="$event.stopPropagation()">
+      <div class="lb-caption">
+        <strong>{{ lv.nom }}</strong>
+        <span *ngIf="lightboxImages().length > 1">{{ lightboxIndex() + 1 }} / {{ lightboxImages().length }}</span>
+      </div>
+
+      <div class="lb-thumbs" *ngIf="lightboxImages().length > 1">
+        <button
+          type="button"
+          *ngFor="let img of lightboxImages(); let i = index"
+          class="lb-thumb"
+          [class.is-active]="lightboxIndex() === i"
+          (click)="lightboxIndex.set(i)"
+          [attr.aria-label]="'Afficher la photo ' + (i + 1)"
+        >
+          <img [src]="img | safeMedia" [alt]="'Miniature ' + (i + 1)" />
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

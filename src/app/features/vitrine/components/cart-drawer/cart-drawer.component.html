@@ -1,0 +1,166 @@
+<!-- Backdrop semi-transparent avec flou -->
+<div
+  class="drawer-backdrop"
+  [class.is-visible]="isOpen()"
+  (click)="close()"
+  aria-hidden="true"
+></div>
+
+<!-- Panneau coulissant depuis la droite -->
+<aside
+  class="cart-drawer-panel"
+  [class.is-open]="isOpen()"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Tiroir de panier d'achat"
+>
+  <!-- En-tête du tiroir -->
+  <header class="drawer-header">
+    <div class="header-title-box">
+      <div class="header-icon-wrap">
+        <mat-icon class="icon-sm">shopping_bag</mat-icon>
+      </div>
+      <div>
+        <h2 class="drawer-title">Mon Panier Soins</h2>
+        <span class="drawer-subtitle" *ngIf="nombreArticles() > 0">
+          {{ nombreArticles() }} article{{ nombreArticles() > 1 ? 's' : '' }} en Click & Collect
+        </span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="btn-close"
+      (click)="close()"
+      aria-label="Fermer le panneau"
+      title="Fermer"
+    >
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <!-- Indicateur de mise à jour / chargement -->
+  <div class="cart-loading-bar" *ngIf="chargement()">
+    <div class="cart-loading-progress"></div>
+  </div>
+
+  <!-- Corps du tiroir : Liste ou État vide -->
+  <div class="drawer-body">
+    <!-- ÉTAT VIDE -->
+    <div class="drawer-empty-state" *ngIf="nombreArticles() === 0">
+      <div class="empty-icon-circle">
+        <mat-icon class="icon-xl">storefront</mat-icon>
+      </div>
+      <h3>Votre panier est vide</h3>
+      <p>
+        Découvrez notre sélection exclusive de soins capillaires, sérums, shampooings et accessoires disponibles en retrait immédiat chez
+        <strong>{{ salonNom }}</strong>.
+      </p>
+      <button type="button" class="btn-discover-boutique" (click)="goToBoutique()">
+        <mat-icon class="icon-sm">shopping_bag</mat-icon>
+        <span>Explorer la boutique</span>
+      </button>
+    </div>
+
+    <!-- LISTE DES ARTICLES DU PANIER -->
+    <div class="drawer-items-list" *ngIf="nombreArticles() > 0">
+      <!-- Badge Click & Collect Offert -->
+      <div class="click-collect-banner">
+        <mat-icon class="icon-xs">storefront</mat-icon>
+        <span>Retrait immédiat gratuit au comptoir du salon</span>
+      </div>
+
+      <div class="items-header-bar">
+        <span class="list-label">Vos produits</span>
+        <button type="button" class="btn-clear-link" (click)="clearPanier()">
+          Vider le panier
+        </button>
+      </div>
+
+      <div
+        class="cart-item-card"
+        *ngFor="let item of panier()?.lignes"
+      >
+        <div class="item-thumb">
+          <mat-icon class="item-icon-fallback">inventory_2</mat-icon>
+        </div>
+
+        <div class="item-info">
+          <h4 class="item-title">{{ item.produitNom }}</h4>
+          <span class="item-unit-price">{{ item.prixUnitaire | number:'1.0-0' }} FCFA / unité</span>
+
+          <div class="item-bottom-row">
+            <!-- Stepper quantité -->
+            <div class="qty-stepper">
+              <button
+                type="button"
+                class="btn-qty"
+                (click)="decrementQuantite(item)"
+                aria-label="Diminuer la quantité"
+              >
+                <mat-icon class="icon-xs">remove</mat-icon>
+              </button>
+              <span class="qty-value">{{ item.quantite }}</span>
+              <button
+                type="button"
+                class="btn-qty"
+                (click)="incrementQuantite(item)"
+                aria-label="Augmenter la quantité"
+              >
+                <mat-icon class="icon-xs">add</mat-icon>
+              </button>
+            </div>
+
+            <!-- Sous-total de l'article -->
+            <span class="item-subtotal">{{ item.sousTotal | number:'1.0-0' }} FCFA</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="btn-remove-item"
+          (click)="removeItem(item.produitId)"
+          aria-label="Supprimer cet article"
+          title="Supprimer"
+        >
+          <mat-icon class="icon-sm">delete_outline</mat-icon>
+        </button>
+      </div>
+
+      <!-- Bouton continuer shopping -->
+      <button type="button" class="btn-add-more" (click)="goToBoutique()">
+        <mat-icon class="icon-sm">add_circle_outline</mat-icon>
+        <span>Ajouter d'autres soins capillaires</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pied du tiroir avec récapitulatif & CTA -->
+  <footer class="drawer-footer" *ngIf="nombreArticles() > 0">
+    <div class="summary-breakdown">
+      <div class="summary-line">
+        <span class="summary-label">Mode de retrait</span>
+        <span class="summary-value pickup-val">Click & Collect Gratuit</span>
+      </div>
+
+      <div class="summary-line total-line">
+        <span class="total-label">Total TTC</span>
+        <span class="total-value">{{ montantTotal() | number:'1.0-0' }} FCFA</span>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      class="btn-proceed-checkout"
+      (click)="proceedToCheckout()"
+    >
+      <span>Finaliser ma commande</span>
+      <mat-icon class="icon-sm">arrow_forward</mat-icon>
+    </button>
+
+    <div class="footer-notice">
+      <mat-icon class="icon-xs">lock</mat-icon>
+      <span>Paiement sécurisé ou au comptoir lors du retrait</span>
+    </div>
+  </footer>
+</aside>

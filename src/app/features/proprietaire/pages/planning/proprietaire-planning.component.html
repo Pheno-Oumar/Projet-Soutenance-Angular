@@ -1,0 +1,137 @@
+<div class="planning-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Planning du Salon</h1>
+      <p class="page-subtitle">Vue globale en temps réel des rendez-vous et créneaux des coiffeurs</p>
+    </div>
+
+    <!-- DATE & FILTER CONTROLS -->
+    <div class="controls-bar">
+      <div class="date-navigator">
+        <button type="button" class="nav-arrow-btn" (click)="changerJour(-1)" title="Jour précédent">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+
+        <input
+          type="date"
+          class="date-input"
+          [(ngModel)]="selectedDate"
+          (change)="chargerPlanning()"
+        />
+
+        <button type="button" class="nav-arrow-btn" (click)="changerJour(1)" title="Jour suivant">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+
+        <button type="button" class="btn-today" (click)="allerAujourdhui()">Aujourd'hui</button>
+      </div>
+
+      <!-- Coiffeur selector -->
+      <select class="select-coiffeur" [(ngModel)]="selectedCoiffeurId" (change)="chargerPlanning()">
+        <option [ngValue]="null">Tous les coiffeurs</option>
+        @for (c of coiffeurs(); track c.affectationId) {
+          <option [ngValue]="c.affectationId">{{ c.prenom }} {{ c.nom }}</option>
+        }
+      </select>
+    </div>
+  </header>
+
+  <!-- DAY SUMMARY BAR -->
+  <section class="summary-bar">
+    <div class="summary-pill">
+      <span class="pill-label">Rendez-vous prévus</span>
+      <strong class="pill-val">{{ planning().length }}</strong>
+    </div>
+
+    <div class="summary-pill">
+      <span class="pill-label">Recettes prévisionnelles</span>
+      <strong class="pill-val val-revenue">{{ formatDevise(calculerTotalEstime()) }}</strong>
+    </div>
+
+    <div class="summary-pill">
+      <span class="pill-label">Date sélectionnée</span>
+      <strong class="pill-val">{{ selectedDate | date:'EEEE d MMMM yyyy' }}</strong>
+    </div>
+  </section>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- PLANNING APPOINTMENTS -->
+  <div class="planning-content">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des créneaux de rendez-vous...</span>
+      </div>
+    } @else if (planning().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">event_busy</mat-icon>
+        <h3>Aucun rendez-vous sur cette date</h3>
+        <p>Le planning est entièrement libre pour le {{ selectedDate | date:'dd/MM/yyyy' }}.</p>
+      </div>
+    } @else {
+      <div class="rdv-grid">
+        @for (rdv of planning(); track rdv.rdvId) {
+          <div class="rdv-card" [class.rdv-no-show]="rdv.statut === 'NO_SHOW'" [class.rdv-annule]="rdv.statut === 'ANNULE'">
+            <!-- Card Header: Time and Status -->
+            <div class="rdv-card-header">
+              <div class="rdv-time">
+                <mat-icon class="time-icon">schedule</mat-icon>
+                <span>{{ rdv.dateHeureDebut | date:'HH:mm' }} - {{ rdv.dateHeureFin | date:'HH:mm' }}</span>
+              </div>
+
+              <span class="statut-badge" [attr.data-statut]="rdv.statut">
+                {{ rdv.statut }}
+              </span>
+            </div>
+
+            <!-- Client & Coiffeur -->
+            <div class="rdv-details">
+              <div class="detail-row">
+                <span class="detail-label">Client :</span>
+                <strong class="detail-val">{{ rdv.prenomClient }} {{ rdv.nomClient }}</strong>
+                @if (rdv.telephoneClient) {
+                  <span class="client-tel">({{ rdv.telephoneClient }})</span>
+                }
+              </div>
+
+              <div class="detail-row">
+                <span class="detail-label">Coiffeur :</span>
+                <span class="coiffeur-tag">{{ rdv.coiffeurPrenom }} {{ rdv.coiffeurNom }}</span>
+              </div>
+            </div>
+
+            <!-- Prestations Breakdown -->
+            @if (rdv.prestations && rdv.prestations.length > 0) {
+              <div class="prestations-box">
+                <span class="prestations-header">Prestations ({{ rdv.prestations.length }}) :</span>
+                <ul class="prestations-list">
+                  @for (p of rdv.prestations; track p.id) {
+                    <li class="prestation-item">
+                      <span class="presta-name">{{ p.varianteNom }}</span>
+                      <span class="presta-time">{{ p.duree }} min</span>
+                      <strong class="presta-price">{{ formatDevise(p.prix) }}</strong>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <!-- Card Footer: Total -->
+            <footer class="rdv-card-footer">
+              <span>Montant estimé :</span>
+              <strong class="total-price">{{ formatDevise(rdv.montantEstime) }}</strong>
+            </footer>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

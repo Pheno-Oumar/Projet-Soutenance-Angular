@@ -1,0 +1,147 @@
+<div class="rgpd-container">
+      <!-- En-tête -->
+      <header class="page-header">
+        <div class="header-titles">
+          <div class="breadcrumbs">
+            <a routerLink="/admin-plateforme">Administration</a>
+            <span>/</span>
+            <span>Conformité RGPD</span>
+          </div>
+          <h1>Gestion des Demandes de Suppression (RGPD)</h1>
+          <p>Examinez et traitez les demandes d'exercice du droit à l'effacement et à l'oubli formulées par les utilisateurs.</p>
+        </div>
+        <div class="header-actions">
+          <button (click)="chargerDemandes()" [disabled]="isLoading()" class="btn-refresh">
+            <mat-icon class="icon-sm" [class.spin]="isLoading()">refresh</mat-icon>
+            <span>Actualiser</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Barre d'outils (Filtres statut) -->
+      <section class="toolbar-card card-3d">
+        <div class="segmented-control">
+          <button [class.active]="filtreStatut() === undefined" (click)="changerFiltre(undefined)">
+            Toutes ({{ totalDemandes() }})
+          </button>
+          <button [class.active]="filtreStatut() === 'EN_ATTENTE'" (click)="changerFiltre('EN_ATTENTE')">
+            En attente ({{ countEnAttente() }})
+          </button>
+          <button [class.active]="filtreStatut() === 'APPROUVEE'" (click)="changerFiltre('APPROUVEE')">
+            Approuvées ({{ countApprouvees() }})
+          </button>
+          <button [class.active]="filtreStatut() === 'REJETEE'" (click)="changerFiltre('REJETEE')">
+            Rejetées ({{ countRejetees() }})
+          </button>
+        </div>
+      </section>
+
+
+      <!-- Erreur -->
+      <div *ngIf="errorMessage()" class="alert-error">
+        <span>{{ errorMessage() }}</span>
+        <button (click)="chargerDemandes()" class="btn-retry">Réessayer</button>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des demandes RGPD...</p>
+      </div>
+
+      <!-- Grille des Demandes -->
+      <section *ngIf="!isLoading()" class="demandes-grid">
+        <div *ngFor="let demande of demandes()" class="demande-card card-3d">
+          <div class="demande-card-header">
+            <div class="user-avatar">
+              <mat-icon class="icon-sm">person</mat-icon>
+            </div>
+            <div class="user-info">
+              <h3>{{ demande.compteEmail }}</h3>
+              <span class="demande-date">Demandé le {{ demande.dateDemande | date:'dd/MM/yyyy à HH:mm' }}</span>
+            </div>
+            <span class="badge-status" [ngClass]="getStatutClass(demande.statut)">
+              {{ getStatutLabel(demande.statut) }}
+            </span>
+          </div>
+
+          <div class="motif-box">
+            <span class="motif-label">Motif invoqué :</span>
+            <p *ngIf="demande.motif">{{ demande.motif }}</p>
+            <p *ngIf="!demande.motif" class="empty">Aucun motif particulier précisé par l'utilisateur.</p>
+          </div>
+
+          <!-- Section Décision si déjà traitée -->
+          <div *ngIf="demande.statut !== 'EN_ATTENTE'" class="decision-box">
+            <span class="decision-label">Décision prise le {{ demande.dateDecision | date:'dd/MM/yyyy' }} :</span>
+            <p *ngIf="demande.motifDecision">{{ demande.motifDecision }}</p>
+            <div *ngIf="demande.traiteParAdminEmail" class="admin-signer">
+              Traité par : <strong>{{ demande.traiteParAdminEmail }}</strong>
+            </div>
+          </div>
+
+          <!-- Action si en attente -->
+          <div *ngIf="demande.statut === 'EN_ATTENTE'" class="demande-actions">
+            <button (click)="ouvrirDecisionModal(demande, false)" class="btn-reject">
+              Rejeter
+            </button>
+            <button (click)="ouvrirDecisionModal(demande, true)" class="btn-approve">
+              Approuver & Supprimer
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Aucun résultat -->
+      <div *ngIf="!isLoading() && demandes().length === 0" class="empty-state card-3d">
+        <div class="empty-icon"><mat-icon class="icon-xl">shield</mat-icon></div>
+        <h3>Aucune demande de suppression</h3>
+        <p>Toutes les demandes de suppression ont été traitées ou aucune demande n'a été formulée.</p>
+      </div>
+
+      <!-- MODAL DE DÉCISION -->
+      <div *ngIf="selectedDemande()" class="modal-backdrop" (click)="selectedDemande.set(null)">
+        <div class="modal-card card-3d" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>{{ decisionApproved() ? 'Confirmer l’approbation de suppression' : 'Rejeter la demande de suppression' }}</h3>
+            <button (click)="selectedDemande.set(null)" class="btn-close"><mat-icon class="icon-sm">close</mat-icon></button>
+          </div>
+
+          <div class="modal-body">
+            <p class="modal-intro">
+              Compte ciblé : <strong>{{ selectedDemande()?.compteEmail }}</strong>
+            </p>
+
+            <div *ngIf="decisionApproved()" class="warning-callout">
+              <mat-icon class="icon-sm text-amber">warning</mat-icon> <strong>Action irréversible :</strong> L'approbation procédera à l'anonymisation / suppression des données du compte conformément au RGPD.
+            </div>
+
+            <div class="form-group">
+              <label for="motifDecision">
+                Motif de la décision
+                <span *ngIf="!decisionApproved()" class="required">*</span>
+                <span *ngIf="decisionApproved()">(Optionnel)</span> :
+              </label>
+              <textarea
+                id="motifDecision"
+                rows="4"
+                [(ngModel)]="decisionMotif"
+                [placeholder]="getPlaceholder()"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button (click)="selectedDemande.set(null)" class="btn-cancel">Annuler</button>
+            <button
+              (click)="validerDecision()"
+              [disabled]="isProcessing() || (!decisionApproved() && !decisionMotif.trim())"
+              [class.btn-danger]="decisionApproved()"
+              [class.btn-primary]="!decisionApproved()"
+            >
+              <span>{{ isProcessing() ? 'Traitement...' : (decisionApproved() ? 'Confirmer la suppression' : 'Confirmer le rejet') }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>

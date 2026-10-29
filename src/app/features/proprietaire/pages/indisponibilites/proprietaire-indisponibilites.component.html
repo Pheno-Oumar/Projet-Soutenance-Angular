@@ -1,0 +1,226 @@
+<div class="indispo-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Indisponibilités des Coiffeurs</h1>
+      <p class="page-subtitle">Suivez et planifiez les congés, arrêts maladie et absences exceptionnelles de votre équipe</p>
+    </div>
+    <div class="header-actions">
+      <!-- Filtre coiffeur -->
+      <select class="select-coiffeur" [(ngModel)]="selectedCoiffeurFilter" (change)="chargerIndisponibilites()">
+        <option [ngValue]="null">Tous les coiffeurs</option>
+        @for (c of coiffeurs(); track c.affectationId) {
+          <option [ngValue]="c.affectationId">{{ c.prenom }} {{ c.nom }}</option>
+        }
+      </select>
+
+      <button type="button" class="btn-primary" (click)="openCreateModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Déclarer une indisponibilité
+      </button>
+    </div>
+  </header>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- LIST TABLE -->
+  <div class="indispo-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des indisponibilités...</span>
+      </div>
+    } @else if (indisponibilites().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">event_busy</mat-icon>
+        <h3>Aucune indisponibilité enregistrée</h3>
+        <p>Tous les coiffeurs sont actuellement opérationnels sur leurs créneaux habituels.</p>
+        <button type="button" class="btn-primary" (click)="openCreateModal()">Ajouter un congé / absence</button>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Coiffeur</th>
+              <th>Période d'absence</th>
+              <th>Statut</th>
+              <th>Motif</th>
+              <th>Commentaire</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (i of indisponibilites(); track i.id) {
+              <tr>
+                <td>
+                  <strong class="coiffeur-name">{{ getCoiffeurNom(i.coiffeurAffectationId) }}</strong>
+                </td>
+
+                <td>
+                  <div class="period-box">
+                    <span>Du {{ i.dateDebut | date:'dd/MM/yyyy HH:mm' }}</span>
+                    <span>au {{ i.dateFin | date:'dd/MM/yyyy HH:mm' }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  @switch (getStatut(i)) {
+                    @case ('EN_COURS') {
+                      <span class="badge badge-ongoing">En cours</span>
+                    }
+                    @case ('A_VENIR') {
+                      <span class="badge badge-upcoming">À venir</span>
+                    }
+                    @case ('PASSEE') {
+                      <span class="badge badge-past">Terminée</span>
+                    }
+                  }
+                </td>
+
+                <td>
+                  <span class="motif-badge">{{ i.motif }}</span>
+                </td>
+
+                <td>
+                  <span class="comment-text">{{ i.commentaire || '-' }}</span>
+                </td>
+
+                <td class="text-right actions-cell">
+                  @if (canEndEarly(i)) {
+                    <button
+                      type="button"
+                      class="btn-action btn-end-now"
+                      (click)="mettreFin(i)"
+                      title="Mettre fin maintenant"
+                    >
+                      Mettre fin
+                    </button>
+                  }
+
+                  @if (canModifyOrDelete(i)) {
+                    <button
+                      type="button"
+                      class="btn-action btn-edit"
+                      (click)="openEditModal(i)"
+                      title="Modifier"
+                    >
+                      Modifier
+                    </button>
+
+                    <button
+                      type="button"
+                      class="btn-action btn-delete"
+                      (click)="supprimer(i)"
+                      title="Supprimer"
+                    >
+                      Supprimer
+                    </button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+
+  <!-- MODAL AJOUT / MODIFICATION -->
+  @if (showModal) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">{{ isEditMode ? 'Modifier l’Indisponibilité' : 'Déclarer une Indisponibilité' }}</h2>
+          <button type="button" class="btn-close" (click)="closeModal()"><mat-icon>close</mat-icon></button>
+        </header>
+
+        <form (ngSubmit)="soumettre()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="indispoCoiffeur" class="form-label">Coiffeur concerné *</label>
+              <select
+                id="indispoCoiffeur"
+                class="form-control"
+                [(ngModel)]="formData.coiffeurAffectationId"
+                name="coiffeurAffectationId"
+                required
+                [disabled]="isEditMode"
+              >
+                @for (c of coiffeurs(); track c.affectationId) {
+                  <option [ngValue]="c.affectationId">{{ c.prenom }} {{ c.nom }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="dateDebut" class="form-label">Date & Heure début *</label>
+                <input
+                  id="dateDebut"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="formData.dateDebut"
+                  name="dateDebut"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="dateFin" class="form-label">Date & Heure fin *</label>
+                <input
+                  id="dateFin"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="formData.dateFin"
+                  name="dateFin"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="motif" class="form-label">Motif de l’indisponibilité *</label>
+              <select
+                id="motif"
+                class="form-control"
+                [(ngModel)]="formData.motif"
+                name="motif"
+                required
+              >
+                @for (m of motifs; track m.key) {
+                  <option [value]="m.key">{{ m.label }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="commentaire" class="form-label">Commentaire / Justificatif</label>
+              <textarea
+                id="commentaire"
+                class="form-control"
+                [(ngModel)]="formData.commentaire"
+                name="commentaire"
+                rows="3"
+                placeholder="Précisions éventuelles sur l'absence..."
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="closeModal()">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Enregistrement...' : (isEditMode ? 'Sauvegarder' : 'Valider l’indisponibilité') }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</div>

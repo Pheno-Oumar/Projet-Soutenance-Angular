@@ -1,0 +1,386 @@
+<div class="planning-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Planning & Disponibilités de l'Équipe</h1>
+      <p class="page-subtitle">Organisation quotidienne des créneaux de rendez-vous et suivi des absences des coiffeurs</p>
+    </div>
+
+    <!-- TABS -->
+    <div class="header-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'PLANNING'"
+        (click)="activeTab = 'PLANNING'; chargerDonnees()"
+      >
+        <mat-icon class="tab-icon">event</mat-icon>
+        Rendez-vous Clients
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab === 'INDISPONIBILITES'"
+        (click)="activeTab = 'INDISPONIBILITES'; chargerDonnees()"
+      >
+        <mat-icon class="tab-icon">schedule</mat-icon>
+        Absences & Indisponibilités
+      </button>
+    </div>
+  </header>
+
+  <!-- TAB 1: PLANNING RENDEZ-VOUS -->
+  @if (activeTab === 'PLANNING') {
+    <div class="planning-toolbar">
+      <div class="toolbar-filters">
+        <div class="date-controls">
+          <label for="rdvDateInput" class="toolbar-label">Jour :</label>
+          <input
+            id="rdvDateInput"
+            type="date"
+            [(ngModel)]="selectedDate"
+            (change)="chargerPlanning()"
+            class="date-picker-input"
+          />
+          <button type="button" class="btn-today" (click)="setAujourdhui()">Aujourd'hui</button>
+        </div>
+
+        <div class="coiffeur-filter">
+          <label for="rdvCoiffeurSelect" class="toolbar-label">Coiffeur :</label>
+          <select
+            id="rdvCoiffeurSelect"
+            [(ngModel)]="filterCoiffeurId"
+            (change)="chargerPlanning()"
+            class="coiffeur-select-input"
+          >
+            <option [ngValue]="null">Tous les coiffeurs</option>
+            @for (c of coiffeurs(); track c.affectationId) {
+              <option [ngValue]="c.affectationId">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="count-badge">
+        {{ appointments().length }} créneau{{ appointments().length > 1 ? 'x' : '' }}
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement du planning...</span>
+      </div>
+    } @else if (appointments().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">event_busy</mat-icon>
+        <h3>Aucun rendez-vous sur cette sélection</h3>
+        <p>Les créneaux de ce collaborateur ou de ce jour sont entièrement disponibles.</p>
+      </div>
+    } @else {
+      <div class="appointments-grid">
+        @for (rdv of appointments(); track rdv.rdvId) {
+          <div class="rdv-card">
+            <div class="rdv-time-block">
+              <span class="start-time">{{ formatHeure(rdv.dateHeureDebut) }}</span>
+              <mat-icon class="duration-arrow">arrow_downward</mat-icon>
+              <span class="end-time">{{ formatHeure(rdv.dateHeureFin) }}</span>
+            </div>
+
+            <div class="rdv-body">
+              <div class="rdv-client-header">
+                <h3 class="rdv-client-name">{{ rdv.prenomClient }} {{ rdv.nomClient }}</h3>
+                <span class="badge" [class]="'badge-' + rdv.statut.toLowerCase()">{{ rdv.statut }}</span>
+              </div>
+
+              @if (rdv.telephoneClient) {
+                <span class="rdv-phone">
+                  <mat-icon class="mini-icon">call</mat-icon>
+                  {{ rdv.telephoneClient }}
+                </span>
+              }
+
+              <div class="rdv-prestations-box">
+                @for (p of rdv.prestations; track $index) {
+                  <div class="prestation-item">
+                    <div class="p-details">
+                      <span class="p-nom">{{ p.serviceNom }} ({{ p.varianteNom }})</span>
+                      <span class="p-coiffeur">Coiffeur : {{ p.coiffeurNom }}</span>
+                    </div>
+                    <div class="p-price-time">
+                      <span>{{ p.dureeMinutes }} min</span>
+                      <strong>{{ formatDevise(p.prix) }}</strong>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              @if (rdv.montantEstime) {
+                <div class="rdv-total-row">
+                  <span>Total estimé :</span>
+                  <span class="total-amount">{{ formatDevise(rdv.montantEstime) }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- TAB 2: INDISPONIBILITÉS COIFFEURS -->
+  @if (activeTab === 'INDISPONIBILITES') {
+    <div class="planning-toolbar">
+      <div class="toolbar-filters">
+        <p class="toolbar-hint">Déclarez les congés, absences ou indisponibilités temporaires des coiffeurs.</p>
+        <div class="coiffeur-filter">
+          <label for="indispoFilterCoiffeur" class="toolbar-label">Filtrer par :</label>
+          <select
+            id="indispoFilterCoiffeur"
+            [(ngModel)]="filterCoiffeurId"
+            (change)="chargerIndisponibilites()"
+            class="coiffeur-select-input"
+          >
+            <option [ngValue]="null">Tous les coiffeurs</option>
+            @for (c of coiffeurs(); track c.affectationId) {
+              <option [ngValue]="c.affectationId">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <button type="button" class="btn-primary" (click)="openCreateIndispoModal()">
+        <mat-icon class="btn-icon">add</mat-icon>
+        Ajouter une indisponibilité
+      </button>
+    </div>
+
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Chargement des indisponibilités...</span>
+      </div>
+    } @else if (indisponibilites().length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">event_available</mat-icon>
+        <h3>Aucune indisponibilité enregistrée</h3>
+        <p>Tous les collaborateurs sont actuellement disponibles sur les créneaux d'ouverture.</p>
+      </div>
+    } @else {
+      <div class="indispo-list">
+        @for (item of indisponibilites(); track item.id) {
+          <div class="indispo-card">
+            <div class="indispo-icon-wrap">
+              <mat-icon>schedule</mat-icon>
+            </div>
+
+            <div class="indispo-main-info">
+              <div class="indispo-header">
+                <h4 class="indispo-motif">{{ item.motif || 'Absence déclarée' }}</h4>
+                <span class="coiffeur-tag">{{ getCoiffeurNom(item.coiffeurAffectationId) }}</span>
+              </div>
+
+              <div class="indispo-dates">
+                <span>Du <strong>{{ item.dateDebut | date:'dd/MM/yyyy HH:mm' }}</strong> au <strong>{{ item.dateFin | date:'dd/MM/yyyy HH:mm' }}</strong></span>
+              </div>
+
+              @if (item.commentaire) {
+                <p class="indispo-comment">{{ item.commentaire }}</p>
+              }
+            </div>
+
+            <div class="indispo-actions">
+              <button type="button" class="btn-secondary btn-sm" (click)="openEditIndispoModal(item)">
+                Modifier
+              </button>
+              <button type="button" class="btn-danger btn-sm" (click)="supprimerIndisponibilite(item)">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  <!-- MODAL: CRÉER INDISPONIBILITÉ -->
+  @if (showCreateIndispoModal) {
+    <div class="modal-backdrop" (click)="showCreateIndispoModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Déclarer une Indisponibilité</h2>
+          <button type="button" class="btn-close" (click)="showCreateIndispoModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="creerIndisponibilite()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="indispoCoiffeurId" class="form-label">Coiffeur concerné *</label>
+              <select
+                id="indispoCoiffeurId"
+                class="form-control"
+                [(ngModel)]="newIndispo.coiffeurAffectationId"
+                name="coiffeurAffectationId"
+                required
+              >
+                <option [ngValue]="undefined" disabled>-- Sélectionner un coiffeur --</option>
+                @for (c of coiffeurs(); track c.affectationId) {
+                  <option [ngValue]="c.affectationId">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="dateDeb" class="form-label">Date & Heure Début *</label>
+                <input
+                  id="dateDeb"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="newIndispo.dateDebut"
+                  name="dateDebut"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="dateFin" class="form-label">Date & Heure Fin *</label>
+                <input
+                  id="dateFin"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="newIndispo.dateFin"
+                  name="dateFin"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="indispoMotif" class="form-label">Motif de l'absence *</label>
+              <input
+                id="indispoMotif"
+                type="text"
+                class="form-control"
+                [(ngModel)]="newIndispo.motif"
+                name="motif"
+                placeholder="Ex: Congé payé, Formation, Maladie..."
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="indispoComm" class="form-label">Commentaire additionnel</label>
+              <textarea
+                id="indispoComm"
+                class="form-control"
+                [(ngModel)]="newIndispo.commentaire"
+                name="commentaire"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showCreateIndispoModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isCreatingIndispo">
+              {{ isCreatingIndispo ? 'Enregistrement...' : 'Enregistrer l’indisponibilité' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL: MODIFIER INDISPONIBILITÉ -->
+  @if (showEditIndispoModal) {
+    <div class="modal-backdrop" (click)="showEditIndispoModal = false">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <h2 class="modal-title">Modifier l'Indisponibilité</h2>
+          <button type="button" class="btn-close" (click)="showEditIndispoModal = false">
+            <mat-icon>close</mat-icon>
+          </button>
+        </header>
+
+        <form (ngSubmit)="modifierIndisponibilite()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="editIndispoCoiffeurId" class="form-label">Coiffeur concerné *</label>
+              <select
+                id="editIndispoCoiffeurId"
+                class="form-control"
+                [(ngModel)]="editIndispoData.coiffeurAffectationId"
+                name="coiffeurAffectationId"
+                required
+              >
+                @for (c of coiffeurs(); track c.affectationId) {
+                  <option [ngValue]="c.affectationId">{{ c.coiffeurPrenom }} {{ c.coiffeurNom }} ({{ c.nomAffichage || 'Coiffeur' }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-half">
+                <label for="editDateDeb" class="form-label">Date & Heure Début</label>
+                <input
+                  id="editDateDeb"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="editIndispoData.dateDebut"
+                  name="dateDebut"
+                  required
+                />
+              </div>
+
+              <div class="form-group col-half">
+                <label for="editDateFin" class="form-label">Date & Heure Fin</label>
+                <input
+                  id="editDateFin"
+                  type="datetime-local"
+                  class="form-control"
+                  [(ngModel)]="editIndispoData.dateFin"
+                  name="dateFin"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="editIndispoMotif" class="form-label">Motif</label>
+              <input
+                id="editIndispoMotif"
+                type="text"
+                class="form-control"
+                [(ngModel)]="editIndispoData.motif"
+                name="motif"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editIndispoComm" class="form-label">Commentaire</label>
+              <textarea
+                id="editIndispoComm"
+                class="form-control"
+                [(ngModel)]="editIndispoData.commentaire"
+                name="commentaire"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+
+          <footer class="modal-footer">
+            <button type="button" class="btn-secondary" (click)="showEditIndispoModal = false">Annuler</button>
+            <button type="submit" class="btn-primary" [disabled]="isUpdatingIndispo">
+              {{ isUpdatingIndispo ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
+          </footer>
+        </form>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,436 @@
+<div class="form-container" [class.in-modal]="isModalMode">
+  <!-- En-tête de la page (si pas dans un modal) -->
+  <header *ngIf="!isModalMode" class="page-header">
+    <div class="header-titles">
+      <div class="breadcrumbs">
+        <a routerLink="/admin-plateforme">Administration</a>
+        <span>/</span>
+        <a routerLink="/admin-plateforme/produits-conseils">Produits Conseils</a>
+        <span>/</span>
+        <span>{{ productId ? 'Modifier' : 'Nouveau Produit' }}</span>
+      </div>
+      <h1>{{ productId ? 'Modifier le Produit Conseil' : 'Ajouter un Produit Conseil Capillaire' }}</h1>
+      <p>Configurez la fiche technique et les critères de recommandation pour les diagnostics capillaires.</p>
+    </div>
+  </header>
+
+  <!-- En-tête modal (si dans un modal) -->
+  <div *ngIf="isModalMode" class="modal-form-header">
+    <h3>{{ productId ? 'Modifier le Produit Conseil' : 'Nouveau Produit de Conseil' }}</h3>
+    <button class="btn-close" (click)="annuler()" aria-label="Fermer">
+      <mat-icon class="icon-sm">close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Alerte Erreur -->
+  <div *ngIf="errorMessage()" class="alert-error">
+    <span>{{ errorMessage() }}</span>
+  </div>
+
+  <!-- État de chargement initial -->
+  <div *ngIf="isLoading()" class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement des informations...</p>
+  </div>
+
+  <!-- Formulaire -->
+  <form *ngIf="!isLoading()" (ngSubmit)="sauvegarder()" class="product-form">
+    <!-- SECTION 1 : INFORMATIONS FONDAMENTALES -->
+    <div class="form-card card-3d">
+      <div class="card-header">
+        <span class="card-step-badge">1</span>
+        <div>
+          <h3>Identité & Rôle du Produit</h3>
+          <p>Désignation commerciale et position dans la routine capillaire.</p>
+        </div>
+      </div>
+
+      <div class="form-grid two-cols">
+        <!-- Nom -->
+        <div class="form-group">
+          <label for="prodNom">Nom du produit <span class="required">*</span></label>
+          <input
+            id="prodNom"
+            type="text"
+            [(ngModel)]="nom"
+            name="nom"
+            required
+            placeholder="Ex: Shampoing Hydratant Karité & Miel"
+          />
+        </div>
+
+        <!-- Marque -->
+        <div class="form-group">
+          <label for="prodMarque">Marque / Gamme</label>
+          <input
+            id="prodMarque"
+            type="text"
+            [(ngModel)]="marque"
+            name="marque"
+            placeholder="Ex: Kady Care, Shea Moisture, Olaplex"
+          />
+        </div>
+      </div>
+
+      <!-- Étape de la Routine -->
+      <div class="form-group routine-selection">
+        <label>Étape clé de la routine capillaire <span class="required">*</span></label>
+        <div class="routine-options-grid">
+          <label
+            class="routine-option-card"
+            [class.selected]="etapeRoutine === 'LAVAGE'"
+          >
+            <input
+              type="radio"
+              [(ngModel)]="etapeRoutine"
+              name="etapeRoutine"
+              value="LAVAGE"
+            />
+            <div class="option-content">
+              <span class="option-title">Lavage</span>
+              <span class="option-sub">Shampoings doux, clarifiants & gommages</span>
+            </div>
+          </label>
+
+          <label
+            class="routine-option-card"
+            [class.selected]="etapeRoutine === 'SOIN_PROFOND'"
+          >
+            <input
+              type="radio"
+              [(ngModel)]="etapeRoutine"
+              name="etapeRoutine"
+              value="SOIN_PROFOND"
+            />
+            <div class="option-content">
+              <span class="option-title">Soin Profond</span>
+              <span class="option-sub">Masques restructurants & bains d'huiles</span>
+            </div>
+          </label>
+
+          <label
+            class="routine-option-card"
+            [class.selected]="etapeRoutine === 'HYDRATATION'"
+          >
+            <input
+              type="radio"
+              [(ngModel)]="etapeRoutine"
+              name="etapeRoutine"
+              value="HYDRATATION"
+            />
+            <div class="option-content">
+              <span class="option-title">Hydratation</span>
+              <span class="option-sub">Leave-in, laits et crèmes sans rinçage</span>
+            </div>
+          </label>
+
+          <label
+            class="routine-option-card"
+            [class.selected]="etapeRoutine === 'FINITION'"
+          >
+            <input
+              type="radio"
+              [(ngModel)]="etapeRoutine"
+              name="etapeRoutine"
+              value="FINITION"
+            />
+            <div class="option-content">
+              <span class="option-title">Finition & Scellage</span>
+              <span class="option-sub">Sérums brillants, huiles & beurres scellants</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Statut Actif -->
+      <div class="form-group switch-group">
+        <label class="switch-container">
+          <input
+            type="checkbox"
+            [(ngModel)]="actif"
+            name="actif"
+          />
+          <span class="slider"></span>
+        </label>
+        <div class="switch-label">
+          <span class="switch-title">Produit actif dans les recommandations</span>
+          <span class="switch-desc">Si désactivé, le produit ne sera pas proposé lors des diagnostics capillaires.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2 : VISUEL DU PRODUIT -->
+    <div class="form-card card-3d">
+      <div class="card-header">
+        <span class="card-step-badge">2</span>
+        <div>
+          <h3>Visuel & Présentation</h3>
+          <p>Ajoutez une photo claire du produit pour l'affichage dans les routines personnalisées.</p>
+        </div>
+      </div>
+
+      <div class="media-upload-container">
+        <!-- Aperçu de l'image -->
+        <div class="preview-box">
+          <img
+            *ngIf="imagePreviewUrl"
+            [src]="imagePreviewUrl"
+            alt="Aperçu du produit"
+            class="preview-img"
+          />
+          <div *ngIf="!imagePreviewUrl" class="no-preview">
+            <span class="no-preview-text">Aucun visuel sélectionné</span>
+          </div>
+          <button
+            *ngIf="imagePreviewUrl"
+            type="button"
+            class="btn-remove-image"
+            (click)="supprimerImage()"
+            title="Supprimer l'image"
+          >
+            Retirer
+          </button>
+        </div>
+
+        <!-- Options d'upload -->
+        <div class="upload-controls">
+          <div class="file-dropzone">
+            <input
+              type="file"
+              id="fileInput"
+              accept="image/png, image/jpeg, image/webp"
+              (change)="onFileSelected($event)"
+              class="hidden-file-input"
+            />
+            <label for="fileInput" class="dropzone-label">
+              <span class="dropzone-main-text">Choisir un fichier image</span>
+              <span class="dropzone-sub-text">PNG, JPG ou WebP (max 5 Mo)</span>
+            </label>
+          </div>
+
+          <div class="divider-text">
+            <span>OU RENSEIGNER UNE URL</span>
+          </div>
+
+          <div class="form-group">
+            <input
+              type="url"
+              [(ngModel)]="imageUrl"
+              name="imageUrl"
+              (blur)="onUrlChange()"
+              placeholder="https://exemple.com/images/produit.webp"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3 : CIBLAGE CAPILLAIRE (TAGS ERGONOMIQUES) -->
+    <div class="form-card card-3d">
+      <div class="card-header">
+        <span class="card-step-badge">3</span>
+        <div>
+          <h3>Diagnostic & Profil Capillaire Recommandé</h3>
+          <p>Cliquez sur les tags pour sélectionner les caractéristiques ciblées par ce soin.</p>
+        </div>
+      </div>
+
+      <div class="criteria-selection-blocks">
+        <!-- Types de Cheveux -->
+        <div class="criteria-row">
+          <div class="criteria-header">
+            <span class="criteria-name">Types de cheveux</span>
+            <span class="selection-count">{{ selectedTypes.size }} sélectionné(s)</span>
+          </div>
+          <div class="interactive-pills">
+            <button
+              type="button"
+              *ngFor="let opt of typeCheveuxOptions"
+              class="pill-tag"
+              [class.active]="selectedTypes.has(opt.value)"
+              (click)="toggleType(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Porosité -->
+        <div class="criteria-row">
+          <div class="criteria-header">
+            <span class="criteria-name">Porosité du cheveu</span>
+            <span class="selection-count">{{ selectedPorosites.size }} sélectionnée(s)</span>
+          </div>
+          <div class="interactive-pills">
+            <button
+              type="button"
+              *ngFor="let opt of porositeOptions"
+              class="pill-tag"
+              [class.active]="selectedPorosites.has(opt.value)"
+              (click)="togglePorosite(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Texture -->
+        <div class="criteria-row">
+          <div class="criteria-header">
+            <span class="criteria-name">Texture & Épaisseur</span>
+            <span class="selection-count">{{ selectedTextures.size }} sélectionnée(s)</span>
+          </div>
+          <div class="interactive-pills">
+            <button
+              type="button"
+              *ngFor="let opt of textureOptions"
+              class="pill-tag"
+              [class.active]="selectedTextures.has(opt.value)"
+              (click)="toggleTexture(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- État des Cheveux -->
+        <div class="criteria-row">
+          <div class="criteria-header">
+            <span class="criteria-name">État & Besoins spécifiques</span>
+            <span class="selection-count">{{ selectedEtats.size }} sélectionné(s)</span>
+          </div>
+          <div class="interactive-pills">
+            <button
+              type="button"
+              *ngFor="let opt of etatCheveuxOptions"
+              class="pill-tag"
+              [class.active]="selectedEtats.has(opt.value)"
+              (click)="toggleEtat(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuir Chevelu -->
+        <div class="criteria-row">
+          <div class="criteria-header">
+            <span class="criteria-name">Nature du cuir chevelu</span>
+            <span class="selection-count">{{ selectedCuirs.size }} sélectionné(s)</span>
+          </div>
+          <div class="interactive-pills">
+            <button
+              type="button"
+              *ngFor="let opt of cuirCheveluOptions"
+              class="pill-tag"
+              [class.active]="selectedCuirs.has(opt.value)"
+              (click)="toggleCuir(opt.value)"
+            >
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4 : CONSEILS & UTILISATION -->
+    <div class="form-card card-3d">
+      <div class="card-header">
+        <span class="card-step-badge">4</span>
+        <div>
+          <h3>Description & Conseils d'Utilisation</h3>
+          <p>Informations transmises au client sur sa routine de soins.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <!-- Description -->
+        <div class="form-group">
+          <label for="prodDesc">Description détaillée</label>
+          <textarea
+            id="prodDesc"
+            rows="3"
+            [(ngModel)]="description"
+            name="description"
+            placeholder="Bienfaits, actifs principaux (aloe vera, beurre de karité...), propriétés nutritives..."
+          ></textarea>
+        </div>
+
+        <!-- Mode d'utilisation -->
+        <div class="form-group">
+          <label for="prodUsage">Conseils d'application & fréquence</label>
+          <textarea
+            id="prodUsage"
+            rows="3"
+            [(ngModel)]="modeUtilisation"
+            name="modeUtilisation"
+            placeholder="Ex : Appliquer sur cheveux essorés section par section. Laisser poser 15 minutes sous charlotte puis rincer abondamment."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5 : ALTERNATIVE NATURELLE & RECETTE MAISON (0 FCFA) -->
+    <div class="form-card card-3d">
+      <div class="card-header">
+        <span class="card-step-badge eco-step">🌿</span>
+        <div>
+          <h3>Alternative Naturelle Maison (0 FCFA) <span class="badge-optional">Optionnel</span></h3>
+          <p>Alternative économique pour les personnes à petit budget avec des ingrédients du quotidien.</p>
+        </div>
+      </div>
+
+      <div class="form-grid two-cols">
+        <!-- Nom du soin maison -->
+        <div class="form-group">
+          <label for="altNom">Nom du soin maison</label>
+          <input
+            id="altNom"
+            type="text"
+            [(ngModel)]="alternativeNaturelleNom"
+            name="alternativeNaturelleNom"
+            placeholder="Ex : Masque Avocat & Banane, Rinçage Eau de Riz"
+          />
+        </div>
+
+        <!-- Ingrédients du quotidien -->
+        <div class="form-group">
+          <label for="altIngredients">Ingrédients du quotidien</label>
+          <input
+            id="altIngredients"
+            type="text"
+            [(ngModel)]="alternativeNaturelleIngredients"
+            name="alternativeNaturelleIngredients"
+            placeholder="Ex : 1 demi-avocat bien mûr + 1 c. à c. de miel"
+          />
+        </div>
+      </div>
+
+      <!-- Recette / Mode de préparation -->
+      <div class="form-group full-width">
+        <label for="altRecette">Préparation & Application maison</label>
+        <textarea
+          id="altRecette"
+          rows="2"
+          [(ngModel)]="alternativeNaturelleRecette"
+          name="alternativeNaturelleRecette"
+          placeholder="Ex : Écraser finement, poser 20 min sous charlotte après le shampoing, puis rincer."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- ACTIONS DU FORMULAIRE -->
+    <div class="form-actions-bar">
+      <button type="button" class="btn-cancel" (click)="annuler()" [disabled]="isSaving()">
+        Annuler
+      </button>
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="isSaving() || !nom.trim()"
+      >
+        <span>{{ isSaving() ? 'Enregistrement en cours...' : (productId ? 'Mettre à jour le produit' : 'Enregistrer le produit') }}</span>
+      </button>
+    </div>
+  </form>
+</div>

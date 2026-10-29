@@ -1,0 +1,102 @@
+<div class="paiements-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Paiements & Encaissements</h1>
+      <p class="page-subtitle">Historique des transactions réglées par les clients (Espèces, Wave, Orange Money, Carte Bancaire)</p>
+    </div>
+
+    <div class="header-summary">
+      <span class="summary-label">Total filtré</span>
+      <strong class="summary-val text-green">+{{ formatDevise(calculerTotal()) }}</strong>
+    </div>
+  </header>
+
+  <!-- FILTERS -->
+  <div class="filters-bar">
+    <div class="search-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Rechercher par référence, n° facture..."
+        [(ngModel)]="searchTerm"
+      />
+    </div>
+
+    <select class="filter-select" [(ngModel)]="selectedMode">
+      <option value="">Tous les moyens de paiement</option>
+      <option value="ESPECES">Espèces</option>
+      <option value="WAVE">Wave</option>
+      <option value="ORANGE_MONEY">Orange Money</option>
+      <option value="CARTE_BANCAIRE">Carte Bancaire</option>
+    </select>
+
+    <button type="button" class="btn-refresh" (click)="chargerPaiements()" [disabled]="isLoading()">
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- DATA TABLE -->
+  <div class="data-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des paiements...</span>
+      </div>
+    } @else if (filteredPaiements.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">payments</mat-icon>
+        <h3>Aucun paiement trouvé</h3>
+        <p>Aucune transaction ne correspond à vos critères de recherche.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Réf Paiement</th>
+              <th>Date & Heure</th>
+              <th>Moyen de Règlement</th>
+              <th>Facture associée</th>
+              <th>Statut</th>
+              <th class="text-right">Montant encaissé</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of filteredPaiements; track p.id) {
+              <tr>
+                <td>
+                  <strong>{{ p.numeroPaiement || ('PAI-' + p.id) }}</strong>
+                </td>
+                <td>
+                  <span class="date-text">{{ p.datePaiement | date:'dd/MM/yyyy HH:mm' }}</span>
+                </td>
+                <td>
+                  <span class="mode-pill">{{ p.type }}</span>
+                </td>
+                <td>
+                  <span class="facture-ref">Facture #{{ p.factureId }}</span>
+                </td>
+                <td>
+                  <span class="badge badge-success">{{ p.statut || 'VALIDÉ' }}</span>
+                </td>
+                <td class="text-right text-green font-bold">
+                  +{{ formatDevise(p.montant) }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,713 @@
+/* ==========================================================================
+   HORAIRES D'OUVERTURE - LUXURY SALON DASHBOARD
+   ========================================================================== */
+
+.horaires-page {
+  padding: 2rem 2.5rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  font-family: inherit;
+  color: #2D241E;
+}
+
+/* --- HEADER --- */
+.luxury-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(74, 59, 50, 0.08);
+}
+
+.header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(197, 168, 128, 0.15);
+  border: 1px solid rgba(197, 168, 128, 0.35);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7D5A2B;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.badge-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #2D241E;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.page-subtitle {
+  font-size: 0.95rem;
+  color: #7A6F68;
+  margin: 0;
+  max-width: 650px;
+  line-height: 1.5;
+}
+
+.btn-save-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.6rem;
+  background: linear-gradient(135deg, #4A3B32 0%, #2E231D 100%);
+  color: #FFFDFC;
+  border: 1px solid rgba(197, 168, 128, 0.3);
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(46, 35, 29, 0.22);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-save-all:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 35, 29, 0.3);
+  background: linear-gradient(135deg, #5D4A3F 0%, #3B2E26 100%);
+}
+
+.btn-save-all:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-icon {
+  font-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* --- ALERT ERROR --- */
+.alert-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.alert-error {
+  background: #FDF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+/* --- KPI & PRESET TOOLBAR --- */
+.kpi-preset-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.kpi-mini-card {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 1.15rem 1.35rem;
+  background: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid rgba(74, 59, 50, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi-mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 59, 50, 0.07);
+}
+
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-wrap mat-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.kpi-icon-wrap.open-days {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.kpi-icon-wrap.hours {
+  background: rgba(197, 168, 128, 0.2);
+  color: #8C6A38;
+}
+
+.kpi-icon-wrap.pace {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4F46E5;
+}
+
+.kpi-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8A7E75;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #2D241E;
+}
+
+.kpi-total {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #A3978E;
+}
+
+/* PRESETS TOOLBAR */
+.presets-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: #FAF8F5;
+  border: 1px dashed rgba(197, 168, 128, 0.45);
+  border-radius: 0.85rem;
+}
+
+.presets-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #5A4738;
+}
+
+.icon-inline {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #C5A880;
+}
+
+.presets-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-preset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  background: #FFFFFF;
+  border: 1px solid rgba(74, 59, 50, 0.15);
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #4A3B32;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-preset:hover {
+  background: #F4EFEA;
+  border-color: #C5A880;
+  color: #2D241E;
+}
+
+.preset-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  color: #C5A880;
+}
+
+/* --- SCHEDULE CONTAINER & CARDS --- */
+.schedule-container {
+  margin-top: 1rem;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  gap: 1rem;
+  color: #7A6F68;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(197, 168, 128, 0.2);
+  border-top-color: #C5A880;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.schedule-days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* CARTE INDIVIDUELLE PAR JOUR */
+.horaire-day-card {
+  display: grid;
+  grid-template-columns: 220px 1fr 180px;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.6rem;
+  background: #FFFFFF;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(74, 59, 50, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s ease;
+}
+
+.horaire-day-card:hover {
+  box-shadow: 0 6px 20px rgba(74, 59, 50, 0.06);
+  border-color: rgba(197, 168, 128, 0.35);
+}
+
+.horaire-day-card.is-closed {
+  background: #FAF8F5;
+  border-color: rgba(74, 59, 50, 0.06);
+  opacity: 0.85;
+}
+
+/* 1. Colonne Identité & Switch */
+.day-ident-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.day-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.day-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 28px;
+  background: linear-gradient(135deg, #4A3B32 0%, #2E231D 100%);
+  color: #F8F5F0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: 0.45rem;
+  letter-spacing: 0.04em;
+}
+
+.is-closed .day-code {
+  background: #A3978E;
+}
+
+.day-full-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2D241E;
+}
+
+.is-closed .day-full-name {
+  color: #7A6F68;
+}
+
+.toggle-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* IOS SWITCH */
+.ios-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.ios-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ios-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #D6CCC2;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 9999px;
+}
+
+.ios-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ios-switch input:checked + .ios-slider {
+  background-color: #10B981;
+}
+
+.ios-switch input:checked + .ios-slider:before {
+  transform: translateX(20px);
+}
+
+.status-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.375rem;
+}
+
+.status-open {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+}
+
+.status-closed {
+  background: rgba(122, 111, 104, 0.12);
+  color: #7A6F68;
+}
+
+/* 2. Colonne Configuration Horaires */
+.day-config-col {
+  padding: 0 0.5rem;
+}
+
+.hours-blocks-row {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.time-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.block-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8C7B70;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.block-icon {
+  font-size: 0.95rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #C5A880;
+}
+
+.inputs-pairing {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.input-with-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.input-caption {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9C8E84;
+}
+
+.luxury-time-input {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1.5px solid #E6DED6;
+  background: #FAF8F5;
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #2D241E;
+  width: 110px;
+  transition: all 0.2s ease;
+}
+
+.luxury-time-input:hover {
+  border-color: #C5A880;
+  background: #FFFFFF;
+}
+
+.luxury-time-input:focus {
+  outline: none;
+  background: #FFFFFF;
+  border-color: #4A3B32;
+  box-shadow: 0 0 0 3px rgba(197, 168, 128, 0.25);
+}
+
+.luxury-time-input.pause {
+  background: #FDFCFB;
+  border-style: dashed;
+}
+
+.range-arrow {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+  color: #C5A880;
+  margin-top: 1rem;
+}
+
+.range-dash {
+  font-size: 1.15rem;
+  color: #C5A880;
+  margin-top: 1rem;
+  font-weight: 700;
+}
+
+/* ÉTAT FERMÉ */
+.day-closed-notice {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  background: rgba(122, 111, 104, 0.06);
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(122, 111, 104, 0.25);
+}
+
+.closed-icon {
+  font-size: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: #A3978E;
+  flex-shrink: 0;
+}
+
+.closed-texts {
+  flex: 1;
+}
+
+.closed-texts strong {
+  display: block;
+  font-size: 0.875rem;
+  color: #5A4E46;
+}
+
+.closed-texts p {
+  margin: 0;
+  font-size: 0.785rem;
+  color: #8C7F77;
+}
+
+.btn-reopen-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.85rem;
+  background: #FFFFFF;
+  border: 1px solid #10B981;
+  color: #059669;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-reopen-day:hover {
+  background: #10B981;
+  color: #FFFFFF;
+}
+
+/* 3. Colonne Actions */
+.day-actions-col {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.btn-duplicate-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.85rem;
+  background: #FAF8F5;
+  border: 1px solid rgba(74, 59, 50, 0.12);
+  border-radius: 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #5A4738;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-duplicate-day:hover {
+  background: #EDE6DF;
+  border-color: #C5A880;
+  color: #2D241E;
+}
+
+.btn-save-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: #4A3B32;
+  color: #FFFDFC;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.15);
+  transition: all 0.2s;
+}
+
+.btn-save-day:hover:not(:disabled) {
+  background: #634F43;
+  transform: translateY(-1px);
+}
+
+.btn-save-day:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.action-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.icon-xs {
+  font-size: 0.875rem;
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* MICRO SPINNER */
+.micro-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .horaire-day-card {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .day-actions-col {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .horaires-page {
+    padding: 1.25rem;
+  }
+
+  .luxury-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-save-all {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .hours-blocks-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .inputs-pairing {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .luxury-time-input {
+    width: calc(50% - 20px);
+  }
+}

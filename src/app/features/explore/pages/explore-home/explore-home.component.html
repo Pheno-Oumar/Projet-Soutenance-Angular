@@ -1,0 +1,94 @@
+<div class="admin-home-page">
+
+  <!-- <app-public-navbar></app-public-navbar> -->
+
+  <!-- ============================= -->
+  <!-- HERO / PAGE D'ACCUEIL ADMIN -->
+  <!-- ============================= -->
+  <main class="admin-hero">
+
+    <!-- Partie gauche -->
+    <section class="hero-content">
+
+      <div class="admin-badge">
+        <img src="/assets/king-svgrepo-com.svg" alt="icone du roi" class="king">
+        <!-- <mat-icon>king_bed</mat-icon> -->
+        <span>Espace Plateforme </span>
+      </div>
+
+      <h1 class="hero-title">
+        Bienvenue sur
+        <span>Hair Style</span>
+      </h1>
+
+      <p class="hero-description">
+        Votre espace dédié à la gestion et à la supervision
+        de la plateforme Hair Style, mettant en relation les
+        clients et les salons de coiffure.
+      </p>
+
+      <p class="hero-description secondary">
+        Gérez les salons partenaires, les activités et veillez au bon fonctionnement
+        de la plateforme.
+      </p>
+
+      <!-- Bouton connexion -->
+      <ng-container *ngIf="!authService.isAuthenticated()">
+        <button
+          mat-flat-button
+          class="login-button"
+          routerLink="/login"
+        >
+          <mat-icon>lock_outline</mat-icon>
+          <span>Se connecter</span>
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="authService.isAuthenticated()">
+        <button
+          mat-flat-button
+          class="login-button"
+          routerLink="/admin-plateforme"
+        >
+          <mat-icon>workspace_premium</mat-icon>
+          <span>Accéder à mon espace</span>
+          <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+        </button>
+      </ng-container>
+
+      <div class="hero-tagline">
+        <span class="tagline-line"></span>
+        <span>Une plateforme, plusieurs possibilités</span>
+      </div>
+
+    </section>
+
+    <!-- Partie droite : image salon -->
+    <section class="hero-visual">
+
+      <div class="visual-frame">
+
+        <img
+          src="/assets/imagesalon.png"
+          alt="Salon de coiffure Hair Style"
+          class="salon-image"
+        />
+
+        <div class="image-overlay"></div>
+
+        <!-- Petit élément décoratif -->
+        <div class="floating-label">
+          <mat-icon>storefront</mat-icon>
+        </div>
+
+      </div>
+
+      <!-- Cercle décoratif -->
+      <div class="gold-circle circle-one"></div>
+      <div class="gold-circle circle-two"></div>
+
+    </section>
+
+  </main>
+
+</div>

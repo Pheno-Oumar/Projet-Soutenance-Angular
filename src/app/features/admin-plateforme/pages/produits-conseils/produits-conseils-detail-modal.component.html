@@ -1,0 +1,164 @@
+<div class="modal-backdrop" (click)="fermer.emit()">
+  <div class="modal-card card-3d" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <header class="modal-header">
+      <div class="header-badge-group">
+        <span class="badge-routine" [ngClass]="getEtapeInfo(produit.etapeRoutine).badgeClass">
+          {{ getEtapeInfo(produit.etapeRoutine).label }}
+        </span>
+        <span class="status-indicator" [class.active]="produit.actif" [class.inactive]="!produit.actif">
+          <span class="status-dot"></span>
+          {{ produit.actif ? 'Actif' : 'Inactif' }}
+        </span>
+      </div>
+      <button class="btn-close" (click)="fermer.emit()" aria-label="Fermer la fenêtre">
+        <mat-icon class="icon-sm">close</mat-icon>
+      </button>
+    </header>
+
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <!-- Top Overview (Image + Identity) -->
+      <div class="overview-section">
+        <div class="product-visual">
+          <img
+            *ngIf="produit.imageUrl"
+            [src]="produit.imageUrl"
+            [alt]="produit.nom"
+            class="product-image"
+          />
+          <div *ngIf="!produit.imageUrl" class="image-fallback">
+            <span class="fallback-initial">{{ produit.nom.charAt(0) }}</span>
+          </div>
+        </div>
+
+        <div class="product-identity">
+          <span class="brand-text" *ngIf="produit.marque">{{ produit.marque }}</span>
+          <h2 class="product-name">{{ produit.nom }}</h2>
+          <p class="routine-desc">{{ getEtapeInfo(produit.etapeRoutine).description }}</p>
+
+          <div class="meta-dates">
+            <span *ngIf="produit.dateCreation">
+              Ajouté le {{ produit.dateCreation | date:'dd/MM/yyyy' }}
+            </span>
+            <span *ngIf="produit.dateModification && produit.dateModification !== produit.dateCreation">
+              • Modifié le {{ produit.dateModification | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Description & Usage -->
+      <div class="info-blocks-grid">
+        <div class="info-block" *ngIf="produit.description">
+          <h4 class="block-title">Description du soin</h4>
+          <p class="block-text">{{ produit.description }}</p>
+        </div>
+
+        <div class="info-block highlight-block" *ngIf="produit.modeUtilisation">
+          <h4 class="block-title">Conseils & Mode d'application</h4>
+          <p class="block-text">{{ produit.modeUtilisation }}</p>
+        </div>
+
+        <div class="info-block eco-block" *ngIf="produit.alternativeNaturelleNom">
+          <h4 class="block-title">🌿 Alternative Naturelle Maison (0 FCFA) : {{ produit.alternativeNaturelleNom }}</h4>
+          <p class="block-text" *ngIf="produit.alternativeNaturelleIngredients">
+            <strong>Ingrédients :</strong> {{ produit.alternativeNaturelleIngredients }}
+          </p>
+          <p class="block-text" *ngIf="produit.alternativeNaturelleRecette">
+            <strong>Préparation :</strong> {{ produit.alternativeNaturelleRecette }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Hair Targeting Matrix (Profils Capillaires Ciblés) -->
+      <div class="criteria-section">
+        <h3 class="section-title">Critères capillaires ciblés</h3>
+        <p class="section-subtitle">
+          Ce produit est automatiquement recommandé aux clients présentant ces spécificités :
+        </p>
+
+        <div class="criteria-grid">
+          <!-- Types de Cheveux -->
+          <div class="criteria-card">
+            <span class="criteria-label">Types de cheveux</span>
+            <div class="pills-wrap">
+              <span
+                *ngFor="let item of produit.typesCheveuxCibles"
+                class="pill pill-primary"
+              >
+                {{ getTypeLabel(item) }}
+              </span>
+              <span *ngIf="!produit.typesCheveuxCibles?.length" class="empty-pill">Tous types</span>
+            </div>
+          </div>
+
+          <!-- Porosité -->
+          <div class="criteria-card">
+            <span class="criteria-label">Porosité du cheveu</span>
+            <div class="pills-wrap">
+              <span
+                *ngFor="let item of produit.porositesCibles"
+                class="pill pill-porosite"
+              >
+                {{ getPorositeLabel(item) }}
+              </span>
+              <span *ngIf="!produit.porositesCibles?.length" class="empty-pill">Toute porosité</span>
+            </div>
+          </div>
+
+          <!-- Texture -->
+          <div class="criteria-card">
+            <span class="criteria-label">Texture / Épaisseur</span>
+            <div class="pills-wrap">
+              <span
+                *ngFor="let item of produit.texturesCibles"
+                class="pill pill-texture"
+              >
+                {{ getTextureLabel(item) }}
+              </span>
+              <span *ngIf="!produit.texturesCibles?.length" class="empty-pill">Toute texture</span>
+            </div>
+          </div>
+
+          <!-- État du Cheveu -->
+          <div class="criteria-card">
+            <span class="criteria-label">État & Besoins</span>
+            <div class="pills-wrap">
+              <span
+                *ngFor="let item of produit.etatsCheveuxCibles"
+                class="pill pill-etat"
+              >
+                {{ getEtatLabel(item) }}
+              </span>
+              <span *ngIf="!produit.etatsCheveuxCibles?.length" class="empty-pill">Tous états</span>
+            </div>
+          </div>
+
+          <!-- Cuir Chevelu -->
+          <div class="criteria-card full-width">
+            <span class="criteria-label">Cuir chevelu adapté</span>
+            <div class="pills-wrap">
+              <span
+                *ngFor="let item of produit.cuirsChevelusCibles"
+                class="pill pill-cuir"
+              >
+                {{ getCuirLabel(item) }}
+              </span>
+              <span *ngIf="!produit.cuirsChevelusCibles?.length" class="empty-pill">Tout cuir chevelu</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <footer class="modal-footer">
+      <button class="btn-secondary" (click)="fermer.emit()">Fermer</button>
+      <button class="btn-primary" (click)="editer.emit(produit)">
+        <mat-icon class="icon-xs">edit</mat-icon>
+        <span>Modifier ce produit</span>
+      </button>
+    </footer>
+  </div>
+</div>

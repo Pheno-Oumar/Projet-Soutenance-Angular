@@ -1,0 +1,93 @@
+<div
+  class="story-viewer-backdrop"
+  (click)="closeModal()"
+  (mousedown)="pauseStory()"
+  (mouseup)="resumeStory()"
+  (touchstart)="pauseStory()"
+  (touchend)="resumeStory()"
+>
+  <div class="story-modal-card" (click)="$event.stopPropagation()">
+    <!-- Top Progress Bars -->
+    <div class="progress-bar-container">
+      <div
+        *ngFor="let s of salonStory.stories; let idx = index"
+        class="progress-segment"
+      >
+        <div
+          class="progress-fill"
+          [style.width.%]="idx < currentIndex ? 100 : (idx === currentIndex ? progress : 0)"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Story Header -->
+    <div class="story-header">
+      <div class="salon-info">
+        <div class="salon-avatar-small">
+          <img
+            *ngIf="salonStory.salonLogoUrl"
+            [src]="salonStory.salonLogoUrl | safeMedia"
+            [alt]="salonStory.salonNom"
+            class="modal-logo-img"
+            referrerpolicy="no-referrer"
+          />
+          <span *ngIf="!salonStory.salonLogoUrl">{{ salonStory.salonNom.charAt(0) }}</span>
+        </div>
+        <div class="salon-text">
+          <span class="salon-name-title">{{ salonStory.salonNom }}</span>
+          <span class="story-expiration" *ngIf="currentStory">
+            <mat-icon class="icon-xs">schedule</mat-icon> {{ getStoryTimeRemaining(currentStory.dateExpiration) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a
+          [routerLink]="['/' + salonStory.salonSlug + '/vitrine']"
+          (click)="closeModal()"
+          class="btn-visit-salon"
+        >
+          Visiter le salon
+        </a>
+        <button class="btn-close-story" (click)="closeModal()" aria-label="Fermer la story">
+          <mat-icon class="icon-sm">close</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Media Container (Image or Video) -->
+    <div class="media-container" *ngIf="currentStory">
+      <img
+        *ngIf="currentStory.typeMedia === 'IMAGE'"
+        [src]="currentStory.mediaUrl"
+        alt="Story du salon"
+        class="story-media"
+      />
+      <video
+        *ngIf="currentStory.typeMedia === 'VIDEO'"
+        [appHlsVideo]="currentStory.mediaUrl"
+        class="story-media"
+        autoplay
+        playsinline
+        muted
+        loop
+      ></video>
+
+      <!-- Click Navigation Zones (Left & Right) -->
+      <div class="nav-zone nav-zone-left" (click)="prevStory()" aria-label="Story précédente"></div>
+      <div class="nav-zone nav-zone-right" (click)="nextStory()" aria-label="Story suivante"></div>
+    </div>
+
+    <!-- Bottom Action CTA -->
+    <div class="story-footer">
+      <a
+        [routerLink]="['/' + salonStory.salonSlug + '/vitrine']"
+        (click)="closeModal()"
+        class="btn-cta-rdv"
+      >
+        <mat-icon class="icon-xs icon-sparkle">calendar_month</mat-icon>
+        <span>Prendre rendez-vous dans ce salon</span>
+      </a>
+    </div>
+  </div>
+</div>

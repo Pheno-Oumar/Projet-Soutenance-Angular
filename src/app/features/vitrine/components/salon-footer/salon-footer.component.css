@@ -1,0 +1,487 @@
+/* =========================================================
+   HAIR STYLE — SALON FOOTER (DESIGN MODERNE & RESPONSIVE)
+   ========================================================= */
+
+:host {
+  display: block;
+  width: 100%;
+  --footer-bg: #FFFFFF;
+  --footer-subtle-bg: #FAF8F5;
+  --text-dark: #2A2421;
+  --text-muted: #7A695F;
+  --brown-primary: #4A3B32;
+  --sand-accent: #C8B6A6;
+  --gold-accent: #D4AF37;
+  --border-light: rgba(200, 182, 166, 0.35);
+  --font-family: inherit;
+}
+
+.salon-footer {
+  background: var(--footer-bg);
+  color: var(--text-dark);
+  font-family: var(--font-family);
+  border-top: 1.5px solid var(--border-light);
+  position: relative;
+  overflow: hidden;
+  padding-top: 60px;
+}
+
+.salon-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--sand-accent), var(--brown-primary), var(--sand-accent), transparent);
+  opacity: 0.6;
+}
+
+.footer-container {
+  width: min(1320px, calc(100% - 48px));
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.35fr 0.95fr 1.25fr 1.05fr;
+  gap: 36px;
+  padding-bottom: 50px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================================
+   COLONNE 1 : IDENTITÉ & MARQUE
+   ========================================================= */
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.footer-logo-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: var(--brown-primary);
+  color: #FAF8F5;
+  border: 1.5px solid var(--sand-accent);
+  box-shadow: 0 4px 14px rgba(74, 59, 50, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.footer-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.footer-logo-initial {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #FAF8F5;
+}
+
+.footer-brand-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-salon-name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+
+.footer-salon-subtitle {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sand-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+
+.footer-tagline {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin: 0 0 20px 0;
+  max-width: 320px;
+}
+
+.footer-contact-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.contact-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.contact-icon {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--brown-primary);
+  flex-shrink: 0;
+}
+
+.contact-link {
+  color: var(--text-dark);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.contact-link:hover {
+  color: var(--brown-primary);
+}
+
+.footer-social-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.social-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brown-primary);
+}
+
+.social-icons-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.social-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--footer-subtle-bg);
+  border: 1.5px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.06);
+  padding: 0;
+}
+
+.social-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  border-color: var(--brown-primary);
+  box-shadow: 0 6px 14px rgba(74, 59, 50, 0.16);
+}
+
+.social-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* =========================================================
+   TITRES DES COLONNES
+   ========================================================= */
+.footer-col-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 20px 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+}
+
+.title-accent {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold-accent);
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
+/* =========================================================
+   LISTES DE LIENS (COLONNE 2 & COLONNE 4)
+   ========================================================= */
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-links-list li a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 2px 0;
+}
+
+.footer-links-list li a:hover {
+  color: var(--brown-primary);
+  transform: translateX(4px);
+}
+
+.link-arrow {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--sand-accent);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.footer-links-list li a:hover .link-arrow {
+  color: var(--brown-primary);
+  transform: translateX(2px);
+}
+
+/* =========================================================
+   COLONNE 3 : HORAIRES D'OUVERTURE
+   ========================================================= */
+.hours-card {
+  background: var(--footer-subtle-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(74, 59, 50, 0.03);
+}
+
+.hour-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  transition: background 0.18s ease;
+}
+
+.hour-item.is-today {
+  background: #FFFFFF;
+  border: 1px solid rgba(200, 182, 166, 0.6);
+  box-shadow: 0 2px 8px rgba(74, 59, 50, 0.05);
+}
+
+.day-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.day-text {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.today-chip {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: var(--brown-primary);
+  color: #FAF8F5;
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+.hour-text {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brown-primary);
+}
+
+.hour-text.is-closed {
+  color: #B91C1C;
+  font-style: italic;
+  font-weight: 500;
+}
+
+/* =========================================================
+   COLONNE 4 : PAIEMENT SÉCURISÉ
+   ========================================================= */
+.footer-payment-section {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dark);
+}
+
+.payment-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.payment-badge-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.06);
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.payment-badge-box:hover {
+  transform: translateY(-2px);
+  border-color: var(--sand-accent);
+  box-shadow: 0 4px 10px rgba(74, 59, 50, 0.12);
+}
+
+.payment-badge-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* =========================================================
+   BARRE DU BAS (COPYRIGHT & BOUTON HAUT DE PAGE)
+   ========================================================= */
+.footer-bottom-bar {
+  background: var(--footer-subtle-bg);
+  border-top: 1px solid var(--border-light);
+  padding: 20px 0;
+  margin-top: 20px;
+}
+
+.footer-bottom-container {
+  width: min(1320px, calc(100% - 48px));
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-copy-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.copyright-text {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dark);
+}
+
+.powered-text {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.brand-highlight {
+  color: var(--brown-primary);
+}
+
+.btn-back-to-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-light);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brown-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(74, 59, 50, 0.05);
+  transition: all 0.25s ease;
+  font-family: inherit;
+}
+
+.btn-back-to-top:hover {
+  background: var(--brown-primary);
+  color: #FAF8F5;
+  border-color: var(--brown-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 59, 50, 0.18);
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN ÉPURÉ
+   ========================================================= */
+@media (max-width: 1080px) {
+  .footer-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+  }
+}
+
+@media (max-width: 680px) {
+  .salon-footer {
+    padding-top: 40px;
+  }
+
+  .footer-container {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-bottom: 30px;
+  }
+
+  .footer-bottom-bar {
+    padding: 20px 0;
+    /* Dégagement crucial pour ne jamais être masqué par le dock flottant en bas */
+    padding-bottom: 110px;
+  }
+
+  .footer-bottom-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .btn-back-to-top {
+    align-self: flex-start;
+  }
+}

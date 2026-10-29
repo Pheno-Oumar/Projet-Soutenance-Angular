@@ -1,0 +1,192 @@
+<main class="register-wrapper" [style.background-image]="'url(' + bgImageUrl() + ')'">
+  <!-- Voile protecteur sombre sur l'image de fond -->
+  <div class="background-overlay" aria-hidden="true"></div>
+
+  <!-- Carte d'inscription centrée "Modern Chic" -->
+  <div class="register-card">
+
+    <!-- ═══ BANDEAU D'EN-TÊTE ÉQUILIBRÉ ═══ -->
+    <header class="card-header-banner">
+      <!-- Rangée supérieure : Logo & Nom à gauche, Badge à droite -->
+      <div class="header-top-row">
+        <div class="header-brand-left">
+          <div class="brand-medallion">
+            @if (logoUrl()) {
+              <img
+                [src]="logoUrl()! | safeMedia"
+                [alt]="nomSalon()"
+                referrerpolicy="no-referrer"
+                class="medallion-img"
+              />
+            } @else {
+              <span class="medallion-initial">{{ nomSalon()?.charAt(0)?.toUpperCase() || 'S' }}</span>
+            }
+          </div>
+          <div class="brand-meta">
+            <span class="brand-name">{{ nomSalon() | titlecase }}</span>
+            <span class="brand-sub">Salon Partenaire</span>
+          </div>
+        </div>
+
+        <span class="header-badge">Espace Client</span>
+      </div>
+
+      <!-- Titre principal -->
+      <div class="header-main-title">
+        <h1 class="header-title">Inscription</h1>
+        <p class="header-subtitle">Créez votre profil pour réserver vos prestations et consulter votre suivi</p>
+      </div>
+    </header>
+
+    <!-- ═══ CORPS DU FORMULAIRE ═══ -->
+    <div class="card-body">
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="register-form" novalidate>
+
+        <!-- Ligne 1 : Nom & Prénom (2 colonnes) -->
+        <div class="form-row">
+          <div class="field-block">
+            <label for="nom" class="field-label">Nom <span class="required-star">*</span></label>
+            <div class="input-container" [class.has-error]="registerForm.get('nom')?.touched && registerForm.get('nom')?.invalid">
+              <input id="nom" type="text" formControlName="nom" class="native-input" placeholder="Ex: Traoré" autocomplete="family-name" />
+            </div>
+            @if (registerForm.get('nom')?.touched && registerForm.get('nom')?.invalid) {
+              <span class="field-error">Le nom est requis (min 2 car.)</span>
+            }
+          </div>
+
+          <div class="field-block">
+            <label for="prenom" class="field-label">Prénom <span class="required-star">*</span></label>
+            <div class="input-container" [class.has-error]="registerForm.get('prenom')?.touched && registerForm.get('prenom')?.invalid">
+              <input id="prenom" type="text" formControlName="prenom" class="native-input" placeholder="Ex: Aminata" autocomplete="given-name" />
+            </div>
+            @if (registerForm.get('prenom')?.touched && registerForm.get('prenom')?.invalid) {
+              <span class="field-error">Le prénom est requis</span>
+            }
+          </div>
+        </div>
+
+        <!-- Ligne 2 : Téléphone (*) & Email (optionnel) -->
+        <div class="form-row">
+          <div class="field-block">
+            <label for="telephone" class="field-label">Téléphone <span class="required-star">*</span></label>
+            <div class="input-container" [class.has-error]="registerForm.get('telephone')?.touched && registerForm.get('telephone')?.invalid">
+              <mat-icon class="input-leading-icon">phone</mat-icon>
+              <input id="telephone" type="tel" formControlName="telephone" class="native-input" placeholder="+223 70 00 00 00" autocomplete="tel" />
+            </div>
+            @if (registerForm.get('telephone')?.touched && registerForm.get('telephone')?.invalid) {
+              <span class="field-error">Numéro valide requis</span>
+            }
+          </div>
+
+          <div class="field-block">
+            <label for="email" class="field-label">Adresse email <span class="optional-label">(optionnelle)</span></label>
+            <div class="input-container" [class.has-error]="registerForm.get('email')?.touched && registerForm.get('email')?.invalid">
+              <mat-icon class="input-leading-icon">mail_outline</mat-icon>
+              <input id="email" type="email" formControlName="email" class="native-input" placeholder="aminata@exemple.com" autocomplete="email" />
+            </div>
+            @if (registerForm.get('email')?.touched && registerForm.get('email')?.invalid) {
+              <span class="field-error">Format d'email invalide</span>
+            }
+          </div>
+        </div>
+
+        <!-- Ligne 3 : Mot de passe (*) & Confirmation (*) -->
+        <div class="form-row">
+          <div class="field-block">
+            <label for="password" class="field-label">Mot de passe <span class="required-star">*</span></label>
+            <div class="input-container" [class.has-error]="registerForm.get('password')?.touched && registerForm.get('password')?.invalid">
+              <mat-icon class="input-leading-icon">lock_outline</mat-icon>
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                class="native-input"
+                placeholder="6 car. min."
+                autocomplete="new-password"
+              />
+              <button type="button" class="toggle-eye-btn" (click)="togglePasswordVisibility()" aria-label="Afficher le mot de passe">
+                <mat-icon class="eye-icon">{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+
+            <!-- Jauge de solidité -->
+            @if (registerForm.get('password')?.value) {
+              <div class="pwd-strength-bar" [ngClass]="'strength-' + passwordStrength()">
+                <div class="strength-segment"></div>
+                <div class="strength-segment"></div>
+                <div class="strength-segment"></div>
+                <span class="strength-label">
+                  @switch (passwordStrength()) {
+                    @case (1) { Faible }
+                    @case (2) { Recommandé }
+                    @case (3) { Robuste }
+                  }
+                </span>
+              </div>
+            }
+
+            @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
+              <span class="field-error">Au moins 6 caractères requis</span>
+            }
+          </div>
+
+          <div class="field-block">
+            <label for="confirmPassword" class="field-label">Confirmer mot de passe <span class="required-star">*</span></label>
+            <div class="input-container" [class.has-error]="(registerForm.get('confirmPassword')?.touched && registerForm.get('confirmPassword')?.invalid) || (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched)">
+              <mat-icon class="input-leading-icon">lock_outline</mat-icon>
+              <input
+                id="confirmPassword"
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                class="native-input"
+                placeholder="Répétez"
+                autocomplete="new-password"
+              />
+              <button type="button" class="toggle-eye-btn" (click)="toggleConfirmPasswordVisibility()" aria-label="Afficher le mot de passe">
+                <mat-icon class="eye-icon">{{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+            @if (registerForm.errors?.['passwordMismatch'] && registerForm.get('confirmPassword')?.touched) {
+              <span class="field-error">Les mots de passe ne correspondent pas</span>
+            }
+          </div>
+        </div>
+
+        <!-- Bouton Brun Chocolat (#5b453b) -->
+        <button
+          type="submit"
+          class="primary-submit-btn"
+          [disabled]="registerForm.invalid || isSubmitting()"
+          id="btn-register-submit"
+        >
+          @if (isSubmitting()) {
+            <span class="spinner-dot" aria-hidden="true"></span>
+            <span>Création de votre compte...</span>
+          } @else {
+            <span>Valider mon inscription</span>
+            <mat-icon class="submit-arrow-icon">arrow_forward</mat-icon>
+          }
+        </button>
+
+        <!-- Lien de retour vitrine -->
+        <div class="back-link-wrapper">
+          <a [routerLink]="['/' + slugSalon() + '/vitrine']" class="back-link">
+            <mat-icon class="back-icon">arrow_back</mat-icon>
+            <span>Retourner à la vitrine du salon</span>
+          </a>
+        </div>
+      </form>
+
+      <!-- Pied de carte : Déjà un compte ? -->
+      <footer class="card-bottom-footer">
+        <p class="login-text">
+          Vous possédez déjà un compte client ou employé ?
+          <a [routerLink]="['/' + slugSalon() + '/login']" class="login-action-link">
+            Se connecter
+          </a>
+        </p>
+      </footer>
+    </div>
+
+  </div>
+</main>

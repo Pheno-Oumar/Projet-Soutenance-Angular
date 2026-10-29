@@ -1,0 +1,288 @@
+<div class="detail-container">
+  <!-- BREADCRUMBS -->
+  <nav class="breadcrumbs" aria-label="Fil d'Ariane">
+    <a routerLink="/admin-plateforme">Administration</a>
+    <span class="sep">/</span>
+    <a routerLink="/admin-plateforme/salons">Salons</a>
+    <span class="sep">/</span>
+    <span class="current">{{ salon()?.nom || 'Détails du salon' }}</span>
+  </nav>
+
+  <!-- ERREUR OU ALERTE -->
+  @if (errorMessage()) {
+    <div class="alert-error">
+      <mat-icon class="icon-sm">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+      <button (click)="chargerSalon()" class="btn-retry">Réessayer</button>
+    </div>
+  }
+
+  <!-- CHARGEMENT -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des détails du salon...</p>
+    </div>
+  } @else if (salon()) {
+    <!-- BANNIÈRE DE COUVERTURE PANORAMIQUE (COVER) -->
+    <section class="salon-hero-banner" [class.has-cover]="!!salon()?.coverUrl">
+      <!-- Image de couverture ou dégradé luxe -->
+      <div class="cover-media-wrap">
+        <img
+          *ngIf="salon()?.coverUrl"
+          [src]="salon()!.coverUrl | safeMedia"
+          [alt]="'Bannière ' + salon()!.nom"
+          class="cover-image"
+          referrerpolicy="no-referrer"
+        />
+        <div class="cover-overlay"></div>
+      </div>
+
+      <!-- Contenu incrusté sur la bannière -->
+      <div class="banner-bottom-bar">
+        <div class="salon-identity-cluster">
+          <!-- Logo ou Avatar initiales -->
+          <div class="salon-avatar-badge">
+            <img
+              *ngIf="salon()?.logoUrl"
+              [src]="salon()!.logoUrl | safeMedia"
+              [alt]="salon()!.nom"
+              referrerpolicy="no-referrer"
+            />
+            <span *ngIf="!salon()?.logoUrl">{{ salon()?.nom?.charAt(0)?.toUpperCase() || 'S' }}</span>
+          </div>
+
+          <div class="salon-titles-block">
+            <div class="title-status-line">
+              <h1 class="salon-main-title">{{ salon()?.nom }}</h1>
+              <span class="badge-status" [class.active]="salon()?.statut" [class.inactive]="!salon()?.statut">
+                <span class="status-dot"></span>
+                {{ salon()?.statut ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
+
+            <p class="salon-hero-meta">
+              <span class="meta-tag">Slug: <strong>@{{ salon()?.slug }}</strong></span>
+              <span class="meta-tag" *ngIf="salon()?.ville">• Ville: <strong>{{ salon()?.ville }}</strong></span>
+              <span class="meta-tag" *ngIf="salon()?.dateCreation">• Créé le {{ salon()?.dateCreation | date:'dd/MM/yyyy' }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Boutons d'action rapides -->
+        <div class="hero-actions-cluster">
+          <button
+            *ngIf="salon()?.statut"
+            (click)="desactiverSalon()"
+            [disabled]="isTogglingStatus()"
+            class="btn-status deactivate"
+          >
+            <mat-icon class="icon-xs">block</mat-icon>
+            <span>{{ isTogglingStatus() ? 'Désactivation...' : 'Désactiver le salon' }}</span>
+          </button>
+
+          <button
+            *ngIf="!salon()?.statut"
+            (click)="reactiverSalon()"
+            [disabled]="isTogglingStatus()"
+            class="btn-status activate"
+          >
+            <mat-icon class="icon-xs">check_circle</mat-icon>
+            <span>{{ isTogglingStatus() ? 'Réactivation...' : 'Réactiver le salon' }}</span>
+          </button>
+
+          <a routerLink="/admin-plateforme/salons" class="btn-back">
+            <mat-icon class="icon-xs">arrow_back</mat-icon>
+            <span>Retour aux salons</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CORPS DE LA FICHE -->
+    <div class="content-body">
+      <!-- 1. GRILLE DES MÉTRIQUES CLÉS -->
+      <section class="metrics-grid">
+        <!-- Clients -->
+        <div class="metric-card card-3d">
+          <div class="metric-icon gold">
+            <mat-icon class="icon-md">groups</mat-icon>
+          </div>
+          <div class="metric-info">
+            <span class="m-title">Clients Enregistrés</span>
+            <span class="m-number">{{ salon()?.nombreClients ?? 0 }}</span>
+            <span class="m-sub">Clients affiliés au salon</span>
+          </div>
+        </div>
+
+        <!-- Employés -->
+        <div class="metric-card card-3d">
+          <div class="metric-icon primary">
+            <mat-icon class="icon-md">badge</mat-icon>
+          </div>
+          <div class="metric-info">
+            <span class="m-title">Équipe & Employés</span>
+            <span class="m-number">{{ salon()?.nombreEmployes ?? 0 }}</span>
+            <span class="m-sub">Coiffeurs et managers actifs</span>
+          </div>
+        </div>
+
+        <!-- Chiffre d'Affaires -->
+        <div class="metric-card card-3d highlight">
+          <div class="metric-icon gold-solid">
+            <mat-icon class="icon-md">payments</mat-icon>
+          </div>
+          <div class="metric-info">
+            <span class="m-title">Chiffre d'Affaires</span>
+            <span class="m-number ca-text">{{ formatDevise(salon()?.chiffreAffaires ?? 0) }}</span>
+            <span class="m-sub">Volume total encaissé</span>
+          </div>
+        </div>
+
+        <!-- Commandes / Ventes -->
+        <div class="metric-card card-3d">
+          <div class="metric-icon primary">
+            <mat-icon class="icon-md">shopping_bag</mat-icon>
+          </div>
+          <div class="metric-info">
+            <span class="m-title">Ventes & Commandes</span>
+            <span class="m-number">{{ salon()?.nombreCommandes ?? 0 }}</span>
+            <span class="m-sub">Commandes de produits / services</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. GRILLE DÉTAILS, MAP & HORAIRES -->
+      <section class="details-grid">
+        <!-- Coordonnées & Informations Générales -->
+        <div class="info-card card-3d">
+          <div class="card-header-styled">
+            <mat-icon class="header-icon">info</mat-icon>
+            <h2 class="card-section-title">Coordonnées & Présentation</h2>
+          </div>
+
+          <div class="info-list">
+            <div class="info-item">
+              <span class="info-label">Description du salon</span>
+              <p class="info-value" *ngIf="salon()?.description">{{ salon()?.description }}</p>
+              <p class="info-value empty" *ngIf="!salon()?.description">Aucune description saisie.</p>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Adresse physique</span>
+              <p class="info-value" *ngIf="salon()?.adresse">
+                <mat-icon class="icon-xs">location_on</mat-icon> {{ salon()?.adresse }}
+              </p>
+              <p class="info-value empty" *ngIf="!salon()?.adresse">Non renseignée.</p>
+            </div>
+
+            <div class="info-item-row">
+              <div class="info-item">
+                <span class="info-label">Téléphone</span>
+                <p class="info-value" *ngIf="salon()?.telephone">
+                  <mat-icon class="icon-xs">phone</mat-icon> {{ salon()?.telephone }}
+                </p>
+                <p class="info-value empty" *ngIf="!salon()?.telephone">Non renseigné.</p>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Email de contact</span>
+                <p class="info-value" *ngIf="salon()?.email">
+                  <mat-icon class="icon-xs">mail</mat-icon> {{ salon()?.email }}
+                </p>
+                <p class="info-value empty" *ngIf="!salon()?.email">Non renseigné.</p>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Coordonnées GPS</span>
+              <p class="info-value" *ngIf="hasGps()">
+                Latitude : <strong>{{ salon()?.latitude }}</strong> | Longitude : <strong>{{ salon()?.longitude }}</strong>
+              </p>
+              <p class="info-value empty" *ngIf="!hasGps()">
+                Coordonnées GPS non configurées.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carte Leaflet du Salon -->
+        <div class="map-card card-3d">
+          <div class="card-header-styled">
+            <mat-icon class="header-icon">place</mat-icon>
+            <h2 class="card-section-title">Localisation Géographique</h2>
+          </div>
+
+          <div *ngIf="hasGps()" class="salon-map-wrapper">
+            <div #salonMap class="salon-map-element"></div>
+          </div>
+
+          <div *ngIf="!hasGps()" class="no-map-placeholder">
+            <div class="no-map-icon">
+              <mat-icon class="icon-xl">map</mat-icon>
+            </div>
+            <h3>Position non géolocalisée</h3>
+            <p>Ce salon ne possède pas encore de coordonnées GPS (latitude et longitude).</p>
+            <span class="badge-subtle">Configuration optionnelle par le propriétaire</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. SECTION HORAIRES HEBDOMADAIRES DU SALON -->
+      <section class="horaires-section card-3d">
+        <div class="card-header-styled">
+          <div class="title-with-icon">
+            <mat-icon class="header-icon">schedule</mat-icon>
+            <h2 class="card-section-title">Horaires d'Ouverture Hebdomadaires</h2>
+          </div>
+          <span class="badge-subtle" *ngIf="horaires().length > 0">
+            {{ horaires().length }} jours configurés
+          </span>
+        </div>
+
+        @if (isLoadingHoraires()) {
+          <div class="horaires-loading">
+            <div class="micro-spinner"></div>
+            <span>Chargement des horaires du salon...</span>
+          </div>
+        } @else if (horaires().length === 0) {
+          <div class="horaires-empty">
+            <mat-icon class="empty-icon">event_busy</mat-icon>
+            <p>Aucun horaire d'ouverture régulier n'a encore été configuré pour ce salon.</p>
+          </div>
+        } @else {
+          <div class="admin-horaires-grid">
+            @for (h of horaires(); track h.jourSemaine) {
+              <div class="admin-horaire-item" [class.is-closed]="h.actif === false">
+                <div class="jour-badge-col">
+                  <span class="jour-name">{{ getJourLabel(h.jourSemaine) }}</span>
+                  <span class="jour-status" [class.open]="h.actif !== false" [class.closed]="h.actif === false">
+                    {{ h.actif !== false ? 'Ouvert' : 'Fermé' }}
+                  </span>
+                </div>
+
+                <div class="jour-hours-col">
+                  @if (h.actif !== false) {
+                    <div class="hours-line">
+                      <mat-icon class="icon-tiny">access_time</mat-icon>
+                      <strong>{{ h.heureOuverture.substring(0, 5) }}</strong>
+                      <span class="sep-dash">—</span>
+                      <strong>{{ h.heureFermeture.substring(0, 5) }}</strong>
+                    </div>
+                    @if (h.pauseDebut && h.pauseFin) {
+                      <div class="pause-line">
+                        <mat-icon class="icon-tiny">restaurant</mat-icon>
+                        <span>Pause : {{ h.pauseDebut.substring(0, 5) }} - {{ h.pauseFin.substring(0, 5) }}</span>
+                      </div>
+                    }
+                  } @else {
+                    <span class="closed-tag">Fermeture hebdomadaire</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </div>
+  }
+</div>

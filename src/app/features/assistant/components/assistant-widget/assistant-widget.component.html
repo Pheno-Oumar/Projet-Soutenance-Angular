@@ -1,0 +1,327 @@
+<!-- Bouton Déclencheur Flottant (Floating Action Button) -->
+<button
+  type="button"
+  class="assistant-trigger-fab"
+  [class.active]="isOpen()"
+  (click)="toggleOpen()"
+  aria-label="Ouvrir l'assistant virtuel concierge"
+>
+  <div class="fab-inner">
+    <mat-icon *ngIf="!isOpen()" class="fab-icon">auto_awesome</mat-icon>
+    <mat-icon *ngIf="isOpen()" class="fab-icon">close</mat-icon>
+    <span *ngIf="unreadCount() > 0 && !isOpen()" class="unread-badge">{{ unreadCount() }}</span>
+  </div>
+  <div class="fab-pulse-ring"></div>
+</button>
+
+<!-- Panneau de Conversation Déroulant (Chat Drawer) -->
+<aside class="assistant-panel" [class.open]="isOpen()" aria-label="Concierge virtuel interactif">
+  <!-- En-tête de l'Assistant -->
+  <header class="assistant-header">
+    <div class="header-identity">
+      <div class="header-avatar">
+        <mat-icon class="avatar-icon">auto_awesome</mat-icon>
+        <span class="live-dot" title="Gemini 3.8 Flash actif"></span>
+      </div>
+      <div class="header-titles">
+        <h2 class="assistant-title">{{ contextStore.salon()?.nom || 'Concierge Privé' }}</h2>
+        <span class="assistant-subtitle">Gemini 3.8 Flash • Conseil & Réservation</span>
+      </div>
+    </div>
+    <button type="button" class="btn-close-header" (click)="toggleOpen()" aria-label="Fermer l'assistant">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <!-- Corps des Messages (Scrollable) -->
+  <div #scrollContainer class="assistant-messages-container">
+    <div *ngFor="let msg of messages()" class="message-row" [class.user]="msg.sender === 'user'">
+      <!-- Avatar Assistant -->
+      <div *ngIf="msg.sender === 'assistant'" class="msg-avatar">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+
+      <div class="message-bubble" [class.user-bubble]="msg.sender === 'user'" [class.assistant-bubble]="msg.sender === 'assistant'">
+        <!-- Texte du Message -->
+        <p class="message-text">{{ msg.text }}</p>
+
+        <!-- CARTES INTERACTIVES -->
+        <div *ngIf="msg.cartes && msg.cartes.length > 0" class="cards-deck">
+          <div *ngFor="let carte of msg.cartes" class="assistant-card" [ngSwitch]="carte.type">
+
+            <!-- 1. Carte CRÉNEAUX -->
+            <div *ngSwitchCase="'CRENEAUX'" class="card-creneaux">
+              <div class="card-header">
+                <mat-icon class="card-icon">schedule</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="creneaux-chips-grid">
+                <button
+                  *ngFor="let c of (carte.donnees?.creneaux || carte.donnees)"
+                  type="button"
+                  class="creneau-chip"
+                  (click)="onSelectCreneau(c)"
+                >
+                  <mat-icon class="chip-clock-icon">event_available</mat-icon>
+                  <span class="chip-time">{{ c.heureDebut }}</span>
+                  <span *ngIf="c.coiffeurNom" class="chip-coiffeur">{{ c.coiffeurNom }}</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Carte VARIANTES / PRESTATIONS -->
+            <div *ngSwitchCase="'VARIANTES'" class="card-variantes">
+              <div class="card-header">
+                <mat-icon class="card-icon">content_cut</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="variantes-list">
+                <div *ngFor="let v of (carte.donnees?.variantes || carte.donnees)" class="variante-row">
+                  <div class="variante-meta">
+                    <span class="variante-name">{{ v.varianteNom || v.nom }}</span>
+                    <span class="variante-info">{{ v.dureeMinutes }} min • {{ v.prix | number }} FCFA</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-card-action"
+                    (click)="ajouterVarianteAuRdv(v)"
+                    title="Ajouter à ma sélection de rendez-vous"
+                  >
+                    <mat-icon>add</mat-icon>
+                    <span>Ajouter</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Carte SERVICES -->
+            <div *ngSwitchCase="'SERVICES'" class="card-services">
+              <div class="card-header">
+                <mat-icon class="card-icon">spa</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="services-list">
+                <div *ngFor="let s of (carte.donnees?.elements || carte.donnees)" class="service-item">
+                  <div class="service-item-info">
+                    <span class="service-item-title">{{ s.nom }}</span>
+                    <span class="service-item-desc">{{ s.description }}</span>
+                    <span class="service-item-badge">À partir de {{ s.prixMin | number }} FCFA</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Carte PRODUITS -->
+            <div *ngSwitchCase="'PRODUITS'" class="card-produits">
+              <div class="card-header">
+                <mat-icon class="card-icon">shopping_bag</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="produits-mini-grid">
+                <div *ngFor="let p of (carte.donnees?.produits || carte.donnees?.elements || carte.donnees)" class="produit-card-item">
+                  <div class="prod-info">
+                    <span class="prod-name">{{ p.nom }}</span>
+                    <span class="prod-price">{{ (p.prixVente || p.prix) | number }} FCFA</span>
+                    <span *ngIf="p.raison" class="prod-reason">{{ p.raison }}</span>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn-card-action"
+                    (click)="ajouterProduitAuPanier(p)"
+                    title="Ajouter au panier Click & Collect"
+                  >
+                    <mat-icon>add_shopping_cart</mat-icon>
+                    <span>Panier</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. Carte CONFIRMATION D'ACTION -->
+            <div *ngSwitchCase="'CONFIRMATION'" class="card-confirmation">
+              <div class="card-header-confirm">
+                <mat-icon class="confirm-icon">shield</mat-icon>
+                <span class="confirm-title">{{ carte.titre }}</span>
+              </div>
+              <p class="confirm-summary">{{ carte.donnees?.resume }}</p>
+              <div class="confirm-buttons-row">
+                <button
+                  type="button"
+                  class="btn-confirm-execute"
+                  (click)="confirmerAction(msg)"
+                >
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Confirmer</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn-confirm-cancel"
+                  (click)="annulerAction(msg)"
+                >
+                  <span>Annuler</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 6. Carte RENDEZ-VOUS CONFIRMÉ -->
+            <div *ngSwitchCase="'RDV'" class="card-rdv-result">
+              <div class="card-header-rdv">
+                <mat-icon class="rdv-icon">event_available</mat-icon>
+                <span class="rdv-title">{{ carte.titre }}</span>
+              </div>
+              <div class="rdv-details-body">
+                <div class="rdv-meta-row">
+                  <span class="rdv-label">Date :</span>
+                  <span class="rdv-val">{{ carte.donnees?.dateHeurePrevue | date:'EEEE d MMMM yyyy à HH:mm' }}</span>
+                </div>
+                <div *ngIf="carte.donnees?.coiffeurNom" class="rdv-meta-row">
+                  <span class="rdv-label">Coiffeur :</span>
+                  <span class="rdv-val">{{ carte.donnees?.coiffeurNom }}</span>
+                </div>
+                <div *ngIf="carte.donnees?.montantTotal" class="rdv-meta-row">
+                  <span class="rdv-label">Total :</span>
+                  <span class="rdv-val highlight">{{ carte.donnees?.montantTotal | number }} FCFA</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. Carte SALON INFOS -->
+            <div *ngSwitchCase="'SALON'" class="card-salon-infos">
+              <div class="card-header">
+                <mat-icon class="card-icon">storefront</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <p *ngIf="carte.donnees?.description" class="salon-desc">{{ carte.donnees?.description }}</p>
+              <div class="salon-details-list">
+                <div *ngIf="carte.donnees?.adresse" class="salon-row">
+                  <mat-icon>place</mat-icon>
+                  <span>{{ carte.donnees?.adresse }}, {{ carte.donnees?.ville }}</span>
+                </div>
+                <div *ngIf="carte.donnees?.telephone" class="salon-row">
+                  <mat-icon>call</mat-icon>
+                  <span>{{ carte.donnees?.telephone }}</span>
+                </div>
+              </div>
+              <a
+                *ngIf="carte.donnees?.lienItineraire"
+                [href]="carte.donnees?.lienItineraire"
+                target="_blank"
+                rel="noopener"
+                class="btn-itineraire"
+              >
+                <mat-icon>directions</mat-icon>
+                <span>Calculer l'itinéraire</span>
+              </a>
+            </div>
+
+            <!-- 8. Carte COMMANDE -->
+            <div *ngSwitchCase="'COMMANDE'" class="card-commande">
+              <div class="card-header">
+                <mat-icon class="card-icon">check_circle</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="commande-body">
+                <p class="commande-code">Code de retrait : <strong>{{ carte.donnees?.codeRetrait || 'MON-SALON-RETRAIT' }}</strong></p>
+                <p class="commande-hint">Présentez ce code au salon sous 48h pour récupérer vos articles.</p>
+              </div>
+            </div>
+
+            <!-- 9. Carte AVIS -->
+            <div *ngSwitchCase="'AVIS'" class="card-avis">
+              <div class="card-header">
+                <mat-icon class="card-icon">reviews</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div *ngIf="carte.donnees?.noteMoyenne" class="avis-score-banner">
+                <span class="big-score">{{ carte.donnees?.noteMoyenne | number:'1.1-1' }}</span>
+                <span class="score-stars">/ 5 ({{ carte.donnees?.total || 0 }} avis vérifiés)</span>
+              </div>
+            </div>
+
+            <!-- 10. Carte HORAIRES -->
+            <div *ngSwitchCase="'HORAIRES'" class="card-horaires">
+              <div class="card-header">
+                <mat-icon class="card-icon">query_builder</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div *ngIf="carte.donnees?.estOuvertMaintenant !== undefined" class="status-indicator-bar" [class.ouvert]="carte.donnees?.estOuvertMaintenant">
+                <mat-icon>{{ carte.donnees?.estOuvertMaintenant ? 'lock_open' : 'lock' }}</mat-icon>
+                <span>{{ carte.donnees?.estOuvertMaintenant ? 'Actuellement Ouvert' : 'Actuellement Fermé' }}</span>
+              </div>
+            </div>
+
+            <!-- 11. Carte DEVIS -->
+            <div *ngSwitchCase="'DEVIS'" class="card-devis">
+              <div class="card-header">
+                <mat-icon class="card-icon">receipt_long</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+              <div class="devis-totals">
+                <span>Durée : {{ carte.donnees?.dureeTotaleMinutes }} min</span>
+                <span class="devis-amount">{{ carte.donnees?.prixTotal | number }} FCFA</span>
+              </div>
+            </div>
+
+            <!-- Default Fallback pour autre type -->
+            <div *ngSwitchDefault class="card-generic">
+              <div class="card-header">
+                <mat-icon class="card-icon">info</mat-icon>
+                <span class="card-title">{{ carte.titre }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <span class="msg-timestamp">{{ msg.timestamp | date:'HH:mm' }}</span>
+      </div>
+    </div>
+
+    <!-- Indicateur d'écriture (Typing Dots) -->
+    <div *ngIf="isTyping()" class="typing-indicator-row">
+      <div class="msg-avatar">
+        <mat-icon>auto_awesome</mat-icon>
+      </div>
+      <div class="typing-bubble">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggestions Rapides (Quick Chips) -->
+  <div *ngIf="suggestions().length > 0" class="suggestions-chips-bar" aria-label="Suggestions de questions">
+    <button
+      *ngFor="let s of suggestions()"
+      type="button"
+      class="suggestion-chip"
+      (click)="sendMessage(s)"
+    >
+      {{ s }}
+    </button>
+  </div>
+
+  <!-- Barre de Saisie Inférieure (Footer Input) -->
+  <footer class="assistant-footer">
+    <form (ngSubmit)="sendMessage()" class="input-form">
+      <input
+        type="text"
+        [(ngModel)]="userInput"
+        name="userInput"
+        class="chat-input"
+        placeholder="Posez votre question..."
+        autocomplete="off"
+        [disabled]="isTyping()"
+        aria-label="Votre message pour l'assistant"
+      />
+      <button
+        type="submit"
+        class="btn-send-message"
+        [disabled]="!userInput.trim() || isTyping()"
+        aria-label="Envoyer le message"
+      >
+        <mat-icon>send</mat-icon>
+      </button>
+    </form>
+  </footer>
+</aside>

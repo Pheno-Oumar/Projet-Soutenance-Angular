@@ -1,0 +1,30 @@
+.phone-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.phone-native-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem 1rem 0.75rem 3.5rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--border-color, rgba(74, 59, 50, 0.14));
+  background-color: var(--bg-input, #FAF8F5);
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text-main, #4A3B32);
+  transition: all 0.2s ease;
+}
+
+.phone-native-input:focus {
+  outline: none;
+  border-color: var(--primary, #4A3B32);
+  background-color: var(--bg-surface, #FFFFFF);
+  box-shadow: 0 0 0 3px rgba(74, 59, 50, 0.12);
+}
+
+.phone-native-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #EFECE4;
+}

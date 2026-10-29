@@ -1,0 +1,102 @@
+<div class="form-container">
+  <!-- En-tête -->
+  <header class="page-header">
+    <div class="breadcrumbs">
+      <a routerLink="/admin-plateforme">Administration</a>
+      <span>/</span>
+      <a routerLink="/admin-plateforme/salons">Salons</a>
+      <span>/</span>
+      <span>Nouveau</span>
+    </div>
+    <h1>Création d'un Nouveau Salon</h1>
+    <p>Enregistrez un nouvel établissement dans le réseau de la plateforme et affiliez-le à un propriétaire.</p>
+  </header>
+
+  <!-- Formulaire principal -->
+  <form [formGroup]="salonForm" (ngSubmit)="onSubmit()" class="salon-form card-3d">
+    <!-- Message d'erreur global -->
+    <div *ngIf="errorMessage()" class="alert-error">
+      <mat-icon class="icon-sm">warning</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+
+    <!-- Section : Informations Requises -->
+    <div class="form-section">
+      <h2 class="section-title">
+        <mat-icon class="section-icon">storefront</mat-icon>
+        Informations du Salon & Propriétaire
+      </h2>
+      <p class="section-subtitle">Renseignez le nom de l'établissement, le pays ainsi que les coordonnées du propriétaire.</p>
+
+      <div class="fields-grid">
+        <!-- Nom du salon -->
+        <div class="form-group full-width">
+          <label for="nom">Nom du salon <span class="required">*</span></label>
+          <input
+            id="nom"
+            type="text"
+            formControlName="nom"
+            placeholder="Ex: Salon Prestige Abidjan"
+            [class.invalid]="isFieldInvalid('nom')"
+          />
+          <span *ngIf="isFieldInvalid('nom')" class="field-error">
+            Le nom du salon est obligatoire (min 2 caractères).
+          </span>
+        </div>
+
+        <!-- Pays -->
+        <div class="form-group">
+          <label for="pays">Pays <span class="required">*</span></label>
+          <input
+            id="pays"
+            type="text"
+            formControlName="pays"
+            placeholder="Ex: Mali, Sénégal..."
+            [class.invalid]="isFieldInvalid('pays')"
+          />
+          <span *ngIf="isFieldInvalid('pays')" class="field-error">
+            Le pays est obligatoire.
+          </span>
+        </div>
+
+        <!-- Téléphone du propriétaire -->
+        <div class="form-group">
+          <label for="telephoneProprietaire">Téléphone du Propriétaire <span class="required">*</span></label>
+          <app-phone-input
+            id="telephoneProprietaire"
+            formControlName="telephoneProprietaire"
+            [country]="salonForm.get('pays')?.value"
+            (countryChange)="onCountryChanged($event)"
+          ></app-phone-input>
+          <span *ngIf="isFieldInvalid('telephoneProprietaire')" class="field-error">
+            Le numéro de téléphone du propriétaire est obligatoire.
+          </span>
+        </div>
+
+        <!-- Email du propriétaire (Optionnel) -->
+        <div class="form-group full-width">
+          <label for="emailProprietaire">Email du Propriétaire <span class="badge-optional">Optionnel</span></label>
+          <input
+            id="emailProprietaire"
+            type="email"
+            formControlName="emailProprietaire"
+            placeholder="Ex: proprietaire@domaine.com (optionnel)"
+            [class.invalid]="isFieldInvalid('emailProprietaire')"
+          />
+          <span *ngIf="isFieldInvalid('emailProprietaire')" class="field-error">
+            Veuillez entrer une adresse email valide.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boutons d'action -->
+    <div class="form-actions">
+      <a routerLink="/admin-plateforme/salons" class="btn-cancel">Annuler</a>
+      <button type="submit" [disabled]="isSubmitting() || salonForm.invalid" class="btn-submit">
+        <span *ngIf="isSubmitting()" class="spinner-small"></span>
+        <span>{{ isSubmitting() ? 'Création en cours...' : 'Créer le Salon' }}</span>
+      </button>
+    </div>
+  </form>
+</div>

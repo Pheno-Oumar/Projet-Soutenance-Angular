@@ -1,0 +1,154 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #FAF8F5;
+  color: #1A1A1A;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  overflow-x: clip;
+  max-width: 100vw;
+  width: 100%;
+}
+
+.salon-shell-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: clip;
+  max-width: 100vw;
+  width: 100%;
+}
+
+.shell-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(200, 182, 166, 0.2);
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.shell-loading-progress {
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg, #C8B6A6, #4A3B32);
+  animation: loadingAnim 1.2s infinite ease-in-out;
+}
+
+@keyframes loadingAnim {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.salon-shell-content {
+  flex: 1 0 auto;
+  min-height: calc(100vh - 80px);
+  padding-top: 74px;
+}
+
+/* ========================================================= */
+/* DOCK RAPIDE MOBILE COLLANT (BAS D'ÉCRAN)                  */
+/* ========================================================= */
+.mobile-sticky-dock {
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 900;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(200, 182, 166, 0.45);
+  border-radius: 36px;
+  padding: 6px 14px;
+  box-shadow: 0 8px 24px rgba(74, 59, 50, 0.12);
+  gap: 8px;
+  align-items: center;
+}
+
+.dock-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #4A3B32;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 20px;
+  position: relative;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dock-btn:hover,
+.dock-btn:active {
+  background: rgba(200, 182, 166, 0.22);
+  color: #1A1A1A;
+}
+
+.dock-icon {
+  font-size: 22px !important;
+  width: 22px !important;
+  height: 22px !important;
+  color: #4A3B32;
+}
+
+.dock-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin-top: 2px;
+  color: #4A3B32;
+}
+
+.dock-badge {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dock-badge.badge-cart {
+  background: #C2185B;
+  color: #FFFFFF;
+}
+
+.dock-badge.badge-rdv {
+  background: #D4AF37;
+  color: #1A1A1A;
+}
+
+@media (max-width: 1024px) {
+  .mobile-sticky-dock {
+    display: flex;
+  }
+
+  .salon-shell-content {
+    padding-bottom: 84px; /* Espace pour le dock flottant */
+  }
+}
+
+@media (max-width: 640px) {
+  .salon-shell-content {
+    padding-top: 64px;
+  }
+}

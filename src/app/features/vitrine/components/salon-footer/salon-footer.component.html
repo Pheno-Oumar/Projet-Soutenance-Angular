@@ -1,0 +1,219 @@
+<footer class="salon-footer" id="section-contact">
+  <div class="footer-container">
+
+    <!-- Colonne 1 : Marque, Philosophie, Contact & Réseaux Sociaux -->
+    <div class="footer-col brand-col">
+      <div class="footer-brand-header">
+        <div class="footer-logo-box">
+          <img
+            *ngIf="salon?.logoUrl"
+            [src]="salon!.logoUrl | safeMedia"
+            [alt]="salon?.nom || 'Salon'"
+            class="footer-logo-img"
+            referrerpolicy="no-referrer"
+          />
+          <span *ngIf="!salon?.logoUrl" class="footer-logo-initial">
+            {{ salon?.nom ? salon?.nom?.charAt(0) : 'S' }}
+          </span>
+        </div>
+        <div class="footer-brand-meta">
+          <h3 class="footer-salon-name">{{ salon?.nom || 'Salon de Coiffure' }}</h3>
+          <span class="footer-salon-subtitle">Maison de Beauté Capillaire</span>
+        </div>
+      </div>
+
+      <p class="footer-tagline">
+        {{ salon?.description || 'L’art du soin et de la coiffure sur-mesure. Vivez une expérience d’exception dans notre salon dédié à votre bien-être.' }}
+      </p>
+
+      <!-- Coordonnées rapides -->
+      <div class="footer-contact-items">
+        <div class="contact-line" *ngIf="salon?.adresse">
+          <mat-icon class="icon-xs contact-icon">location_on</mat-icon>
+          <span>{{ salon!.adresse }}</span>
+        </div>
+        <div class="contact-line" *ngIf="salon?.telephone">
+          <mat-icon class="icon-xs contact-icon">call</mat-icon>
+          <a [href]="'tel:' + salon!.telephone" class="contact-link">{{ salon!.telephone }}</a>
+        </div>
+      </div>
+
+      <!-- Réseaux Sociaux (Toujours Visibles) -->
+      <div class="footer-social-wrap">
+        <span class="social-title">Suivez notre univers</span>
+        <div class="social-icons-row">
+          <a
+            [href]="salon?.instagramUrl || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-btn"
+            title="Instagram"
+          >
+            <img src="assets/intagram.jpg" alt="Instagram" />
+          </a>
+          <a
+            [href]="salon?.facebookUrl || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-btn"
+            title="Facebook"
+          >
+            <img src="assets/facbook.png" alt="Facebook" />
+          </a>
+          <a
+            [href]="salon?.tiktokUrl || '#'"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="social-btn"
+            title="TikTok"
+          >
+            <img src="assets/tiktok.png" alt="TikTok" />
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colonne 2 : Liens de Navigation -->
+    <div class="footer-col nav-col">
+      <h4 class="footer-col-title">
+        <span class="title-accent"></span>
+        <span>Navigation</span>
+      </h4>
+      <ul class="footer-links-list">
+        <li>
+          <a [routerLink]="['/' + slugSalon]">
+            <mat-icon class="icon-xs link-arrow">chevron_right</mat-icon>
+            <span>Accueil</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/services']">
+            <mat-icon class="icon-xs link-arrow">chevron_right</mat-icon>
+            <span>Prestations Signatures</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/boutique']">
+            <mat-icon class="icon-xs link-arrow">chevron_right</mat-icon>
+            <span>Boutique du Salon</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/realisations']">
+            <mat-icon class="icon-xs link-arrow">chevron_right</mat-icon>
+            <span>Galerie Réalisations</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/avis']">
+            <mat-icon class="icon-xs link-arrow">chevron_right</mat-icon>
+            <span>Avis Clients</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Colonne 3 : Horaires d'Ouverture -->
+    <div class="footer-col hours-col">
+      <h4 class="footer-col-title">
+        <span class="title-accent"></span>
+        <span>Horaires</span>
+      </h4>
+      <div class="hours-card">
+        <ng-container *ngIf="horairesTries.length > 0; else aucunHoraire">
+          <div
+            *ngFor="let h of horairesTries"
+            class="hour-item"
+            [class.is-today]="isToday(h.jourSemaine)"
+          >
+            <div class="day-group">
+              <span class="day-text">{{ getJourLabel(h.jourSemaine) }}</span>
+              <span class="today-chip" *ngIf="isToday(h.jourSemaine)">Aujourd'hui</span>
+            </div>
+            <span class="hour-text" [class.is-closed]="!h.actif">
+              {{ h.actif ? (formatHour(h.heureOuverture) + ' - ' + formatHour(h.heureFermeture)) : 'Fermé' }}
+            </span>
+          </div>
+        </ng-container>
+
+        <ng-template #aucunHoraire>
+          <div class="hour-item">
+            <div class="day-group">
+              <span class="day-text">Horaires non renseignés</span>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+
+    <!-- Colonne 4 : Espace Client & Paiements -->
+    <div class="footer-col client-col">
+      <h4 class="footer-col-title">
+        <span class="title-accent"></span>
+        <span>Espace Client</span>
+      </h4>
+      <ul class="footer-links-list">
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/client/rdv']">
+            <mat-icon class="icon-xs link-arrow">calendar_month</mat-icon>
+            <span>Mes Rendez-vous</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/client/commandes']">
+            <mat-icon class="icon-xs link-arrow">shopping_bag</mat-icon>
+            <span>Mes Commandes</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/client/paiements']">
+            <mat-icon class="icon-xs link-arrow">receipt_long</mat-icon>
+            <span>Règlements & Factures</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="['/' + slugSalon + '/client/profil-capillaire']">
+            <mat-icon class="icon-xs link-arrow">lock</mat-icon>
+            <span>Diagnostic Capillaire PIN</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Moyens de Paiement Sécurisés -->
+      <div class="footer-payment-section">
+        <span class="payment-title">Paiements Acceptés</span>
+        <div class="payment-chips-row">
+          <div class="payment-badge-box" title="Orange Money">
+            <img src="assets/orangemaney.png" alt="Orange Money" />
+          </div>
+          <div class="payment-badge-box" title="Wave">
+            <img src="assets/wave.png" alt="Wave" />
+          </div>
+          <div class="payment-badge-box" title="Moov Money">
+            <img src="assets/moovmoney.png" alt="Moov Money" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Barre de Pied de Page Inférieure -->
+  <div class="footer-bottom-bar">
+    <div class="footer-bottom-container">
+      <div class="footer-copy-wrap">
+        <p class="copyright-text">
+          © {{ currentYear }} <strong>{{ salon?.nom || 'Salon de Coiffure' }}</strong>. Tous droits réservés.
+        </p>
+        <span class="powered-text">
+          Propulsé par <strong class="brand-highlight">Hair Style</strong> · Plateforme d'Excellence Capillaire
+        </span>
+      </div>
+
+      <button type="button" class="btn-back-to-top" (click)="scrollToTop()" title="Remonter en haut de page">
+        <span>Haut de page</span>
+        <mat-icon class="icon-xs">arrow_upward</mat-icon>
+      </button>
+    </div>
+  </div>
+</footer>

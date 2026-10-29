@@ -1,0 +1,758 @@
+<div class="produits-container">
+  <!-- Notifications -->
+  @if (errorMessage()) {
+  <div class="alert-banner alert-danger">
+    <div class="alert-content">
+      <mat-icon class="alert-icon icon-sm">error</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+    <button class="alert-close" (click)="errorMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+  </div>
+  }
+
+  @if (successMessage()) {
+  <div class="alert-banner alert-success">
+    <div class="alert-content">
+      <mat-icon class="alert-icon icon-sm">check_circle</mat-icon>
+      <span>{{ successMessage() }}</span>
+    </div>
+    <button class="alert-close" (click)="successMessage.set(null)"><mat-icon class="icon-xs">close</mat-icon></button>
+  </div>
+  }
+
+  <!-- Header -->
+  <header class="page-header">
+    <div>
+      <div class="breadcrumbs">
+        <a [routerLink]="['..']">Inventaire</a>
+        <span class="crumb-separator">/</span>
+        <span>Produits</span>
+      </div>
+      <h1 class="page-title">Catalogue des Produits</h1>
+      <p class="page-subtitle">Gestion des références en boutique, prix, seuils de sécurité et valorisation</p>
+    </div>
+
+    <div class="header-actions">
+      <!-- Sélecteur de vue Grille vs Tableau Rentabilité -->
+      <div class="view-switch-tabs">
+        <button type="button" class="view-tab" [class.active]="vueMode === 'GRILLE'" (click)="vueMode = 'GRILLE'" title="Affichage Catalogue Grille">
+          <mat-icon class="icon-xs">grid_view</mat-icon>
+          <span>Catalogue</span>
+        </button>
+        <button type="button" class="view-tab" [class.active]="vueMode === 'RENTABILITE'" (click)="vueMode = 'RENTABILITE'" title="Tableau Complet de Rentabilité">
+          <mat-icon class="icon-xs">insights</mat-icon>
+          <span>Rentabilité & Marges ({{ filteredProduits.length }})</span>
+        </button>
+      </div>
+
+      <button class="btn btn-secondary" (click)="chargerDonnees()" [disabled]="isLoading()">
+        <mat-icon class="btn-icon icon-sm" [class.spinning]="isLoading()">refresh</mat-icon>
+        <span>Actualiser</span>
+      </button>
+
+      <button class="btn btn-primary" (click)="ouvrirModalCreation()">
+        <mat-icon class="btn-icon icon-sm">add</mat-icon>
+        <span>Nouveau Produit</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Filters Bar -->
+  <section class="filters-card">
+    <div class="search-input-wrapper">
+      <mat-icon class="search-icon icon-sm">search</mat-icon>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher par nom, description ou catégorie..."
+        class="search-input" />
+      @if (searchQuery) {
+      <button class="clear-search" (click)="searchQuery = ''">×</button>
+      }
+    </div>
+
+    <div class="select-filters">
+      <!-- Filtre Catégorie -->
+      <select [(ngModel)]="selectedCategorieFilter" class="filter-select">
+        <option value="">Toutes les catégories ({{ categories().length }})</option>
+        @for (cat of categories(); track cat.id) {
+        <option [value]="cat.id">{{ cat.nom }}</option>
+        }
+      </select>
+
+      <!-- Filtre Statut -->
+      <select [(ngModel)]="selectedStatutFilter" class="filter-select">
+        <option value="TOUS">Tous les statuts</option>
+        <option value="ACTIF">Actifs uniquement</option>
+        <option value="INACTIF">Inactifs uniquement</option>
+      </select>
+
+      <!-- Filtre État du stock -->
+      <select [(ngModel)]="selectedStockFilter" class="filter-select">
+        <option value="TOUS">Tous les stocks</option>
+        <option value="ALERTE">Stock critique (≤ seuil)</option>
+        <option value="RUPTURE">Rupture totale (= 0)</option>
+      </select>
+
+      <!-- Filtre Tri Rentabilité & Ventes -->
+      <select [(ngModel)]="selectedSortFilter" class="filter-select select-sort">
+        <option value="DEFAULT">Tri par défaut</option>
+        <option value="MARGE_DESC">💰 Marge unitaire (FCFA)</option>
+        <option value="TAUX_MARGE_DESC">📈 Taux de marge (%)</option>
+        <option value="VENTES_DESC">🔥 Meilleures ventes (Unités)</option>
+        <option value="BENEFICE_DESC">🏆 Bénéfice total réalisé</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Products List -->
+  @if (isLoading()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Chargement du catalogue...</p>
+  </div>
+  } @else if (filteredProduits.length === 0) {
+  <div class="empty-state">
+    <mat-icon class="empty-icon icon-xl">inventory_2</mat-icon>
+    <h3>Aucun produit trouvé</h3>
+    <p>Modifiez vos critères de recherche ou ajoutez un nouveau produit au catalogue.</p>
+    <button class="btn btn-primary" (click)="ouvrirModalCreation()">Ajouter un produit</button>
+  </div>
+  } @else {
+  @if (vueMode === 'GRILLE') {
+  <div class="produits-grid">
+    @for (prod of filteredProduits; track prod.id) {
+    <div class="produit-card" [class.is-inactive]="!prod.statut">
+      <!-- Card Image & Status -->
+      <div class="card-media">
+        @if (prod.imageUrl) {
+        <img [src]="prod.imageUrl" [alt]="prod.nom" class="produit-img" />
+        } @else {
+        <div class="produit-placeholder">
+          <span class="monogram">{{ prod.nom.substring(0, 2).toUpperCase() }}</span>
+        </div>
+        }
+        @if (prod.imagesUrls && prod.imagesUrls.length > 1) {
+        <span class="multi-photos-badge" [title]="prod.imagesUrls.length + ' photos disponibles'">
+          <mat-icon class="icon-xs">photo_library</mat-icon>
+          <span>{{ prod.imagesUrls.length }}</span>
+        </span>
+        }
+        <button class="btn-change-image" (click)="ouvrirModalImage(prod)" title="Gérer les photos du produit">
+          <mat-icon class="icon-xs">photo_camera</mat-icon>
+        </button>
+        <span class="statut-badge" [class.statut-actif]="prod.statut" [class.statut-inactif]="!prod.statut">
+          {{ prod.statut ? 'Actif' : 'Inactif' }}
+        </span>
+
+        @if (prod.imagesUrls && prod.imagesUrls.length > 1) {
+        <div class="card-thumbs-strip" (click)="$event.stopPropagation()">
+          @for (img of prod.imagesUrls; track img) {
+          <button type="button" class="card-thumb-dot" [class.active]="img === prod.imageUrl"
+            (click)="prod.imageUrl = img" [title]="'Voir photo ' + ($index + 1)">
+            <img [src]="img" [alt]="prod.nom" />
+          </button>
+          }
+        </div>
+        }
+      </div>
+
+      <!-- Card Content -->
+      <div class="card-body">
+        <span class="card-category">{{ prod.categorieNom }}</span>
+        <h3 class="card-title" [title]="prod.nom">{{ prod.nom }}</h3>
+        @if (prod.description) {
+        <p class="card-desc">{{ prod.description }}</p>
+        }
+
+        <div class="card-price-row">
+          <div class="price-value-wrap">
+            <span class="price-value">{{ formatMontant(prod.prixVente) }}</span>
+            <button type="button" class="btn-price-inline-edit" (click)="ouvrirModalAjusterPrix(prod)" title="Ajuster le prix de vente">
+              <mat-icon class="icon-xxs">edit</mat-icon>
+            </button>
+          </div>
+          @if (getRentabilite(prod.id); as rent) {
+            <span class="marge-badge" [class.marge-badge-gold]="rent.tauxMarge >= 50" [class.marge-badge-green]="rent.tauxMarge >= 30 && rent.tauxMarge < 50" [title]="'Prix achat: ' + (rent.prixAchatMoyen ? formatMontant(rent.prixAchatMoyen) : 'Non défini') + ' | Bénéfice cumulé: ' + formatMontant(rent.beneficeTotal)">
+              Marge: +{{ formatMontant(rent.margeUnitaire) }} ({{ rent.tauxMarge }}%)
+            </span>
+          }
+        </div>
+
+        @if (getRentabilite(prod.id); as rent) {
+          <div class="card-rentabilite-stats">
+            <span class="stat-pill"><mat-icon class="icon-xxs">shopping_cart</mat-icon> {{ rent.quantiteVendue }} vendu(s)</span>
+            <span class="stat-pill profit" [class.profit-positive]="rent.beneficeTotal > 0"><mat-icon class="icon-xxs">trending_up</mat-icon> +{{ formatMontant(rent.beneficeTotal) }}</span>
+          </div>
+        }
+
+        <!-- Stock Level Gauge -->
+        <div class="stock-level-box">
+          <div class="stock-level-header">
+            <span class="stock-level-label">Stock disponible:</span>
+            <span class="stock-level-value" [class.text-danger]="(prod.stock?.quantiteDisponible || 0) === 0"
+              [class.text-warning]="(prod.stock?.quantiteDisponible || 0) > 0 && (prod.stock?.quantiteDisponible || 0) <= (prod.stock?.seuilMinimum || 0)">
+              {{ prod.stock?.quantiteDisponible ?? 0 }} unités
+            </span>
+          </div>
+
+          <!-- Jauge -->
+          <div class="gauge-bar">
+            <div class="gauge-fill" [class.fill-danger]="(prod.stock?.quantiteDisponible || 0) === 0"
+              [class.fill-warning]="(prod.stock?.quantiteDisponible || 0) > 0 && (prod.stock?.quantiteDisponible || 0) <= (prod.stock?.seuilMinimum || 0)"
+              [style.width.%]="Math.min(100, ((prod.stock?.quantiteDisponible || 0) / Math.max(1, (prod.stock?.seuilMaximum || (prod.stock?.seuilMinimum || 5) * 3))) * 100)">
+            </div>
+          </div>
+
+          <div class="stock-thresholds">
+            <span>Min: {{ prod.stock?.seuilMinimum || 0 }}</span>
+            @if (prod.stock?.seuilMaximum) {
+            <span>Max: {{ prod.stock?.seuilMaximum }}</span>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Actions -->
+      <div class="card-footer">
+        <div class="actions-left">
+          <button class="action-btn" (click)="ouvrirModalEdit(prod)" title="Modifier les informations complètes">
+            <mat-icon class="icon-xs">edit</mat-icon>
+          </button>
+
+          <button class="action-btn btn-price-action" (click)="ouvrirModalAjusterPrix(prod)" title="Ajuster le prix de vente">
+            <mat-icon class="icon-xs">sell</mat-icon>
+          </button>
+
+          <button class="action-btn" [class.btn-deactivate]="prod.statut" [class.btn-activate]="!prod.statut"
+            (click)="basculerStatut(prod)" [title]="prod.statut ? 'Désactiver le produit' : 'Activer le produit'">
+            <mat-icon class="icon-xs">{{ prod.statut ? 'block' : 'check' }}</mat-icon>
+          </button>
+        </div>
+
+        <div class="actions-right">
+          <button class="btn btn-sm btn-movement" (click)="ouvrirModalMouvement(prod)" title="Ajuster le stock">
+            <mat-icon class="icon-xs">swap_vert</mat-icon>
+            <span>Stock</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  } @else {
+  <!-- TABLEAU VUE ANALYSE RENTABILITÉ & MARGES -->
+  <div class="table-responsive rentabilite-table-wrapper">
+    <table class="luxury-table rentabilite-table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Catégorie</th>
+          <th>Prix Vente</th>
+          <th>Prix Achat Moyen</th>
+          <th>Marge / Unité</th>
+          <th>Taux Marge</th>
+          <th>Ventes</th>
+          <th>Chiffre d'Affaires</th>
+          <th>Bénéfice Réalisé</th>
+          <th>Stock Dispo</th>
+          <th>Niveau</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (prod of filteredProduits; track prod.id) {
+          @let rent = getRentabilite(prod.id);
+          <tr>
+            <td>
+              <div class="table-product-info">
+                @if (prod.imageUrl) {
+                  <img [src]="prod.imageUrl" [alt]="prod.nom" class="table-prod-img" />
+                } @else {
+                  <div class="table-prod-placeholder">{{ prod.nom.substring(0, 2).toUpperCase() }}</div>
+                }
+                <div>
+                  <strong class="prod-name-table">{{ prod.nom }}</strong>
+                  <div class="prod-sub-table">Réf: #{{ prod.id }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="cat-pill">{{ prod.categorieNom }}</span></td>
+            <td class="font-bold text-dark">{{ formatMontant(prod.prixVente) }}</td>
+            <td class="text-muted">{{ rent?.prixAchatMoyen ? formatMontant(rent.prixAchatMoyen) : '-' }}</td>
+            <td class="font-bold text-success">+{{ formatMontant(rent?.margeUnitaire || prod.prixVente) }}</td>
+            <td>
+              <span class="badge-taux" [class.taux-tres-haut]="(rent?.tauxMarge || 0) >= 50" [class.taux-bon]="(rent?.tauxMarge || 0) >= 30 && (rent?.tauxMarge || 0) < 50">
+                {{ rent?.tauxMarge ?? 100 }}%
+              </span>
+            </td>
+            <td class="font-semibold">{{ rent?.quantiteVendue || 0 }} unité(s)</td>
+            <td>{{ formatMontant(rent?.chiffreAffairesTotal || 0) }}</td>
+            <td class="font-bold text-success">+{{ formatMontant(rent?.beneficeTotal || 0) }}</td>
+            <td>
+              <span class="badge-stock-table" [class.stock-danger]="(prod.stock?.quantiteDisponible || 0) === 0"
+                    [class.stock-warning]="(prod.stock?.quantiteDisponible || 0) > 0 && (prod.stock?.quantiteDisponible || 0) <= (prod.stock?.seuilMinimum || 0)">
+                {{ prod.stock?.quantiteDisponible ?? 0 }}
+              </span>
+            </td>
+            <td>
+              <span class="badge-niveau-table" [class]="'niveau-' + (rent?.niveauRentabilite || 'RENTABLE').toLowerCase()">
+                {{ rent?.niveauRentabilite || 'RENTABLE' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="table-actions-row">
+                <button class="btn-table-action btn-prix" (click)="ouvrirModalAjusterPrix(prod)" title="Ajuster le prix de vente">
+                  <mat-icon class="icon-xs">sell</mat-icon>
+                  <span>Prix</span>
+                </button>
+                <button class="btn-table-action btn-mvt" (click)="ouvrirModalMouvement(prod)" title="Ajuster stock">
+                  <mat-icon class="icon-xs">swap_vert</mat-icon>
+                  <span>Stock</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+  }
+
+  <!-- MODAL : Création Produit -->
+  @if (isCreateModalOpen()) {
+  <div class="modal-backdrop" (click)="fermerModalCreation()">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Nouveau Produit au Catalogue</h3>
+          <p class="modal-subtitle">Ajoutez un article avec ses tarifs, son stock initial et ses seuils</p>
+        </div>
+        <button class="modal-close" (click)="fermerModalCreation()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Catégorie parente *</label>
+            <select [(ngModel)]="newProduitCategorieId" class="form-input">
+              @for (c of categories(); track c.id) {
+              <option [value]="c.id">{{ c.nom }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group flex-2">
+            <label class="form-label">Nom du produit *</label>
+            <input type="text" [(ngModel)]="newProduitNom" class="form-input"
+              placeholder="Ex: Shampoing Hydratant Argan 500ml" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description détaillée</label>
+          <textarea [(ngModel)]="newProduitDescription" rows="2" class="form-input"
+            placeholder="Bienfaits, utilisation, ingrédients..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prix de vente (FCFA) *</label>
+            <input type="number" min="1" [(ngModel)]="newProduitPrixVente" class="form-input" placeholder="Ex: 8500" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prix d'achat unitaire (FCFA)</label>
+            <input type="number" min="0" [(ngModel)]="newProduitPrixAchat" class="form-input" placeholder="Ex: 5000" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Quantité initiale en stock *</label>
+            <input type="number" min="0" [(ngModel)]="newProduitQuantiteInitiale" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seuil minimum d'alerte *</label>
+            <input type="number" min="1" [(ngModel)]="newProduitSeuilMin" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seuil maximum (optionnel)</label>
+            <input type="number" min="1" [(ngModel)]="newProduitSeuilMax" class="form-input" />
+          </div>
+        </div>
+
+        <!-- Upload Image(s) -->
+        <div class="form-group">
+          <label class="form-label">Photos du produit (optionnelles, plusieurs possibles)</label>
+          <div class="file-upload-zone">
+            <input type="file" multiple (change)="onFileSelectedCreate($event)" accept="image/*" id="create-img-input"
+              class="hidden-file-input" />
+            <label for="create-img-input" class="file-upload-label">
+              <div class="upload-placeholder">
+                <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                <span>Cliquez pour choisir une ou plusieurs photos (PNG, JPG, WebP)</span>
+                <span class="upload-hint">Vous pouvez sélectionner plusieurs photos pour ce produit</span>
+              </div>
+            </label>
+          </div>
+
+          @if (createImagePreviews.length > 0) {
+          <div class="selected-previews-container">
+            <div class="previews-header">
+              <span class="previews-count">{{ createImagePreviews.length }} photo(s) sélectionnée(s)</span>
+              <span class="previews-note">La première photo sera la photo principale du produit</span>
+            </div>
+            <div class="previews-grid">
+              @for (prev of createImagePreviews; track prev; let i = $index) {
+              <div class="preview-card" [class.is-first]="i === 0">
+                <img [src]="prev" alt="Aperçu" class="preview-img" />
+                @if (i === 0) {
+                <span class="preview-primary-badge">Principale</span>
+                }
+                <button type="button" class="btn-remove-preview" (click)="removeCreateImage(i)"
+                  title="Retirer cette photo">
+                  <mat-icon class="icon-xs">close</mat-icon>
+                </button>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="fermerModalCreation()" [disabled]="isSubmittingCreate()">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="validerCreation()" [disabled]="isSubmittingCreate()">
+          @if (isSubmittingCreate()) {
+          <span>Enregistrement...</span>
+          } @else {
+          <span>Créer le produit</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- MODAL : Modification Produit -->
+  @if (isEditModalOpen() && editingProduit) {
+  <div class="modal-backdrop" (click)="fermerModalEdit()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Modifier le Produit</h3>
+          <p class="modal-subtitle">{{ editingProduit.nom }}</p>
+        </div>
+        <button class="modal-close" (click)="fermerModalEdit()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nom du produit *</label>
+          <input type="text" [(ngModel)]="editNom" class="form-input" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea [(ngModel)]="editDescription" rows="2" class="form-input"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Prix de vente (FCFA) *</label>
+          <input type="number" min="1" [(ngModel)]="editPrixVente" class="form-input" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Seuil minimum *</label>
+            <input type="number" min="1" [(ngModel)]="editSeuilMin" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Seuil maximum (optionnel)</label>
+            <input type="number" min="1" [(ngModel)]="editSeuilMax" class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="fermerModalEdit()" [disabled]="isSubmittingEdit()">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="validerEdit()" [disabled]="isSubmittingEdit()">
+          @if (isSubmittingEdit()) {
+          <span>Mise à jour...</span>
+          } @else {
+          <span>Enregistrer les modifications</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- MODAL : Gestion Galerie Photos Produit -->
+  @if (isImageModalOpen() && imageTargetProduit) {
+  <div class="modal-backdrop" (click)="fermerModalImage()">
+    <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Galerie Photos du Produit</h3>
+          <p class="modal-subtitle">{{ imageTargetProduit.nom }} — Ajoutez des photos supplémentaires sans écraser l'existant</p>
+        </div>
+        <button class="modal-close" (click)="fermerModalImage()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Photos existantes -->
+        @if (existingTargetImages.length > 0) {
+        <div class="existing-photos-section">
+          <div class="existing-photos-header">
+            <label class="form-label">Photos actuelles en catalogue ({{ existingTargetImages.length }})</label>
+            <span class="existing-photos-sub">L'étoile jaune indique la photo principale en boutique</span>
+          </div>
+          <div class="existing-photos-grid">
+            @for (img of existingTargetImages; track img; let i = $index) {
+            <div class="existing-photo-item" [class.is-primary]="i === 0">
+              <img [src]="img" alt="Photo existante" class="existing-photo-img" />
+              @if (i === 0) {
+              <span class="existing-badge-primary">Principale</span>
+              } @else {
+              <span class="existing-badge-sec">Photo {{ i + 1 }}</span>
+              }
+
+              <div class="existing-photo-actions">
+                @if (i !== 0) {
+                <button type="button" class="btn-photo-action btn-set-primary" [disabled]="isSubmittingImage()"
+                  (click)="definirCommePrincipale(img)" title="Définir comme photo principale">
+                  <mat-icon class="icon-xs">star</mat-icon>
+                </button>
+                }
+                <button type="button" class="btn-photo-action btn-delete-photo" [disabled]="isSubmittingImage()"
+                  (click)="supprimerPhotoExistante(img)" title="Supprimer cette photo">
+                  <mat-icon class="icon-xs">delete</mat-icon>
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Nouvelle(s) photo(s) -->
+        <div class="form-group">
+          <label class="form-label">Ajouter des photos supplémentaires</label>
+          <div class="file-upload-zone">
+            <input type="file" multiple (change)="onFileSelectedNew($event)" accept="image/*" id="new-img-input"
+              class="hidden-file-input" />
+            <label for="new-img-input" class="file-upload-label">
+              <div class="upload-placeholder">
+                <mat-icon class="icon-md">add_photo_alternate</mat-icon>
+                <span>Sélectionner une ou plusieurs nouvelles photos</span>
+                <span class="upload-hint">Format PNG, JPG, WebP — Elles seront ajoutées à la galerie sans supprimer l'existant</span>
+              </div>
+            </label>
+          </div>
+
+          @if (newImagePreviews.length > 0) {
+          <div class="selected-previews-container">
+            <div class="previews-header">
+              <span class="previews-count">{{ newImagePreviews.length }} nouvelle(s) photo(s) prête(s) à être ajoutée(s)</span>
+            </div>
+            <div class="previews-grid">
+              @for (prev of newImagePreviews; track prev; let i = $index) {
+              <div class="preview-card">
+                <img [src]="prev" alt="Nouvel aperçu" class="preview-img" />
+                <button type="button" class="btn-remove-preview" (click)="removeNewImage(i)" title="Retirer">
+                  <mat-icon class="icon-xs">close</mat-icon>
+                </button>
+              </div>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="fermerModalImage()" [disabled]="isSubmittingImage()">
+          Fermer
+        </button>
+        <button class="btn btn-primary" (click)="validerUploadImage()"
+          [disabled]="isSubmittingImage() || (newImagePreviews.length === 0 && !selectedNewImageFile)">
+          @if (isSubmittingImage()) {
+          <span>Téléversement en cours...</span>
+          } @else {
+          <mat-icon class="icon-xs">add_photo_alternate</mat-icon>
+          <span>Ajouter à la galerie</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- MODAL : Enregistrement Flux Stock Rapide -->
+  @if (isMouvementModalOpen() && mouvementProduit) {
+  <div class="modal-backdrop" (click)="fermerModalMouvement()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Ajustement de Stock</h3>
+          <p class="modal-subtitle">{{ mouvementProduit.nom }} (Dispo: {{ mouvementProduit.stock?.quantiteDisponible ??
+            0 }})</p>
+        </div>
+        <button class="modal-close" (click)="fermerModalMouvement()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Type de flux *</label>
+            <select [(ngModel)]="mouvementType" class="form-input">
+              <option value="ENTREE">ENTRÉE (Réception fournisseur / Achat)</option>
+              <option value="VENTE">VENTE (Sortie manuelle en boutique)</option>
+              <option value="PERTE">PERTE (Casse, péremption, avarie)</option>
+              <option value="AJUSTEMENT">AJUSTEMENT (Inventaire physique)</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label">Quantité *</label>
+            <input type="number" min="1" [(ngModel)]="mouvementQuantite" class="form-input" />
+          </div>
+        </div>
+
+        @if (mouvementType === 'ENTREE') {
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Prix d'achat unitaire (FCFA) *</label>
+            <input type="number" min="0" [(ngModel)]="mouvementPrixUnitaire" class="form-input" placeholder="Coût fournisseur" />
+            <span style="font-size: 0.75rem; color: #64748b; margin-top: 2px; display: block;">Coût d'achat (dépense)</span>
+          </div>
+          <div class="form-group flex-1">
+            <label class="form-label">Prix de vente boutique (FCFA)</label>
+            <input type="number" min="0" [(ngModel)]="mouvementNouveauPrixVente" class="form-input" placeholder="Prix boutique" />
+            <span style="font-size: 0.75rem; color: #64748b; margin-top: 2px; display: block;">Ajuster le prix client</span>
+          </div>
+        </div>
+        }
+
+        @if (mouvementType === 'VENTE') {
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label class="form-label">Prix de vente unitaire (FCFA)</label>
+            <input type="number" min="1" [(ngModel)]="mouvementPrixUnitaire" class="form-input" placeholder="Prix de vente appliqué" />
+            <span style="font-size: 0.75rem; color: #10B981; margin-top: 2px; display: block; font-weight: 600;">
+              Recette totale générée : {{ formatMontant((mouvementPrixUnitaire > 0 ? mouvementPrixUnitaire : mouvementProduit.prixVente) * mouvementQuantite) }}
+            </span>
+          </div>
+        </div>
+        }
+
+        <div class="form-group">
+          <label class="form-label">Motif ou justification</label>
+          <textarea [(ngModel)]="mouvementMotif" rows="2" class="form-input"
+            placeholder="Ex: Vente directe en salon"></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="fermerModalMouvement()" [disabled]="isSubmittingMouvement()">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="validerMouvement()" [disabled]="isSubmittingMouvement()">
+          @if (isSubmittingMouvement()) {
+          <span>Enregistrement...</span>
+          } @else {
+          <span>Valider le flux ({{ mouvementType }})</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- MODAL : Ajuster Prix de Vente -->
+  @if (isAjusterPrixModalOpen() && ajusterPrixProduitCible) {
+  <div class="modal-backdrop" (click)="fermerModalAjusterPrix()">
+    <div class="modal-card modal-md" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Ajuster le Prix de Vente</h3>
+          <p class="modal-subtitle">Modifiez le tarif boutique pour « {{ ajusterPrixProduitCible.nom }} »</p>
+        </div>
+        <button class="modal-close" (click)="fermerModalAjusterPrix()"><mat-icon class="icon-sm">close</mat-icon></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="produit-target-preview">
+          <div class="preview-info">
+            <span class="preview-cat">{{ ajusterPrixProduitCible.categorieNom }}</span>
+            <h4 class="preview-name">{{ ajusterPrixProduitCible.nom }}</h4>
+          </div>
+          <div class="preview-prices">
+            <div class="price-chip">
+              <span class="chip-lbl">Prix Actuel</span>
+              <span class="chip-val">{{ formatMontant(ajusterPrixProduitCible.prixVente) }}</span>
+            </div>
+            @if (getRentabilite(ajusterPrixProduitCible.id)?.prixAchatMoyen; as pa) {
+              <div class="price-chip chip-achat">
+                <span class="chip-lbl">Prix Achat Constaté</span>
+                <span class="chip-val">{{ formatMontant(pa) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="form-group mt-4">
+          <label class="form-label">Nouveau Prix de Vente (FCFA) *</label>
+          <div class="input-currency-wrapper">
+            <input type="number" [(ngModel)]="nouveauPrixVenteSaisi"
+              class="form-input price-input" placeholder="Ex: 5000" min="1" step="100" />
+            <span class="currency-addon">FCFA</span>
+          </div>
+        </div>
+
+        <!-- Simulation Rentabilité en temps réel -->
+        <div class="simulation-box">
+          <div class="sim-header">
+            <mat-icon class="icon-xs text-gold">insights</mat-icon>
+            <span>Simulation de rentabilité</span>
+          </div>
+          <div class="sim-grid">
+            <div class="sim-item">
+              <span class="sim-lbl">Évolution tarif</span>
+              <span class="sim-val" [class.text-success]="nouveauPrixVenteSaisi > ajusterPrixProduitCible.prixVente"
+                    [class.text-danger]="nouveauPrixVenteSaisi < ajusterPrixProduitCible.prixVente">
+                {{ nouveauPrixVenteSaisi >= ajusterPrixProduitCible.prixVente ? '+' : '' }}{{ formatMontant(nouveauPrixVenteSaisi - ajusterPrixProduitCible.prixVente) }}
+              </span>
+            </div>
+            <div class="sim-item">
+              <span class="sim-lbl">Marge brute / unité</span>
+              <span class="sim-val text-success font-bold">+{{ formatMontant(getSimulatedMargeUnitaire()) }}</span>
+            </div>
+            <div class="sim-item">
+              <span class="sim-lbl">Taux de marge</span>
+              <span class="sim-val font-bold">{{ getSimulatedTauxMarge() }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="fermerModalAjusterPrix()" [disabled]="isSubmittingAjusterPrix()">
+          Annuler
+        </button>
+        <button type="button" class="btn btn-primary" (click)="validerAjustementPrix()" [disabled]="isSubmittingAjusterPrix() || nouveauPrixVenteSaisi <= 0">
+          @if (isSubmittingAjusterPrix()) {
+            <span>Enregistrement...</span>
+          } @else {
+            <mat-icon class="btn-icon icon-xs">check</mat-icon>
+            <span>Appliquer le prix</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

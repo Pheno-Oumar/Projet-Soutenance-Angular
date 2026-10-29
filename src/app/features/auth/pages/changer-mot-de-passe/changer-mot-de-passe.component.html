@@ -1,0 +1,119 @@
+<div class="auth-wrapper">
+  <div class="auth-card">
+    
+    <!-- En-tête épuré -->
+    <div class="auth-header">
+      <div class="icon-circle">
+        <mat-icon>lock_outline</mat-icon>
+      </div>
+      <h1 class="auth-title">Modifier le mot de passe</h1>
+      <p class="auth-subtitle">Définissez un nouveau mot de passe pour continuer.</p>
+    </div>
+
+    <!-- Formulaire -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form" novalidate>
+      
+      <!-- Mot de passe actuel -->
+      <div class="field">
+        <label for="ancienMotDePasse">Mot de passe actuel</label>
+        <div class="input-box" [class.error]="form.get('ancienMotDePasse')?.touched && form.get('ancienMotDePasse')?.invalid">
+          <input
+            id="ancienMotDePasse"
+            [type]="showOldPassword() ? 'text' : 'password'"
+            formControlName="ancienMotDePasse"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="showOldPassword.set(!showOldPassword())"
+            tabindex="-1"
+            aria-label="Afficher/masquer"
+          >
+            <mat-icon>{{ showOldPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <!-- Nouveau mot de passe -->
+      <div class="field">
+        <label for="nouveauMotDePasse">Nouveau mot de passe</label>
+        <div class="input-box" [class.error]="form.get('nouveauMotDePasse')?.touched && form.get('nouveauMotDePasse')?.invalid">
+          <input
+            id="nouveauMotDePasse"
+            [type]="showNewPassword() ? 'text' : 'password'"
+            formControlName="nouveauMotDePasse"
+            placeholder="8 caractères minimum"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="showNewPassword.set(!showNewPassword())"
+            tabindex="-1"
+            aria-label="Afficher/masquer"
+          >
+            <mat-icon>{{ showNewPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </div>
+        @if (form.get('nouveauMotDePasse')?.touched && form.get('nouveauMotDePasse')?.hasError('minlength')) {
+          <span class="field-error">Au moins 8 caractères requis</span>
+        }
+      </div>
+
+      <!-- Confirmation -->
+      <div class="field">
+        <label for="confirmerMotDePasse">Confirmer le mot de passe</label>
+        <div
+          class="input-box"
+          [class.error]="
+            (form.get('confirmerMotDePasse')?.touched && form.get('confirmerMotDePasse')?.invalid) ||
+            (form.touched && form.hasError('passwordMismatch'))
+          "
+        >
+          <input
+            id="confirmerMotDePasse"
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            formControlName="confirmerMotDePasse"
+            placeholder="••••••••"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            (click)="showConfirmPassword.set(!showConfirmPassword())"
+            tabindex="-1"
+            aria-label="Afficher/masquer"
+          >
+            <mat-icon>{{ showConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </div>
+        @if (form.touched && form.hasError('passwordMismatch') && form.get('confirmerMotDePasse')?.value) {
+          <span class="field-error">Les mots de passe ne correspondent pas</span>
+        }
+      </div>
+
+      <!-- Bouton principal -->
+      <button
+        type="submit"
+        id="btn-valider-mot-de-passe"
+        class="btn-submit"
+        [disabled]="form.invalid || isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Enregistrement...</span>
+        } @else {
+          <span>Valider</span>
+        }
+      </button>
+
+      <!-- Lien déconnexion -->
+      <button type="button" class="btn-logout" (click)="logout()">
+        Se déconnecter
+      </button>
+
+    </form>
+  </div>
+</div>

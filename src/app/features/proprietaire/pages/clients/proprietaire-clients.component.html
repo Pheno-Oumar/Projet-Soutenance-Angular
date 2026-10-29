@@ -1,0 +1,92 @@
+<div class="clients-page">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Fichier Clients du Salon</h1>
+      <p class="page-subtitle">Consultez les fiches détaillées, historique des rendez-vous et profils capillaires</p>
+    </div>
+
+    <div class="header-count">
+      <span>Total Clients</span>
+      <strong>{{ clients().length }}</strong>
+    </div>
+  </header>
+
+  <!-- SEARCH BAR -->
+  <div class="search-bar">
+    <div class="search-input-box">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input
+        type="text"
+        placeholder="Rechercher par nom, prénom, email ou téléphone..."
+        [(ngModel)]="searchTerm"
+      />
+    </div>
+
+    <button type="button" class="btn-refresh" (click)="chargerClients()" [disabled]="isLoading()">
+      Actualiser
+    </button>
+  </div>
+
+  <!-- ERROR ALERT -->
+  @if (errorMessage()) {
+    <div class="alert-box alert-error">
+      <mat-icon class="alert-icon">error_outline</mat-icon>
+      <span>{{ errorMessage() }}</span>
+    </div>
+  }
+
+  <!-- CLIENTS TABLE -->
+  <div class="clients-card">
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Récupération des clients...</span>
+      </div>
+    } @else if (filteredClients.length === 0) {
+      <div class="empty-state">
+        <mat-icon class="empty-icon">groups</mat-icon>
+        <h3>Aucun client trouvé</h3>
+        <p>Aucun client enregistré ne correspond à votre recherche.</p>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Client</th>
+              <th>Email</th>
+              <th>Téléphone</th>
+              <th>Date d'inscription</th>
+              <th class="text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of filteredClients; track c.clientId) {
+              <tr>
+                <td>
+                  <div class="client-cell">
+                    <div class="client-avatar">{{ c.prenom?.charAt(0) }}{{ c.nom?.charAt(0) }}</div>
+                    <div class="client-names">
+                      <strong>{{ c.prenom }} {{ c.nom }}</strong>
+                      <span class="client-id">Client #{{ c.clientId }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ c.email }}</td>
+                <td>{{ c.telephone || '-' }}</td>
+                <td>{{ c.dateInscription | date:'dd/MM/yyyy' }}</td>
+                <td class="text-right">
+                  <a [routerLink]="[c.clientId]" class="btn-dossier">
+                    <span>Consulter la fiche</span>
+                    <mat-icon class="icon-xs">arrow_forward</mat-icon>
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>

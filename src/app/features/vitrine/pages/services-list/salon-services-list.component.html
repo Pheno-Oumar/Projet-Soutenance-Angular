@@ -1,0 +1,163 @@
+<div class="services-page">
+  <!-- EN-TÊTE COMPACT : titre + recherche -->
+  <header class="services-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav" aria-label="Fil d'Ariane">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span>Prestations</span>
+      </nav>
+
+      <div class="header-row">
+        <div class="header-titles">
+          <h1 class="page-title">Nos prestations</h1>
+          <p class="page-desc">
+            Choisissez un soin chez <strong>{{ salonNom }}</strong>, puis sa formule.
+          </p>
+        </div>
+
+        <div class="search-bar-wrap">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Rechercher une prestation..."
+            aria-label="Rechercher une prestation"
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+          <button
+            *ngIf="searchQuery()"
+            type="button"
+            (click)="searchQuery.set('')"
+            class="clear-btn"
+            aria-label="Effacer la recherche"
+          >
+            <mat-icon class="icon-xs">close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRE DE CATÉGORIES COLLANTE (générée depuis les vrais services) -->
+  <div class="categories-sticky" *ngIf="categories().length > 0">
+    <div class="categories-scroll" role="tablist" aria-label="Catégories de prestations">
+      <button
+        type="button"
+        *ngFor="let cat of categories()"
+        class="cat-chip"
+        role="tab"
+        [class.is-active]="selectedCategory() === cat.key"
+        [attr.aria-selected]="selectedCategory() === cat.key"
+        (click)="selectCategory(cat.key, $event)"
+      >
+        <mat-icon class="cat-chip-icon">{{ cat.icon }}</mat-icon>
+        <span class="cat-chip-label">{{ cat.label }}</span>
+        <span class="cat-chip-count">{{ cat.count }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LISTE DES SERVICES -->
+  <main class="services-content">
+    <div class="content-container">
+      <!-- Chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des prestations...</p>
+      </div>
+
+      <!-- Aucun résultat -->
+      <div *ngIf="!isLoading() && filteredServices().length === 0" class="empty-state">
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">spa</mat-icon>
+        </div>
+        <h3>Aucune prestation trouvée</h3>
+        <p>Essayez d'autres mots-clés ou affichez toute la carte.</p>
+        <button type="button" (click)="resetFilters()" class="btn-reset">
+          Voir toutes les prestations
+        </button>
+      </div>
+
+      <!-- Résumé du filtre -->
+      <p class="results-summary" *ngIf="!isLoading() && filteredServices().length > 0">
+        {{ filteredServices().length }} prestation{{ filteredServices().length > 1 ? 's' : '' }}
+      </p>
+
+      <!-- Lignes compactes -->
+      <ul *ngIf="!isLoading() && filteredServices().length > 0" class="services-list">
+        <li *ngFor="let s of filteredServices()">
+          <a
+            [routerLink]="['/' + slugSalon + '/services', s.id]"
+            class="service-row"
+            [class.has-selection]="getSelectedCount(s) > 0"
+          >
+            <div class="service-thumb">
+              <img
+                *ngIf="s.imageUrl"
+                [src]="s.imageUrl | safeMedia"
+                [alt]="s.nom"
+                class="service-thumb-img"
+                loading="lazy"
+              />
+              <mat-icon *ngIf="!s.imageUrl" class="service-thumb-fallback">spa</mat-icon>
+            </div>
+
+            <div class="service-main">
+              <h2 class="service-name">{{ s.nom }}</h2>
+              <p class="service-summary" *ngIf="s.description">{{ s.description }}</p>
+              <div class="service-meta">
+                <span class="meta-pill">
+                  <mat-icon class="icon-xxs">layers</mat-icon>
+                  {{ getFormulesCount(s) }} formule{{ getFormulesCount(s) > 1 ? 's' : '' }}
+                </span>
+                <span class="meta-pill">
+                  <mat-icon class="icon-xxs">schedule</mat-icon>
+                  Dès {{ getMinDuree(s) }} min
+                </span>
+                <span class="meta-pill meta-selected" *ngIf="getSelectedCount(s) > 0">
+                  <mat-icon class="icon-xxs">check_circle</mat-icon>
+                  {{ getSelectedCount(s) }} choisie{{ getSelectedCount(s) > 1 ? 's' : '' }}
+                </span>
+              </div>
+            </div>
+
+            <div class="service-side">
+              <span class="price-label">dès</span>
+              <span class="service-price">{{ getMinPrice(s) | number:'1.0-0' }} <small>FCFA</small></span>
+              <span class="service-go" aria-hidden="true">
+                <mat-icon>chevron_right</mat-icon>
+              </span>
+            </div>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- BARRE RDV EN COURS -->
+  <aside class="booking-floating-bar" *ngIf="bookingStore.count() > 0">
+    <div class="floating-bar-inner">
+      <div class="floating-left">
+        <div class="floating-badge">
+          <mat-icon class="icon-xs">calendar_month</mat-icon>
+          <span>{{ bookingStore.count() }} prestation{{ bookingStore.count() > 1 ? 's' : '' }}</span>
+        </div>
+        <span class="floating-total">
+          Total : <strong>{{ bookingStore.totalPrix() | number:'1.0-0' }} FCFA</strong>
+        </span>
+      </div>
+
+      <div class="floating-actions">
+        <button type="button" class="btn-floating-view" (click)="bookingStore.openDrawer()">
+          Ma sélection
+        </button>
+        <a [routerLink]="['/' + slugSalon + '/rdv']" class="btn-floating-confirm">
+          <span>Choisir mon créneau</span>
+          <mat-icon class="icon-xs">arrow_forward</mat-icon>
+        </a>
+      </div>
+    </div>
+  </aside>
+</div>

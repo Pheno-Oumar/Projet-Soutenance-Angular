@@ -1,0 +1,154 @@
+<div class="reels-grid-page">
+  <!-- EN-TÊTE DU FEED RÉALISATIONS -->
+  <header class="reels-header">
+    <div class="header-container">
+      <nav class="breadcrumb-nav">
+        <a [routerLink]="['/' + slugSalon]">Accueil</a>
+        <mat-icon class="icon-xs">chevron_right</mat-icon>
+        <span class="active-crumb">Galerie Réalisations</span>
+      </nav>
+
+      <span class="sub-badge">PORTFOLIO VIDÉO 9:16 · CRÉATIONS SIGNATURES</span>
+      <h1 class="page-title">Nos Créations & Inspirations</h1>
+      <p class="page-desc">
+        Explorez le savoir-faire de nos artisans coiffeurs en vidéo immersive. Cliquez sur n'importe quelle réalisation pour lancer le lecteur vertical et réserver ce style en un clic.
+      </p>
+
+      <!-- BARRE DE RECHERCHE & FILTRES -->
+      <div class="filter-toolbar">
+        <div class="search-box">
+          <mat-icon class="search-icon">search</mat-icon>
+          <input
+            type="text"
+            class="search-input"
+            placeholder="Rechercher un style, une coupe, un coiffeur..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+          />
+          <button
+            *ngIf="searchQuery()"
+            (click)="searchQuery.set('')"
+            class="clear-btn"
+            aria-label="Effacer la recherche"
+          >
+            <mat-icon class="icon-xs">close</mat-icon>
+          </button>
+        </div>
+
+        <!-- Onglets Stylistes -->
+        <div class="stylist-pills-row" *ngIf="availableStylists().length > 0">
+          <button
+            type="button"
+            class="stylist-pill"
+            [class.active]="selectedCoiffeur() === 'ALL'"
+            (click)="selectedCoiffeur.set('ALL')"
+          >
+            <span>Toutes les créations</span>
+            <span class="count-tag">{{ filteredRealisations().length }}</span>
+          </button>
+
+          <button
+            *ngFor="let styler of availableStylists()"
+            type="button"
+            class="stylist-pill"
+            [class.active]="selectedCoiffeur() === styler"
+            (click)="selectedCoiffeur.set(styler)"
+          >
+            <mat-icon class="icon-xs">face</mat-icon>
+            <span>{{ styler }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENU DE LA GRILLE -->
+  <main class="reels-content">
+    <div class="content-container">
+      <!-- État de chargement -->
+      <div *ngIf="isLoading()" class="loading-state">
+        <div class="spinner-walnut"></div>
+        <p>Chargement des réalisations vidéo...</p>
+      </div>
+
+      <!-- État vide -->
+      <div *ngIf="!isLoading() && filteredRealisations().length === 0" class="empty-state">
+        <div class="empty-icon-box">
+          <mat-icon class="empty-icon">play_circle</mat-icon>
+        </div>
+        <h3>Aucune réalisation trouvée</h3>
+        <p>Aucune vidéo ne correspond à votre filtre de recherche.</p>
+        <button
+          type="button"
+          class="btn-reset"
+          (click)="searchQuery.set(''); selectedCoiffeur.set('ALL')"
+        >
+          Réinitialiser les filtres
+        </button>
+      </div>
+
+      <!-- Grille Vidéo 9:16 -->
+      <div *ngIf="!isLoading() && filteredRealisations().length > 0" class="reels-grid">
+        <a
+          *ngFor="let r of filteredRealisations(); let idx = index"
+          [routerLink]="['/' + slugSalon + '/realisations', r.id]"
+          class="reel-card"
+          appTilt3d
+          [maxTilt]="6"
+          appRevealOnScroll
+          [revealDelay]="idx * 40"
+          (mouseenter)="playPreview(vid)"
+          (mouseleave)="pausePreview(vid)"
+        >
+          <div class="reel-media-box">
+            <!-- Balise vidéo avec lecture au survol (Streaming HLS) -->
+            <video
+              #vid
+              [appHlsVideo]="r.urlVideo"
+              playsinline
+              muted
+              loop
+              preload="metadata"
+              class="reel-video"
+            ></video>
+
+            <!-- Gradient somptueux Walnut / Charcoal -->
+            <div class="reel-gradient-overlay"></div>
+
+            <!-- Vues en haut à gauche -->
+            <div class="reel-badge-top-left">
+              <mat-icon class="icon-xs">play_arrow</mat-icon>
+              <span>{{ getViewCount(r) }}</span>
+            </div>
+
+            <!-- Likes en haut à droite -->
+            <div class="reel-badge-top-right">
+              <mat-icon class="icon-xs">favorite</mat-icon>
+              <span>{{ getLikeCount(r) }}</span>
+            </div>
+
+            <!-- Indicateur de lecture tactile au centre -->
+            <div class="reel-center-play">
+              <div class="play-pulse-circle">
+                <mat-icon class="play-icon">play_arrow</mat-icon>
+              </div>
+            </div>
+
+            <!-- Styliste & Titre en bas -->
+            <div class="reel-bottom-info">
+              <span class="reel-artist" *ngIf="r.coiffeurNomComplet">
+                <mat-icon class="icon-xs">verified</mat-icon>
+                <span>{{ r.coiffeurNomComplet }}</span>
+              </span>
+              <h3 class="reel-title">{{ r.titre }}</h3>
+              <div class="reel-cta-hint">
+                <span>Découvrir le look</span>
+                <mat-icon class="icon-xs">arrow_forward</mat-icon>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </main>
+</div>

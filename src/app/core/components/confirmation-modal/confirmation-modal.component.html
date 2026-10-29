@@ -1,0 +1,40 @@
+@if (active) {
+  <div class="confirm-backdrop" (click)="onCancel()">
+    <div class="confirm-dialog" [class]="'dialog-' + active.type" (click)="$event.stopPropagation()">
+      <div class="confirm-header">
+        <div class="confirm-icon-circle" [class]="'icon-' + active.type">
+          <mat-icon>{{ active.icon }}</mat-icon>
+        </div>
+        <button type="button" class="btn-close" (click)="onCancel()" title="Fermer">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="confirm-body">
+        <h3 class="confirm-title">{{ active.title }}</h3>
+        <p class="confirm-message">{{ active.message }}</p>
+
+        @if (active.showInput) {
+          <div class="confirm-input-wrap">
+            <textarea
+              [(ngModel)]="active.inputValue"
+              [placeholder]="active.inputPlaceholder || ''"
+              rows="3"
+              class="confirm-textarea"
+              (keydown.enter)="handleTextareaEnter($event)"
+              autofocus></textarea>
+          </div>
+        }
+      </div>
+
+      <div class="confirm-footer">
+        <button type="button" class="btn-cancel" (click)="onCancel()">
+          {{ active.cancelText }}
+        </button>
+        <button type="button" class="btn-confirm" [class]="'btn-confirm-' + active.type" (click)="onConfirm()">
+          {{ active.confirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
